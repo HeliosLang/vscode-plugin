@@ -1,0 +1,68 @@
+{
+  	"scopeName": "source.helios",
+  	"patterns": [
+		{
+			"name": "comment.line.double-slash.helios",
+			"match": "//.*"
+		},
+		{
+			"name": "comment.block.helios",
+			"begin": "/\\*",
+			"end": "\\*/"
+		},
+		{
+		    "name": "string.quoted.double.helios",
+		  	"begin": "\"",
+		  	"end": "\""
+		},
+		{
+			"name": "constant.language.boolean.helios",
+			"match": "\\b(true|false)\\b"
+		},
+		{
+			"name": "constant.numeric.decimal.helios",
+			"match": "\\b[0-9]+"
+		},
+		{
+			"name": "constant.character.helios",
+			"begin": "#",
+			"end": "[a-f0-9]*"
+		},
+		{
+			"name": "keyword.control.helios",
+			"match": "\\b(if|else|switch)\\b"
+		},
+  {
+          "name": "keyword.operator.comparison.helios",
+          "match": "(<=|>=|==|!=|<|>)"
+        },
+        {
+          "name": "keyword.operator.logical.helios",
+          "match": "(&&|\\|\\|)"
+        },
+        {
+          "name": "keyword.operator.math.helios",
+          "match": "(\\+|\\-|/|\\*|%)"
+        },
+        {
+          "name": "keyword.operator.assignment.helios",
+          "match": "="
+        },
+		{
+			"name": "keyword.other.scriptpurpose.helios",
+			"match": "^(minting|spending|staking|testing)\\b"
+		},
+		{
+			"name": "keyword.other.statement.helios",
+			"match": "\\b(const|enum|func|struct)\\b"
+		},
+		{
+			"name": "support.function.helios",
+			"match": "\\b(assert|error|print)\\b"
+		},
+		{
+			"name": "entity.name.type.helios",
+			"match": "\\b(Address|AssetClass|Bool|ByteArray|Credential|Duration|Int|Map|MintingPolicyHash|Option|PubKey|PubKeyHash|ScriptContext|String|Time|Tx|ValidatorHash|Value)\\b"
+		}
+	]
+}

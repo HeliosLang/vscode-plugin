@@ -1,0 +1,27 @@
+{
+  "name": "helios",
+  "displayName": "Helios",
+  "description": "Helios language support",
+  "version": "0.1.0",
+  "scripts": {
+	  "install": "vsce package && code --install-extension ./helios-0.1.0.vsix"
+  },
+  "engines": {
+    "vscode": "^1.51.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "helios",
+      "extensions": [".hl"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "helios",
+      "scopeName": "source.helios",
+      "path": "./grammar.json"
+    }]
+  }
+}
