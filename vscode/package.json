@@ -1,9 +1,16 @@
 {
   "name": "helios",
   "displayName": "Helios",
-  "description": "Helios language support",
+  "description": "Helios language support for VS Code",
+  "publisher": "Shinka",
   "version": "0.1.0",
+  "icon": "icon.png",
+  "repository": {
+	  "type": "git",
+	  "url": "https://github.com/hyperion-bt/helios-ide-plugins"
+  },
   "scripts": {
+	  "build": "vsce package",
 	  "install": "vsce package && code --install-extension ./helios-0.1.0.vsix"
   },
   "engines": {
@@ -15,8 +22,20 @@
   "contributes": {
     "languages": [{
       "id": "helios",
+	  "aliases": [
+		  "Helios",
+		  "Helios-Lang",
+		  "Helios-lang",
+		  "Helios_lang",
+		  "helios_lang",
+		  "helios"
+	  ],
       "extensions": [".hl"],
-      "configuration": "./language-configuration.json"
+      "configuration": "./language-configuration.json",
+	  "icon": {
+		  "light": "file-icon-light.png",
+		  "dark": "file-icon-dark.png"
+	  }
     }],
     "grammars": [{
       "language": "helios",

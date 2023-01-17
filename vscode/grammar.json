@@ -2,67 +2,659 @@
   	"scopeName": "source.helios",
   	"patterns": [
 		{
-			"name": "comment.line.double-slash.helios",
-			"match": "//.*"
+			"include": "#header"
 		},
 		{
-			"name": "comment.block.helios",
-			"begin": "/\\*",
-			"end": "\\*/"
+			"include": "#comments"
 		},
 		{
-		    "name": "string.quoted.double.helios",
-		  	"begin": "\"",
-		  	"end": "\""
-		},
-		{
-			"name": "constant.language.boolean.helios",
-			"match": "\\b(true|false)\\b"
-		},
-		{
-			"name": "constant.numeric.decimal.helios",
-			"match": "\\b[0-9]+"
-		},
-		{
-			"name": "constant.character.helios",
-			"begin": "#",
-			"end": "[a-f0-9]*"
-		},
-		{
-			"name": "keyword.control.helios",
-			"match": "\\b(if|else|switch)\\b"
-		},
-  {
-          "name": "keyword.operator.comparison.helios",
-          "match": "(<=|>=|==|!=|<|>)"
-        },
-        {
-          "name": "keyword.operator.logical.helios",
-          "match": "(&&|\\|\\|)"
-        },
-        {
-          "name": "keyword.operator.math.helios",
-          "match": "(\\+|\\-|/|\\*|%)"
-        },
-        {
-          "name": "keyword.operator.assignment.helios",
-          "match": "="
-        },
-		{
-			"name": "keyword.other.scriptpurpose.helios",
-			"match": "^(minting|spending|staking|testing)\\b"
-		},
-		{
-			"name": "keyword.other.statement.helios",
-			"match": "\\b(const|enum|func|struct)\\b"
-		},
-		{
-			"name": "support.function.helios",
-			"match": "\\b(assert|error|print)\\b"
-		},
-		{
-			"name": "entity.name.type.helios",
-			"match": "\\b(Address|AssetClass|Bool|ByteArray|Credential|Duration|Int|Map|MintingPolicyHash|Option|PubKey|PubKeyHash|ScriptContext|String|Time|Tx|ValidatorHash|Value)\\b"
+			"include": "#statements"
 		}
-	]
+	],
+	"repository": {
+		"header": {
+			"patterns": [
+				{
+					"begin": "\\A(minting|module|spending|staking|testing)\\b",
+					"beginCaptures": {
+						"1": {"name": "keyword.other.scriptpurpose.helios"}
+					},
+					"end": "(?=\\b(const|enum|func|import|struct)\\b)",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"begin": "[a-zA-Z][a-zA-Z0-9_]*",
+							"beginCaptures": {
+								"0": {"name": "scriptname.helios"}
+							},
+							"end": "(?=\\b(const|enum|func|import|struct)\\b)",
+							"patterns": [
+								{
+									"include": "#comments"
+								}
+							]
+						}
+					]
+				}
+			]
+		},
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.line.double-slash.helios",
+					"match": "//.*"
+				},
+				{
+					"name": "comment.block.helios",
+					"begin": "/\\*",
+					"end": "\\*/"
+				}
+			]
+		},
+		"literals": {
+			"patterns": [
+				{
+					"name": "string.quoted.double.helios",
+					"begin": "\"",
+					"end": "\"",
+					"patterns": [
+						{
+						  "name": "constant.character.escape.helios",
+						  "match": "\\\\."
+						}
+					]
+				},
+				{
+					"name": "constant.numeric.decimal.helios",
+					"match": "\\b[0-9]+"
+				},
+				{
+					"name": "constant.character.helios",
+					"match": "#[a-f0-9]*"
+				},
+				{
+					"name": "constant.language.boolean.helios",
+					"match": "\\b(true|false)\\b"
+				}
+			]
+		},
+		"operators": {
+			"patterns": [
+				{
+			        "name": "keyword.operator.comparison.helios",
+			        "match": "(<=|>=|==|!=|<|>)"
+				},
+				{
+				    "name": "keyword.operator.logical.helios",
+				    "match": "(&&|\\|\\|)"
+				},
+				{
+				    "name": "keyword.operator.math.helios",
+				    "match": "(\\+|\\-|/|\\*)"
+				},
+				{
+				    "name": "keyword.operator.semicolon.helios",
+				    "match": ";"
+				},
+				{
+				    "name": "keyword.operator.dcolon.helios",
+				    "match": "::"
+				},
+				{
+					"match": "\\b[_]\\b",
+					"name": "keyword.operator.underscore.helios"
+				},
+				{
+				    "name": "keyword.operator.darrow.helios",
+				    "match": "=>"
+				}
+			]
+		},
+		"types": {
+			"patterns": [
+				{
+					"match": "[a-zA-Z][a-zA-Z0-9_]*",
+					"name": "entity.name.type.helios"
+				}
+			]
+		},
+		"arrow": {
+			"begin": "\\->",
+			"beginCaptures": {
+				"0": {"name": "keyword.operator.arrow.helios"}
+			},
+			"end": "(?=\\{)",
+			"name": "arrow.helios",
+			"patterns": [
+				{
+					"include": "#comments"
+				},
+				{
+					"include": "#types"
+				},
+				{
+					"begin": "\\(",
+					"end": "\\)",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"include": "#types"
+						}
+					]
+				}
+			]
+		},
+		"parentheses": {
+			"begin": "\\(",
+			"end": "\\)",
+			"name": "group.parentheses.helios",
+			"patterns": [
+				{
+					"include": "#comments"
+				},
+				{
+					"include": "#expressions"
+				},
+				{
+					"begin": ":",
+					"beginCaptures": {
+						"0": {"name": "keyword.operator.colon.helios"}
+					},
+					"end": "(([\\,])|(?=[\\)]))",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"include": "#types"
+						}
+					]
+				}
+			]
+		},
+		"assignment": {
+			"begin": "([a-zA-Z][a-zA-Z0-9_]*)\\s*(:)",
+			"beginCaptures": {
+				"1": {"name": "variable.other.assignment.helios"},
+				"2": {"name": "keyword.operator.color.helios"}
+			},
+			"end": "=",
+			"endCaptures": {
+				"0": {"name": "keyword.operator.assignment.helios"}
+			},
+			"patterns": [
+				{
+					"include": "#comments"
+				},
+				{
+					"include": "#types"
+				}
+			]
+		},
+		"non-assignment": {
+			"patterns": [
+				{
+					"match": "\\b(if|else)\\b",
+					"name": "keyword.other.helios"
+				},
+				{
+					"name": "switch.helios",
+					"begin": "\\b(switch)\\{",
+					"beginCaptures": {
+						"1": {"name": "keyword.other.helios"}
+					},
+					"end": "}",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"match": "(else)\\s*(=>)",
+							"captures": {
+								"1": {"name": "keyword.other.else.helios"},
+								"2": {"name": "keyword.operator.darrow.switch.helios"}
+							}
+						},
+						{
+							"match": "([a-zA-Z][a-zA-Z0-9_]*\\s*(:)\\s*)?(Map)\\[(Data)](Data)\\s*(=>)",
+							"captures": {
+								"1": {"name": "regular.variable.helios"},
+								"2": {"name": "keyword.operator.colon.helios"},
+								"3": {"name": "entity.name.type.helios"},
+								"4": {"name": "entity.name.type.helios"},
+								"5": {"name": "entity.name.type.helios"},
+								"6": {"name": "keyword.operator.darrow.switch.helios"}
+							}
+						},
+						{
+							"match": "([a-zA-Z][a-zA-Z0-9_]*\\s*(:)\\s*)?\\[](Data)\\s*(=>)",
+							"captures": {
+								"2": {"name": "keyword.operator.colon.helios"},
+								"3": {"name": "entity.name.type.helios"},
+								"4": {"name": "keyword.operator.darrow.switch.helios"}
+							}
+						},
+						{
+							"match": "([a-zA-Z][a-zA-Z0-9_]*\\s*(:)\\s*)?([a-zA-Z][a-zA-Z0-9_]*)\\s*(=>)",
+							"captures": {
+								"2": {"name": "keyword.operator.colon.helios"},
+								"3": {"name": "entity.name.type.helios"},
+								"4": {"name": "keyword.operator.darrow.switch.helios"}
+							}
+						},
+						{
+							"match": "=>",
+							"name": "keyword.operator.darrow.switch.helios"
+						},
+						{
+							"include": "#expressions"
+						}
+					]
+				},
+				{
+					"include": "#literals"
+				},
+				{
+					"include": "#arrow"
+				},
+				{
+					"include": "#operators"
+				},
+				{
+					"match": "\\b(assert|error|print)\\b",
+					"name": "support.function.helios"
+				},
+				{
+					"match": "\\b(self)\\b",
+					"name": "variable.language.helios"
+				},
+				{
+					"begin": "]",
+					"end": "(?=(\\{|::))",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"include": "#types"
+						}
+					]
+				},
+				{
+					"begin": "Map\\[",
+					"end": "(?=])",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"include": "#types"
+						}
+					]
+				},
+				{
+					"include": "#parentheses"
+				},
+				{
+					"begin": "\\{",
+					"end": "}",
+					"name": "group.braces.helios",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"match": ":",
+							"name": "keyword.operator.colon.helios"
+						},
+						{
+							"include": "#non-assignment"
+						}
+					]
+				}
+			]
+		},
+		"expressions": {
+			"patterns": [
+				{
+					"include": "#non-assignment"
+				},
+				{
+					"include": "#assignment"
+				}
+			]
+		},
+		"import": {
+			"name": "statement.import.helios",
+			"begin": "\\b(import)\\b",
+			"beginCaptures": {
+				"1": {"name": "keyword.other.import.helios"}
+			},
+			"end": "(?=\\b(const|enum|func|import|struct)\\b)",
+			"name": "statement.import.helios",
+			"patterns": [
+				{
+					"include": "#comments"
+				},
+				{
+					"begin": "\\b(from)\\b",
+					"beginCaptures": {
+						"1": {"name": "keyword.other.from.helios"}
+					},
+					"end": "(?=\\b(const|enum|func|import|struct)\\b)",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"begin": "[a-zA-Z][a-zA-Z0-9_]*",
+							"beginCaptures": {
+								"0": {"name": "module.helios"}
+							},
+							"end": "(?=\\b(const|enum|func|import|struct)\\b)",
+							"patterns": [
+								{
+									"include": "#comments"
+								}
+							]
+						}
+					]
+				},
+				{
+					"match": "[a-zA-Z][a-zA-Z0-9_]*",
+					"name": "variable.other.import.helios"
+				},
+				{
+					"begin": "\\{",
+					"end": "}",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"match": "\\b(as)\\b",
+							"name": "keyword.other.as.helios"
+						},
+						{
+							"match": "[a-zA-Z][a-zA-Z0-9_]*",
+							"name": "variable.other.import.helios"
+						}
+					]
+				}
+			]
+		},
+		"const": {
+			"name": "statement.const.helios",
+			"begin": "\\b(const)\\b",
+			"beginCaptures": {
+				"1": {"name": "storage.type.const.helios"}
+			},
+			"end": "(?=(\\b(const|enum|func|import|struct)\\b)|(}))",
+			"patterns": [
+				{
+					"include": "#comments"
+				},
+				{
+					"begin": "[a-zA-Z][a-zA-Z0-9_]*",
+					"beginCaptures": {
+						"0": {"name": "variable.other.const.helios"}
+					},
+					"end": "(?=[=])",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"begin": ":",
+							"beginCaptures": {
+								"0": {"name": "keyword.operator.colon.helios"}
+							},
+							"end": "(?=[=])",
+							"patterns": [
+								{
+									"include": "#comments"
+								},
+								{
+									"include": "#types"
+								}
+							]
+						}
+					]
+				},
+				{
+					"begin": "=",
+					"beginCaptures": {
+						"0": {"name": "keyword.operator.assignment.helios"}
+					},
+					"end": "(?=(\\b(const|enum|func|import|struct)\\b)|(}))",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"include": "#expressions"
+						}
+					]
+				}
+			]
+		},
+		"struct": {
+			"name": "statement.struct.helios",
+			"begin": "\\b(struct)\\b",
+			"beginCaptures": {
+				"1": {"name": "storage.struct.helios"}
+			},
+			"end": "(?=\\b(const|enum|func|import|struct)\\b)",
+			"patterns": [
+				{
+					"include": "comments"
+				},
+				{
+					"begin": "[a-zA-Z][a-zA-Z0-9_]*",
+					"beginCaptures": {
+						"0": {"name": "entity.name.type.helios"}
+					},
+					"end": "(?=\\{)",
+					"patterns": [
+						{
+							"include": "#comments"
+						}
+					]
+				},
+				{
+					"begin": "\\{",
+					"end": "(?=})",
+					"name": "struct.helios",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"include": "#const"
+						},
+						{
+							"begin": ":",
+							"end": "$",
+							"patterns": [
+								{
+									"include": "#comments"
+								},
+								{
+									"include": "#types"
+								}
+							]
+						},
+						{
+							"include": "#func"
+						}
+					]
+				}
+			]
+		},
+		"enum": {
+			"name": "statement.enum.helios",
+			"begin": "\\b(enum)\\b",
+			"beginCaptures": {
+				"1": {"name": "storage.enum.helios"}
+			},
+			"end": "(?=\\b(const|enum|func|import|struct)\\b)",
+			"patterns": [
+				{
+					"include": "comments"
+				},
+				{
+					"begin": "[a-zA-Z][a-zA-Z0-9_]*",
+					"beginCaptures": {
+						"0": {"name": "entity.name.type.helios"}
+					},
+					"end": "(?=\\{)",
+					"patterns": [
+						{
+							"include": "#comments"
+						}
+					]
+				},
+				{
+					"begin": "\\{",
+					"end": "}",
+					"name": "enum.helios",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"include": "#const"
+						},
+						{
+							"include": "#func"
+						},
+						{
+							"match": "[a-zA-Z][a-zA-Z0-9_]*",
+							"name": "enum.variant.name.helios"
+						},
+						{
+							"begin": "\\{",
+							"end": "}",
+							"name": "enum.variant.helios",
+							"patterns": [
+								{
+									"include": "#comments"
+								},
+								{
+									"begin": ":",
+									"end": "$",
+									"patterns": [
+										{
+											"include": "#comments"
+										},
+										{
+											"include": "#types"
+										}
+									]
+								}
+							]
+						}
+					]
+				}
+			]
+		},
+		"func": {
+			"name": "statement.func.helios",
+			"begin": "\\b(func)\\b",
+			"beginCaptures": {
+				"1": {"name": "storage.function.helios"}
+			},
+			"end": "(?=(\\b(const|enum|func|import|struct)\\b)|(}))",
+			"patterns": [
+				{
+					"include": "#comments"
+				},
+				{
+					"match": "[a-zA-Z][a-zA-Z0-9_]*",
+					"name": "variable.other.function.helios"
+				},
+				{
+					"name": "statement.func.args.helios",
+					"begin": "\\(",
+					"end": "(?=\\))",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"begin": ":",
+							"beginCaptures": {
+								"0": {"name": "keyword.operator.colon.helios"}
+							},
+							"end": "(([\\,])|(?=[\\)]))",
+							"name": "statement.func.arg.type.helios",
+							"patterns": [
+								{
+									"include": "#comments"
+								},
+								{
+									"include": "#types"
+								}
+							]
+						},
+						{
+							"match": "\\b(self)\\b",
+							"name": "variable.language.helios"
+						},
+						{
+							"match": "\\b[_]\\b",
+							"name": "keyword.operator.underscore.helios"
+						}
+					]
+				},
+				{
+					"begin": "\\)",
+					"end": "(?=\\->)",
+					"patterns": [
+						{
+							"include": "#comments"
+						}
+					]
+				},
+				{
+					"include": "#arrow"
+				},
+				{
+					"begin": "\\{",
+					"end": "}",
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"include": "#expressions"
+						}
+					]
+				}
+			]
+		},
+		"statements": {
+			"patterns": [
+				{
+					"include": "#import"
+				},
+				{
+					"include": "#const"
+				},
+				{
+					"include": "#struct"
+				},
+				{
+					"include": "#enum"
+				},
+				{
+					"include": "#func"
+				}
+			]
+		}
+	}
 }
