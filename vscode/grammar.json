@@ -157,14 +157,14 @@
 					"include": "#comments"
 				},
 				{
-					"include": "#expressions"
+					"include": "#non-assignment"
 				},
 				{
 					"begin": ":",
 					"beginCaptures": {
 						"0": {"name": "keyword.operator.colon.helios"}
 					},
-					"end": "(([\\,])|(?=[\\)]))",
+					"end": "([\\,])|(?=[\\)])",
 					"patterns": [
 						{
 							"include": "#comments"
@@ -176,8 +176,72 @@
 				}
 			]
 		},
+		"switch": {
+			"name": "switch.helios",
+			"begin": "\\b(switch)\\{",
+			"beginCaptures": {
+				"1": {"name": "keyword.other.helios"}
+			},
+			"end": "}",
+			"patterns": [
+				{
+					"include": "#comments"
+				},
+				{
+					"match": "(else)\\s*(=>)",
+					"captures": {
+						"1": {"name": "keyword.other.else.helios"},
+						"2": {"name": "keyword.operator.darrow.switch.helios"}
+					}
+				},
+				{
+					"match": "([a-zA-Z][a-zA-Z0-9_]*\\s*(:)\\s*)?(Map)\\[(Data)](Data)\\s*(=>)",
+					"captures": {
+						"1": {"name": "regular.variable.helios"},
+						"2": {"name": "keyword.operator.colon.helios"},
+						"3": {"name": "entity.name.type.helios"},
+						"4": {"name": "entity.name.type.helios"},
+						"5": {"name": "entity.name.type.helios"},
+						"6": {"name": "keyword.operator.darrow.switch.helios"}
+					}
+				},
+				{
+					"match": "([a-zA-Z][a-zA-Z0-9_]*\\s*(:)\\s*)?\\[](Data)\\s*(=>)",
+					"captures": {
+						"2": {"name": "keyword.operator.colon.helios"},
+						"3": {"name": "entity.name.type.helios"},
+						"4": {"name": "keyword.operator.darrow.switch.helios"}
+					}
+				},
+				{
+					"match": "([a-zA-Z][a-zA-Z0-9_]*\\s*(:)\\s*)?([a-zA-Z][a-zA-Z0-9_]*)\\s*(=>)",
+					"captures": {
+						"2": {"name": "keyword.operator.colon.helios"},
+						"3": {"name": "entity.name.type.helios"},
+						"4": {"name": "keyword.operator.darrow.switch.helios"}
+					}
+				},
+				{
+					"match": "=>",
+					"name": "keyword.operator.darrow.switch.helios"
+				},
+				{
+					"include": "#expressions"
+				}
+			]
+		},
 		"assignment": {
-			"begin": "([a-zA-Z][a-zA-Z0-9_]*)\\s*(:)",
+			"patterns": [
+				{
+					"include": "#assignment-with-type"
+				},
+				{
+					"include": "#assignment-without-type"
+				}
+			]
+		},
+		"assignment-with-type": {
+			"begin": "([a-zA-Z][a-zA-Z0-9_]*)\\s*(:)(?!:)",
 			"beginCaptures": {
 				"1": {"name": "variable.other.assignment.helios"},
 				"2": {"name": "keyword.operator.color.helios"}
@@ -195,6 +259,14 @@
 				}
 			]
 		},
+		"assignment-without-type": {
+			"begin": "([a-zA-Z][a-zA-Z0-9_]*)\\s*(=)",
+			"beginCaptures": {
+				"1": {"name": "variable.other.assignment.helios"},
+				"2": {"name": "keyword.operator.assignment.helios"}
+			},
+			"end": "\\b"
+		},
 		"non-assignment": {
 			"patterns": [
 				{
@@ -202,58 +274,7 @@
 					"name": "keyword.other.helios"
 				},
 				{
-					"name": "switch.helios",
-					"begin": "\\b(switch)\\{",
-					"beginCaptures": {
-						"1": {"name": "keyword.other.helios"}
-					},
-					"end": "}",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"match": "(else)\\s*(=>)",
-							"captures": {
-								"1": {"name": "keyword.other.else.helios"},
-								"2": {"name": "keyword.operator.darrow.switch.helios"}
-							}
-						},
-						{
-							"match": "([a-zA-Z][a-zA-Z0-9_]*\\s*(:)\\s*)?(Map)\\[(Data)](Data)\\s*(=>)",
-							"captures": {
-								"1": {"name": "regular.variable.helios"},
-								"2": {"name": "keyword.operator.colon.helios"},
-								"3": {"name": "entity.name.type.helios"},
-								"4": {"name": "entity.name.type.helios"},
-								"5": {"name": "entity.name.type.helios"},
-								"6": {"name": "keyword.operator.darrow.switch.helios"}
-							}
-						},
-						{
-							"match": "([a-zA-Z][a-zA-Z0-9_]*\\s*(:)\\s*)?\\[](Data)\\s*(=>)",
-							"captures": {
-								"2": {"name": "keyword.operator.colon.helios"},
-								"3": {"name": "entity.name.type.helios"},
-								"4": {"name": "keyword.operator.darrow.switch.helios"}
-							}
-						},
-						{
-							"match": "([a-zA-Z][a-zA-Z0-9_]*\\s*(:)\\s*)?([a-zA-Z][a-zA-Z0-9_]*)\\s*(=>)",
-							"captures": {
-								"2": {"name": "keyword.operator.colon.helios"},
-								"3": {"name": "entity.name.type.helios"},
-								"4": {"name": "keyword.operator.darrow.switch.helios"}
-							}
-						},
-						{
-							"match": "=>",
-							"name": "keyword.operator.darrow.switch.helios"
-						},
-						{
-							"include": "#expressions"
-						}
-					]
+					"include": "#switch"
 				},
 				{
 					"include": "#literals"
@@ -361,6 +382,11 @@
 									"include": "#comments"
 								}
 							]
+						},
+						{
+							"name": "string.quoted.double.helios",
+							"begin": "\"",
+							"end": "\""
 						}
 					]
 				},
@@ -393,7 +419,7 @@
 			"beginCaptures": {
 				"1": {"name": "storage.type.const.helios"}
 			},
-			"end": "(?=(\\b(const|enum|func|import|struct)\\b)|(}))",
+			"end": "(?=(\\b(const|enum|func|import|struct)\\b))",
 			"patterns": [
 				{
 					"include": "#comments"
@@ -430,13 +456,13 @@
 					"beginCaptures": {
 						"0": {"name": "keyword.operator.assignment.helios"}
 					},
-					"end": "(?=(\\b(const|enum|func|import|struct)\\b)|(}))",
+					"end": "(?=(\\b(const|enum|func|import|struct)\\b))",
 					"patterns": [
 						{
 							"include": "#comments"
 						},
 						{
-							"include": "#expressions"
+							"include": "#non-assignment"
 						}
 					]
 				}
@@ -448,7 +474,10 @@
 			"beginCaptures": {
 				"1": {"name": "storage.struct.helios"}
 			},
-			"end": "(?=\\b(const|enum|func|import|struct)\\b)",
+			"end": "}",
+			"endCaptures": {
+				"0": {"name": "group.braces.struct.helios"}
+			},
 			"patterns": [
 				{
 					"include": "comments"
@@ -501,7 +530,10 @@
 			"beginCaptures": {
 				"1": {"name": "storage.enum.helios"}
 			},
-			"end": "(?=\\b(const|enum|func|import|struct)\\b)",
+			"end": "}",
+			"endCaptures": {
+				"0": {"name": "group.braces.enum.helios"}
+			},
 			"patterns": [
 				{
 					"include": "comments"
@@ -520,7 +552,7 @@
 				},
 				{
 					"begin": "\\{",
-					"end": "}",
+					"end": "(?=})",
 					"name": "enum.helios",
 					"patterns": [
 						{
@@ -568,7 +600,10 @@
 			"beginCaptures": {
 				"1": {"name": "storage.function.helios"}
 			},
-			"end": "(?=(\\b(const|enum|func|import|struct)\\b)|(}))",
+			"end": "}",
+			"endCaptures": {
+				"0": {"name": "group.braces.func.helios"}
+			},
 			"patterns": [
 				{
 					"include": "#comments"
@@ -625,7 +660,7 @@
 				},
 				{
 					"begin": "\\{",
-					"end": "}",
+					"end": "(?=})",
 					"patterns": [
 						{
 							"include": "#comments"
