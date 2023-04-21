@@ -1,3 +1,5 @@
 *.vsix
+vscode/dist/**
+*.swp
 *.log
 node_modules

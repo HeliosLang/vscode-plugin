@@ -1,60 +1,66 @@
 {
-  "name": "helios",
-  "displayName": "Helios",
-  "description": "Helios language support for VS Code",
-  "publisher": "ShinkaNetwork",
-  "version": "0.1.2",
-  "icon": "icon.png",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/hyperion-bt/helios-ide-plugins"
-  },
-  "scripts": {
-    "build": "vsce package",
-    "install": "vsce package && code --install-extension ./helios-0.1.2.vsix"
-  },
-  "engines": {
-    "vscode": "^1.51.0"
-  },
-  "categories": [
-    "Programming Languages"
-  ],
-  "contributes": {
-    "languages": [
-      {
-        "id": "helios",
-        "aliases": [
-          "Helios",
-          "Helios-Lang",
-          "Helios-lang",
-          "Helios_lang",
-          "helios_lang",
-          "helios"
-        ],
-        "extensions": [
-          ".hl",
-          ".helios"
-        ],
-        "configuration": "./language-configuration.json",
-        "icon": {
-          "light": "file-icon-light.png",
-          "dark": "file-icon-dark.png"
-        }
-      }
+    "name": "helios",
+    "displayName": "Helios",
+    "description": "Helios language support for VS Code",
+    "publisher": "ShinkaNetwork",
+    "version": "0.1.3",
+    "icon": "icon.png",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/hyperion-bt/helios-ide-plugins"
+    },
+    "scripts": {
+        "build": "tsc && vsce package",
+        "install": "vsce package && code --install-extension ./helios-0.1.3.vsix",
+        "deploy": "vsce publish"
+    },
+    "engines": {
+        "vscode": "^1.77.0"
+    },
+    "categories": [
+        "Programming Languages"
     ],
-    "grammars": [
-      {
-        "language": "helios",
-        "scopeName": "source.helios",
-        "path": "./grammar.json"
-      }
-    ]
-  },
-  "activationEvents": [
-    "onLanguage:helios"
-  ],
-  "main": "./index.js",
-  "dependencies": {
-    "vscode-nls": "^5.2.0"
-  }
+    "contributes": {
+        "languages": [
+            {
+                "id": "helios",
+                "aliases": [
+                    "helios",
+                    "Helios",
+                    "Helios-Lang",
+                    "Helios-lang",
+                    "Helios_lang",
+                    "helios_lang"
+                ],
+                "extensions": [
+                    ".hl",
+                    ".helios"
+                ],
+                "configuration": "./language-configuration.json",
+                "icon": {
+                    "light": "file-icon-light.png",
+                    "dark": "file-icon-dark.png"
+                }
+            }
+        ],
+        "grammars": [
+            {
+                "language": "helios",
+                "scopeName": "source.helios",
+                "path": "./grammar.json"
+            }
+        ]
+    },
+    "main": "./dist/index.js",
+    "activationEvents": [
+        "onLanguage:helios"
+    ],
+    "dependencies": {
+        "vscode-nls": "^5.2.0"
+    },
+    "devDependencies": {
+        "@types/node": "^18.15.11",
+        "@types/vscode": "^1.77.0",
+        "typescript": "^5.0.4"
+    }
 }
