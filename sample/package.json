@@ -8,6 +8,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@hyperionbt/helios": "^0.13.21"
+    "@hyperionbt/helios": "^0.13.22"
   }
 }

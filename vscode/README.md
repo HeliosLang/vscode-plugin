@@ -2,6 +2,7 @@
 
 Features:
  * Syntax highlighting for .hl files.
+ * Syntax error diagnostics
 
 ## Further reading
 https://macromates.com/manual/en/language_grammars#naming-conventions

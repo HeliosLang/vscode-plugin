@@ -1,7 +1,5 @@
 spending hello
 
-const name = 0
-
-func main(hello: asd, hell: Hello) -> Bool {
+func main(_, _, _) -> Bool {
     true
 }
