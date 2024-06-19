@@ -2,8 +2,8 @@
     "name": "helios",
     "displayName": "Helios",
     "description": "Helios language support for VS Code",
-    "publisher": "ShinkaNetwork",
-    "version": "0.1.4",
+    "publisher": "HeliosLang",
+    "version": "0.1.8",
     "icon": "icon.png",
     "repository": {
         "type": "git",
@@ -11,7 +11,7 @@
     },
     "scripts": {
         "build": "tsc && vsce package",
-        "install": "vsce package && code --install-extension ./helios-0.1.4.vsix",
+        "install": "vsce package && code --install-extension ./helios-0.1.8.vsix",
         "deploy": "vsce publish"
     },
     "engines": {

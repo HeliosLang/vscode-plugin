@@ -3,10 +3,10 @@ import {
 } from "vscode"
 
 import {
-    HeliosLibraryCache
+    Cache
 } from "./cache"
 
-export function registerHoverProvider(cache: HeliosLibraryCache) {
+export function registerHoverProvider(cache: Cache) {
     languages.registerHoverProvider("helios", {
 		provideHover: (document, position, token) => {
             const lib = cache.loadCachedLibrary(document.fileName)

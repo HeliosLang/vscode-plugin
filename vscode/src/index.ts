@@ -3,7 +3,7 @@ import {
 } from "vscode"
 
 import {
-	HeliosLibraryCache
+	Cache
 } from "./cache"
 
 import {
@@ -16,7 +16,7 @@ import {
 
 // called when plugin is loaded
 export function activate(context: ExtensionContext) {
-	const cache = new HeliosLibraryCache()
+	const cache = new Cache()
 
 	/*languages.registerDocumentFormattingEditProvider('helios', {
 		provideDocumentFormattingEdits: (document) => {

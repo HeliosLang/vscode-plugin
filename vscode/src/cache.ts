@@ -9,70 +9,23 @@ import {
     join as joinPath
 } from "path"
 
-export type HeliosLibrary = {
-    VERSION: string
-    Tokenizer: any
-    Source: any
-    buildScript: any
-    setImportPathTranslator: any
-}
+import {
+    HeliosLibrary,
+    compareVersions
+} from "./library"
 
-class Repository {
-    #path: string
-    #version: string
-    #lastLoaded: Date
-    
-    constructor(path: string, version: string, lastModified: Date) {
-        this.#path = path
-        this.#version = version
-        this.#lastLoaded = lastModified
-    }
+import {
+    Repository
+} from "./repository"
 
-    get path(): string {
-        return this.#path
-    }
-
-    get version(): string {
-        return this.#version
-    }
-
-    get lastLoaded(): Date {
-        return this.#lastLoaded
-    }
-}
-
-function parseVersion(v: string): number[] {
-	if (v.startsWith("v")) {
-		v = v.slice(1);
-	}
-
-	let parts = v.split(".");
-
-	return parts.map(p => (p != undefined ? parseInt(p) : 0));
-}
-
-function compareVersions(va: string, vb: string) {
-	let a = parseVersion(va);
-	let b = parseVersion(vb);
-
-	if (a[0] == b[0]) {
-		if (a[1] == b[1]) {
-			return a[2] - b[2];
-		} else {
-			return a[1] - b[1];
-		}
-	} else {
-		return a[0] - b[0];
-	}
-}
 
 // maps Helios versions to the actual library
 // maps fileNames to packageJson fileNames (assumes files are very rarely moved between repositories)
 // check the last modification date of packageJson files (a more recent version of Helios could've been installed while the IDE is open)
-export class HeliosLibraryCache {
+export class Cache {
     #versions: {[version: string]: HeliosLibrary}
     #repositories: {[path: string]: Repository}
-    #files: {[path: string]: string}
+    #files: {[path: string]: string} // map of files to package.json
 
     constructor() {
         this.#versions = {}
@@ -86,6 +39,9 @@ export class HeliosLibraryCache {
 
             // can't use import because it isn't available inside vsce package
             let heliosSrc = readFileSync(libPath).toString()
+
+            console.log("Read helios lib from " + libPath)
+
             heliosSrc = heliosSrc.replace(/^\ *export /gm, "")
             heliosSrc = `${heliosSrc}
             
@@ -94,7 +50,16 @@ const exportedForVSCode = {
     Tokenizer,
     Source,
     buildScript,
-    setImportPathTranslator
+    extractScriptPurposeAndName,
+    setImportPathTranslator,
+    Module,
+    MainModule,
+    TopScope,
+    GlobalScope,
+    ModuleScope,
+    assertDefined,
+    MintingPolicyHashType,
+    ValidatorHashType
 };
 
 exportedForVSCode`
@@ -115,6 +80,7 @@ exportedForVSCode`
                 return null;
             }
         } catch(e: any) {
+            console.log("Failed to read helios lib from " + libPath + " (" + e.message + ")")
             return null
         }
     }
@@ -148,11 +114,12 @@ exportedForVSCode`
         }
     }
 
+    // path points to package.json file
     private loadRepository(path: string): (null | Repository) {
         try {
             const contents: any = JSON.parse(readFileSync(path).toString())
 
-            if ((contents?.dependencies["@hyperionbt/helios"]) ?? (contents?.devDependencies["@hyperionbt/helios"]) ?? "") {
+            if ((contents?.dependencies["@hyperionbt/helios"]) ?? (contents?.devDependencies["@hyperionbt/helios"]) ?? (contents?.peerDependencies["@hyperionbt/helios"]) ?? "") {
                 const version = this.loadLibrary(joinPath(dirname(path), "node_modules/@hyperionbt/helios/helios.js"))
     
                 if (version) {
@@ -162,49 +129,61 @@ exportedForVSCode`
 
                     return repo
                 } else {
+                    console.log("Helios library marked as dependency but not installed")
                     return null
                 }
             } else {
+                console.log("Helios not detected as dependency of " + path)
                 return null
             }
-        } catch(e) {
+        } catch(e: any) {
+            console.log("Error while trying to load helios library (" + e.message + ")")
             return null
         }
     }
 
-    private loadCachedRepository(path: string): (null | Repository) {
-        let repo: (null | Repository) = this.#repositories[path]
-
-        if (repo) {
-            try {
-                const stat = statSync(repo.path)
-    
-                if (stat.mtime.getTime() > repo.lastLoaded.getTime()) {
-                    repo = this.loadRepository(repo.path)
-                }
-            } catch(e ) {
-                return null
-            }
-        } else {
-            repo = this.loadRepository(path)
-        }
-
-        return repo
-    }
-
-    loadCachedLibrary(fileName: string): (null | HeliosLibrary) {
+    loadCachedRepository(fileName: string): (null | Repository) {
         const repoPath = this.findRepository(fileName)
 
         if (repoPath) {
-            const repo = this.loadCachedRepository(repoPath)
+            let repo: (null | Repository) = this.#repositories[repoPath]
 
             if (repo) {
-                const lib = this.#versions[repo.version]
-
-                if (lib) {
-                    return lib
+                try {
+                    const stat = statSync(repo.path)
+        
+                    if (stat.mtime.getTime() > repo.lastLoaded.getTime()) {
+                        repo = this.loadRepository(repo.path)
+                    }
+                } catch(e: any) {
+                    console.log("Unable to load package.json for " + fileName + " (" + e.message + ")")
+                    return null
                 }
+            } else {
+                repo = this.loadRepository(repoPath)
             }
+
+            return repo
+        } else {
+            console.log("No package.json found for " + fileName)
+        }
+
+        return null
+    }
+
+    loadCachedLibrary(fileName: string): (null | HeliosLibrary) {
+        const repo = this.loadCachedRepository(fileName)
+
+        if (repo) {
+            const lib = this.#versions[repo.version]
+
+            if (lib) {
+                return lib
+            } else {
+                console.log("No lib found with version " + repo.version)
+            }
+        } else {
+            console.log("No package.json with helios dependency found for " + fileName)
         }
 
         return null

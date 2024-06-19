@@ -22,24 +22,57 @@ import {
 } from "vscode"
 
 import {
-    HeliosLibraryCache
+	isHeliosExt
+} from "./repository"
+
+import {
+    Cache
 } from "./cache"
 
-function isHeliosScript(document: TextDocument): boolean {
-	const ext = extname(document.fileName)
+// task queue first-in-last-out
+let tasks: [string, () => Promise<void>][] = []
 
-	return ext == ".hl" || ext == ".helios"
+// only handle one task
+function handleTasks() {
+	const task = tasks.pop()
+
+	if (task) {
+		tasks = tasks.filter(t => t[0] !== task[0])
+
+		task[1]().then(() => {
+			setTimeout(handleTasks, 500)
+		})
+	} else {
+		setTimeout(handleTasks, 500)
+	}
 }
 
-async function refreshDiagnostics(cache: HeliosLibraryCache, document: TextDocument, heliosDiagnostics: DiagnosticCollection) {
+handleTasks()
+
+function isHeliosScript(document: TextDocument): boolean {
+	return isHeliosExt(document.fileName)
+}
+
+async function refreshDiagnostics(cache: Cache, document: TextDocument, heliosDiagnostics: DiagnosticCollection) {
 	if (!isHeliosScript(document)) {
 		return
 	}
 	
-    const lib = cache.loadCachedLibrary(document.fileName)
+    const helios = cache.loadCachedLibrary(document.fileName)
+	const repo = cache.loadCachedRepository(document.fileName)
 
-    if (lib) {
-		const { buildScript, Source, Tokenizer } = lib
+	console.log("lib " + helios)
+
+    if (helios && repo) {
+		await repo.init(helios)
+
+		repo.updateFile(helios, document.fileName, document.getText())
+
+		tasks.push([repo.path, async () => {
+			await repo.diagnose(helios, heliosDiagnostics)
+		}])
+
+		/*const { buildScript, Source, Tokenizer } = lib
 
 		lib.setImportPathTranslator((str: any) => {
 			const relPath = str.value;
@@ -83,11 +116,14 @@ async function refreshDiagnostics(cache: HeliosLibraryCache, document: TextDocum
 			)
 		})
 
-		heliosDiagnostics.set(document.uri, fileDiagnostics)
+		console.log("setting diagnostics for " + document.uri)
+
+		heliosDiagnostics.set(document.uri, fileDiagnostics)*/
     }
 }
 
-export function registerDiagnostics(context: ExtensionContext, cache: HeliosLibraryCache) {
+// this is actually just a trigger/entrypoint
+export function registerDiagnostics(context: ExtensionContext, cache: Cache) {
 	const heliosDiagnostics = languages.createDiagnosticCollection("helios")
 
 	if (window.activeTextEditor) {
@@ -104,9 +140,5 @@ export function registerDiagnostics(context: ExtensionContext, cache: HeliosLibr
 
 	context.subscriptions.push(
 		workspace.onDidChangeTextDocument(e => refreshDiagnostics(cache, e.document, heliosDiagnostics))
-	)
-
-	context.subscriptions.push(
-		workspace.onDidCloseTextDocument(doc => heliosDiagnostics.delete(doc.uri))
 	)
 }
