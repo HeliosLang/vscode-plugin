@@ -1,5 +1,0 @@
-spending hello
-
-func main(_, _, _) -> Bool {
-    true
-}

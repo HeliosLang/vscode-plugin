@@ -1,5 +1,5 @@
 *.vsix
-vscode/dist/**
+dist/**
 *.swp
 *.log
 node_modules
