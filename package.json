@@ -10,8 +10,9 @@
         "url": "https://github.com/hyperion-bt/helios-ide-plugins"
     },
     "scripts": {
-        "build": "tsc && vsce package",
-        "install": "vsce package && code --install-extension ./helios-0.1.8.vsix",
+        "build": "tsc && vsce package --no-dependencies",
+        "postinstall": "pnpm run build ; pnpm run package",
+        "package": "vsce package --no-dependencies && code --install-extension ./helios-0.1.8.vsix ; true",
         "deploy": "vsce publish"
     },
     "engines": {
@@ -56,6 +57,7 @@
         "onLanguage:helios"
     ],
     "dependencies": {
+        "@vscode/vsce": "^3.0.0",
         "vscode-nls": "^5.2.0"
     },
     "devDependencies": {
