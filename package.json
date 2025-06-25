@@ -54,6 +54,7 @@
         "views": {
             "debug": [
                 {
+                    "type": "webview",
                     "id": "helios.runView",
                     "name": "Helios Runner"
                 }
