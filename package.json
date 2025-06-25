@@ -50,11 +50,27 @@
                 "scopeName": "source.helios",
                 "path": "./grammar.json"
             }
+        ],
+        "views": {
+            "explorer": [
+                {
+                    "id": "helios.runView",
+                    "name": "Helios Runner"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "helios.showRunView",
+                "title": "Show Helios Runner"
+            }
         ]
     },
     "main": "./dist/index.js",
     "activationEvents": [
-        "onLanguage:helios"
+        "onLanguage:helios",
+        "onView:helios.runView",
+        "onCommand:helios.showRunView"
     ],
     "dependencies": {
         "@vscode/vsce": "^3.0.0",
