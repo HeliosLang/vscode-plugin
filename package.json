@@ -52,7 +52,7 @@
             }
         ],
         "views": {
-            "explorer": [
+            "debug": [
                 {
                     "id": "helios.runView",
                     "name": "Helios Runner"
