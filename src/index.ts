@@ -1,7 +1,9 @@
 import {
         ExtensionContext,
         window,
-        commands
+        commands,
+        workspace,
+        TextDocument
 } from "vscode"
 
 import {
@@ -24,6 +26,13 @@ export function activate(context: ExtensionContext) {
         const cache = new Cache()
         const runViewProvider = new RunViewProvider(context, cache)
 
+        const updateFiles = () => {
+                const files = workspace.textDocuments
+                        .filter(doc => isHeliosExt(doc.fileName))
+                        .map(doc => doc.fileName)
+                runViewProvider.setFileList(files)
+        }
+
 	/*languages.registerDocumentFormattingEditProvider('helios', {
 		provideDocumentFormattingEdits: (document) => {
 			const firstLine = document.lineAt(0);
@@ -40,6 +49,8 @@ export function activate(context: ExtensionContext) {
         context.subscriptions.push(
                 window.registerWebviewViewProvider(RunViewProvider.viewType, runViewProvider)
         )
+
+        updateFiles()
 
         context.subscriptions.push(
                 commands.registerCommand("helios.showRunView", () => runViewProvider.reveal())
@@ -60,6 +71,23 @@ export function activate(context: ExtensionContext) {
                                         }
                                 }
                                 runViewProvider.reveal()
+                        }
+                        updateFiles()
+                })
+        )
+
+        context.subscriptions.push(
+                workspace.onDidOpenTextDocument(doc => {
+                        if (isHeliosExt(doc.fileName)) {
+                                updateFiles()
+                        }
+                })
+        )
+
+        context.subscriptions.push(
+                workspace.onDidCloseTextDocument(doc => {
+                        if (isHeliosExt(doc.fileName)) {
+                                updateFiles()
                         }
                 })
         )
