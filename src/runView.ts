@@ -6,7 +6,9 @@ import {
     CancellationToken,
     commands,
     window,
-    debug
+    debug,
+    workspace,
+    TextDocument
 } from "vscode"
 
 import { createRequire } from "module"
@@ -37,7 +39,7 @@ export class RunViewProvider implements WebviewViewProvider {
         webviewView.webview.html = this.html()
         webviewView.webview.onDidReceiveMessage(async msg => {
             if (msg.command == "run") {
-                await this.run(msg.validator, msg.input)
+                await this.run(msg.file, msg.input)
             }
         })
     }
@@ -56,6 +58,12 @@ export class RunViewProvider implements WebviewViewProvider {
         }
     }
 
+    setFileList(files: string[]) {
+        if (this.#view) {
+            this.#view.webview.postMessage({ command: "setFiles", files })
+        }
+    }
+
     private html(): string {
         const nonce = Date.now().toString()
         return `<!DOCTYPE html>
@@ -66,6 +74,8 @@ export class RunViewProvider implements WebviewViewProvider {
     textarea { width: 100%; height: 60px; }
     input { width: 100%; }
     </style>
+    <label>Validator file:</label><br/>
+    <select id="file"></select><br/>
     <label>Validator name:</label><br/>
     <input id="validator" /><br/>
     <label>Input (JSON or hex CBOR):</label><br/>
@@ -76,6 +86,7 @@ export class RunViewProvider implements WebviewViewProvider {
     document.getElementById('run').addEventListener('click', () => {
         vscode.postMessage({
             command: 'run',
+            file: document.getElementById('file').value,
             validator: document.getElementById('validator').value,
             input: document.getElementById('input').value
         });
@@ -85,20 +96,40 @@ export class RunViewProvider implements WebviewViewProvider {
         if (m.command === 'setValidator') {
             document.getElementById('validator').value = m.validator;
         }
+        if (m.command === 'setFiles') {
+            const sel = document.getElementById('file');
+            while (sel.firstChild) sel.removeChild(sel.firstChild);
+            m.files.forEach((f) => {
+                const opt = document.createElement('option');
+                opt.value = f;
+                opt.textContent = f;
+                sel.appendChild(opt);
+            });
+        }
     });
     </script>
 </body>
 </html>`
     }
 
-    private async run(_validator: string, input: string) {
-        const editor = window.activeTextEditor
-        if (!editor) {
+    private async run(file: string, input: string) {
+        let doc: TextDocument | undefined
+        const open = workspace.textDocuments.find(d => d.fileName === file)
+        if (open) {
+            doc = open
+        } else {
+            try {
+                doc = await workspace.openTextDocument(file)
+            } catch {
+                const editor = window.activeTextEditor
+                doc = editor?.document
+            }
+        }
+        if (!doc) {
             return
         }
-        const doc = editor.document
         if (!isHeliosExt(doc.fileName)) {
-            debug.activeDebugConsole.appendLine("Active file is not a Helios script")
+            debug.activeDebugConsole.appendLine("Selected file is not a Helios script")
             return
         }
 
