@@ -16,6 +16,66 @@ import { createRequire } from "module"
 import { Cache } from "./cache"
 import { isHeliosExt } from "./repository"
 
+const vscodeStyleSheet = `<style>
+  :root { color-scheme: light dark; } /* respect light/dark HC palettes */
+
+  *, label {
+    background-color: transparent;
+    color: var(--vscode-foreground);
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  /* Links */
+  a { color: var(--vscode-textLink-foreground); text-decoration: none; }
+  a:hover { color: var(--vscode-textLink-activeForeground); text-decoration: underline; }
+
+  /* Inputs */
+  input, select, textarea {
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border, transparent);
+    border-radius: 4px;
+    padding: 6px 8px;
+    outline: none;
+    width: 100%;
+  }
+  input::placeholder, textarea::placeholder {
+    color: var(--vscode-input-placeholderForeground);
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+  }
+
+  /* Buttons */
+  button {
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: 0;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  button:hover { background: var(--vscode-button-hoverBackground); }
+  button.secondary {
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+  }
+  button.secondary:hover { background: var(--vscode-button-secondaryHoverBackground); }
+
+  /* Panels / Cards */
+  .section {
+    background: var(--vscode-editorWidget-background);
+    border: 1px solid var(--vscode-editorWidget-border, transparent);
+    padding: 12px;
+    border-radius: 6px;
+  }
+  .muted { color: var(--vscode-descriptionForeground); }
+</style>`
+
 export class RunViewProvider implements WebviewViewProvider {
     public static readonly viewType = "helios.runView"
 
@@ -48,7 +108,7 @@ export class RunViewProvider implements WebviewViewProvider {
         if (this.#view) {
             this.#view.show(true)
         } else {
-            commands.executeCommand("helios.showRunView")
+            commands.executeCommand("helios.showRunView").then(() => commands.executeCommand("helios.runView.focus"))
         }
     }
 
@@ -69,11 +129,7 @@ export class RunViewProvider implements WebviewViewProvider {
         return `<!DOCTYPE html>
 <html lang="en">
 <body>
-    <style>
-    body { font-family: sans-serif; padding: 10px; }
-    textarea { width: 100%; height: 60px; }
-    input { width: 100%; }
-    </style>
+    ${vscodeStyleSheet}
     <label>Validator file:</label><br/>
     <select id="file"></select><br/>
     <label>Validator name:</label><br/>

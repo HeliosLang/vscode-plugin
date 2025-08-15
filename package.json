@@ -51,18 +51,35 @@
                 "path": "./grammar.json"
             }
         ],
+        "debuggers": [
+            {
+                "type": "helios",
+                "label": "Helios Debugger",
+                "languages": ["helios"],
+                "configurationAttributes": { "launch": { "properties": {} } }
+            }
+        ],
+        "viewsWelcome": [
+            {
+                "view": "debug",
+                "contents": "",
+                "when": "!virtualWorkspace && debugStartLanguage == helios"
+            }
+        ],
         "views": {
             "debug": [
                 {
+                    "type": "webview",
                     "id": "helios.runView",
-                    "name": "Helios Runner"
+                    "name": "Helios Entry Point & Arguments",
+                    "visibility": "visible",
+                    "when": "!virtualWorkspace && debugStartLanguage == helios"
                 }
             ]
         },
         "commands": [
             {
-                "command": "helios.showRunView",
-                "title": "Show Helios Runner"
+                "command": "helios.showRunView"
             }
         ]
     },
@@ -70,7 +87,10 @@
     "activationEvents": [
         "onLanguage:helios",
         "onView:helios.runView",
-        "onCommand:helios.showRunView"
+        "onCommand:helios.showRunView",
+        "onDebugInitialConfigurations",
+        "onDebugDynamicConfigurations:helios",
+        "onDebugResolve:helios"
     ],
     "dependencies": {
         "@vscode/vsce": "^3.0.0",
