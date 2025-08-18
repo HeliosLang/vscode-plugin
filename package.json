@@ -58,21 +58,24 @@
             {
                 "type": "helios",
                 "label": "Helios Debugger",
-                "program": "./dist/debugAdapter.js",
                 "languages": [
                     "helios"
                 ],
+
+                "program": "./dist/debugAdapter.js",
+                "runtime": "node",
+                
                 "configurationAttributes": {
                     "launch": {
                         "properties": {
-                            "name": {
+                            "entryPoint": {
                                 "type": "string",
-                                "description": "Name of the helios debug session",
-                                "default": "Hello world"
+                                "description": "Entry point to debug",
+                                "default": "main"
                             }
                         },
                         "required": [
-                            "name"
+                            "entryPoint"
                         ]
                     }
                 },
@@ -80,9 +83,11 @@
                     {
                         "type": "helios",
                         "request": "launch",
-                        "name": "Launch Helios Debugger"
+                        "name": "Launch Helios Debugger",
+                        "entryPoint": "main"
                     }
-                ]
+                ],
+                "when": "!virtualWorkspace && debugStartLanguage == helios"
             }
         ],
         "viewsWelcome": [
@@ -98,8 +103,7 @@
                     "type": "webview",
                     "id": "helios.entryPointAndArguments",
                     "name": "Helios Entry Point & Arguments",
-                    "visibility": "visible",
-                    "when": "!virtualWorkspace && debugStartLanguage == helios"
+                    "when": "heliosDebugActive"
                 }
             ]
         },
@@ -112,9 +116,7 @@
     },
     "main": "./dist/index.js",
     "activationEvents": [
-        "onDebugInitialConfigurations",
-        "onDebugDynamicConfigurations:helios",
-        "onDebugResolve:helios"
+        "onDebug:helios"
     ],
     "prettier": {
         "trailingComma": "none",

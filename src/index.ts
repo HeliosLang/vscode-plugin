@@ -31,36 +31,6 @@ export function activate(context: ExtensionContext) {
     const sources: Record<string, Source> = {}
     const programs: Record<string, Program> = {}
 
-    const retryWithBackoff = async <T>(
-        fn: () => Thenable<T>,
-        retries: number = 5,
-        backoff: number = 1000
-    ): Promise<T> => {
-        let attempt = 0
-        while (attempt < retries) {
-            entryPointAndArgumentsViewProvider.log(`attemp ${attempt}`)
-            try {
-                const result = await fn()
-                if (Array.isArray(result) && result.length === 0) {
-                    entryPointAndArgumentsViewProvider.log(
-                        "Empty array returned"
-                    )
-                }
-                return result
-            } catch (error) {
-                attempt++
-                if (attempt >= retries) {
-                    throw error
-                }
-                await new Promise((resolve) =>
-                    setTimeout(resolve, backoff * attempt)
-                )
-            }
-        }
-        entryPointAndArgumentsViewProvider.log("Failed after maximum retries")
-        throw new Error("failed")
-    }
-
     const setASTs = () => {
         if (
             window.activeTextEditor &&
@@ -70,7 +40,7 @@ export function activate(context: ExtensionContext) {
 
             if (p) {
                 entryPointAndArgumentsViewProvider.setAST(
-                    basename(window.activeTextEditor.document.fileName),
+                    window.activeTextEditor.document.fileName,
                     p
                 )
             } else {
@@ -247,9 +217,15 @@ export function activate(context: ExtensionContext) {
         window.registerWebviewViewProvider(
             "helios.entryPointAndArguments",
             entryPointAndArgumentsViewProvider,
-            { webviewOptions: { retainContextWhenHidden: true } }
+            {
+                webviewOptions: { 
+                    retainContextWhenHidden: true,
+                }
+            }
         )
-    )
+        )
+
+    commands.executeCommand("setContext", "heliosDebugActive", true)
 
     context.subscriptions.push(
         debug.registerDebugConfigurationProvider("helios", {
@@ -260,28 +236,27 @@ export function activate(context: ExtensionContext) {
                     config
                 )
 
-                debug.activeDebugConsole.appendLine(
-                    "Hello from my extension 👋"
-                )
+                // TODO: also send UPLC cborHex, source code mapping, arguments (CBOR hex), and ScriptContext (CBOR hex) to debug process
+                // entryPoint isn't used during the run, but still provides useful information during debugging
 
-                // Return the (possibly modified) config, or 'undefined' to cancel the launch
-                return { ...config, name: "Hell oworld" }
+                return { 
+                    name: config.name ?? "Launch Helios Debugger",
+                    type: config.type ?? "helios",
+                    request: config.request ?? "launch",
+                    entryPoint: entryPointAndArgumentsViewProvider.entryPoint,
+
+                }
             }
         })
     )
 
-    context.subscriptions.push(
-        debug.onDidStartDebugSession((session) => {
-            //if (session.type === 'helios') {
-            console.log(
-                "Debugging helios function in onDidStartDebugSession!",
-                session
-            )
-
-            debug.activeDebugConsole.appendLine("Hello from my extension 👋")
-            //}
-        })
-    )
+    //context.subscriptions.push(
+    //    debug.onDidStartDebugSession((session) => {
+    //        if (session.type === 'helios') {
+    //            console.log("Started Helios debug session:", session)
+    //        }
+    //    })
+    //)
 
     loadHeliosDocuments()
     //updateFiles()

@@ -28,7 +28,7 @@ async function main() {
         splitting: false,
         format: "cjs",
         platform: "node",
-        external: ["vscode", "node:*", "@vscode/*"],
+        external: ["vscode", "node:*"],
         minify: false,
         outfile: join(dstBaseDir, "debugAdapter.js"),
         entryPoints: [join(srcBaseDir, "debugAdapter.ts")],

@@ -22,7 +22,7 @@ class HelloDebugSession extends DebugSession {
         args: any
     ): void {
         // Just say hello
-        this.sendEvent(new OutputEvent(`👋 Hello, ${args.name || "World"}!\n`))
+        this.sendEvent(new OutputEvent(`hello from debug adapter!\n${JSON.stringify(args)}\n`))
 
         this.sendResponse(response)
 

@@ -6,6 +6,24 @@
             "type": "shell",
             "command": "node ${workspaceFolder}/esbuild.mjs",
             "problemMatcher": []
-        }
+        },
+        {
+            "label": "package with vsce",
+            "type": "shell",
+            "command": "vsce package --no-dependencies",
+            "problemMatcher": []
+        },
+        {
+            "label": "install with code",
+            "type": "shell",
+            "command": "code --install-extension ./helios-0.1.8.vsix",
+            "problemMatcher": []
+        },
+        {
+            "label": "prelaunch",
+            "dependsOn": ["build with esbuild", "package with vsce", "install with code"],
+            "dependsOrder": "sequence",
+            "group": "build"
+          }
     ]
 }

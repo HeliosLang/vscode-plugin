@@ -1,3 +1,4 @@
+import { basename } from "node:path"
 import {
     WebviewViewProvider,
     WebviewView,
@@ -10,15 +11,12 @@ import {
     workspace,
     TextDocument
 } from "vscode"
-import { createRequire } from "module"
 import { bytesToHex, encodeUtf8 } from "@helios-lang/codec-utils"
 import { Program } from "@helios-lang/compiler"
 import { blake2b } from "@helios-lang/crypto"
 import { Cache } from "./cache"
 import { log } from "./log"
 import { isHeliosExt } from "./repository"
-
-const vscodeStyleSheet = ``
 
 /**
  * Display
@@ -36,6 +34,10 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
         this.#entryPoint = undefined
         this.#argValues = {}
         this.#scriptContext = ""
+    }
+
+    get entryPoint(): string | undefined {
+        return this.#entryPoint
     }
 
     resolveWebviewView(
@@ -80,6 +82,8 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
     }
 
     setAST(fileName: string, ast: Program | undefined) {
+        const baseName = basename(fileName)
+
         this.#activeAST = ast
 
         // TODO: send a message to update the html
@@ -99,13 +103,11 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
             }
         }
 
-        console.log(`setting fileName: ${fileName}`)
-
         if (this.#view) {
             this.#view.webview.postMessage({
                 command: "setEntryPoints",
                 entryPoints,
-                fileName
+                baseName
             })
         } else {
             this.log("view not available")
