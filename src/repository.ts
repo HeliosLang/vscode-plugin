@@ -1,13 +1,6 @@
-import {
-    existsSync,
-    statSync
-} from "fs"
+import { existsSync, statSync } from "fs"
 
-import {
-	dirname,
-	extname,
-    join as joinPath
-} from "path"
+import { dirname, extname, join as joinPath } from "path"
 
 import {
     Diagnostic,
@@ -20,16 +13,12 @@ import {
     workspace
 } from "vscode"
 
-import { 
-    compareVersions,
-    HeliosLibrary 
-} from "./library"
-
+import { compareVersions, HeliosLibrary } from "./library"
 
 export function isHeliosExt(fileName: string): boolean {
-	const ext = extname(fileName)
+    const ext = extname(fileName)
 
-	return ext == ".hl" || ext == ".helios"
+    return ext == ".hl" || ext == ".helios"
 }
 
 class Script {
@@ -76,17 +65,18 @@ class Script {
         const raw = new TextDecoder("utf-8").decode(file)
 
         const src = new Source(raw) // doesn't yet contain any errors
-        
+
         return new Script(path, src)
     }
 
-    async parse(helios: HeliosLibrary, scripts: {[name: string]: Script}) {
-        const { buildScript, extractScriptPurposeAndName, Source, Tokenizer } = helios
+    async parse(helios: HeliosLibrary, scripts: { [name: string]: Script }) {
+        const { buildScript, extractScriptPurposeAndName, Source, Tokenizer } =
+            helios
 
-		helios.setImportPathTranslator((str: any) => {
-			const relPath = str.value;
+        helios.setImportPathTranslator((str: any) => {
+            const relPath = str.value
 
-			let path = joinPath(this.dir, relPath)
+            let path = joinPath(this.dir, relPath)
 
             if (!(path in scripts)) {
                 if (existsSync(path) && statSync(path).isDirectory()) {
@@ -100,15 +90,17 @@ class Script {
                 }
             }
 
-			if (!(path in scripts)) {
+            if (!(path in scripts)) {
                 console.log(path, " not in ", Object.keys(scripts))
-				str.syntaxError("not a helios scripts");
-				return null;
-			} else if (path == this.#path) {
-				str.syntaxError("can't import self");
-				return null;
-			} else {
-                const maybeNameAndPurpose = extractScriptPurposeAndName(scripts[path].src.raw)
+                str.syntaxError("not a helios scripts")
+                return null
+            } else if (path == this.#path) {
+                str.syntaxError("can't import self")
+                return null
+            } else {
+                const maybeNameAndPurpose = extractScriptPurposeAndName(
+                    scripts[path].src.raw
+                )
 
                 if (!maybeNameAndPurpose) {
                     str.syntaxError("invalid header in imported file")
@@ -116,38 +108,38 @@ class Script {
                 }
 
                 return maybeNameAndPurpose[1]
-			}
-		})
+            }
+        })
 
-		const ts = (new Tokenizer(this.#src)).tokenize()
+        const ts = new Tokenizer(this.#src).tokenize()
 
-		if (this.#src.errors.length == 0) {
-			this.#ast = buildScript(ts);
-		}
+        if (this.#src.errors.length == 0) {
+            this.#ast = buildScript(ts)
+        }
     }
 
     collectErrors(diagnostics: DiagnosticCollection) {
         const fileDiagnostics: Diagnostic[] = []
 
-        let e = this.#src.errors.shift();
+        let e = this.#src.errors.shift()
         while (e) {
             const [startLine, startCol, endLine, endCol] = e.getFilePos()
 
-			fileDiagnostics.push(
-				new Diagnostic(
-					new Range(
-						new Position(startLine, startCol),
-						new Position(endLine, endCol)
-					),
-					e.message.split(":").slice(1).join("").trim(),
-					DiagnosticSeverity.Error
-				)
-			)
+            fileDiagnostics.push(
+                new Diagnostic(
+                    new Range(
+                        new Position(startLine, startCol),
+                        new Position(endLine, endCol)
+                    ),
+                    e.message.split(":").slice(1).join("").trim(),
+                    DiagnosticSeverity.Error
+                )
+            )
 
-            e = this.#src.errors.shift();
+            e = this.#src.errors.shift()
         }
 
-		diagnostics.set(this.uri, fileDiagnostics)
+        diagnostics.set(this.uri, fileDiagnostics)
     }
 }
 
@@ -162,84 +154,99 @@ async function readDir(dir: string): Promise<[string, FileType][]> {
 }
 
 // TODO: only eval types of the minimum
-export function evalTypes(helios: HeliosLibrary, allScripts: [null | string, any | null, any[], number][]) {
-    const { assertDefined, Module, MainModule, ValidatorHashType, MintingPolicyHashType, GlobalScope, ModuleScope, TopScope } = helios
-	
+export function evalTypes(
+    helios: HeliosLibrary,
+    allScripts: [null | string, any | null, any[], number][]
+) {
+    const {
+        assertDefined,
+        Module,
+        MainModule,
+        ValidatorHashType,
+        MintingPolicyHashType,
+        GlobalScope,
+        ModuleScope,
+        TopScope
+    } = helios
 
-	// only handle scripts which actually have a valid script puropose and name
-	const scripts: [string, any, any[], number][] = []
-	
-	allScripts.forEach(s => {
-		if (s[0] !== null && s[1] !== null) {
-			scripts.push([
-				assertDefined(s[0]), 
-				assertDefined(s[1]), 
-				assertDefined(s[2]), 
-				s[3]
-			])
-		}
-	})
+    // only handle scripts which actually have a valid script puropose and name
+    const scripts: [string, any, any[], number][] = []
 
-	// sort in a particular order
-	const modules = scripts.filter(s => s[0] == "module").map(s => new Module(assertDefined(s[1]), assertDefined(s[2])))
+    allScripts.forEach((s) => {
+        if (s[0] !== null && s[1] !== null) {
+            scripts.push([
+                assertDefined(s[0]),
+                assertDefined(s[1]),
+                assertDefined(s[2]),
+                s[3]
+            ])
+        }
+    })
 
-	const entryPoints = scripts.filter(s => s[0] != "module").map(s => new MainModule(assertDefined(s[1]), assertDefined(s[2])))
+    // sort in a particular order
+    const modules = scripts
+        .filter((s) => s[0] == "module")
+        .map((s) => new Module(assertDefined(s[1]), assertDefined(s[2])))
 
-	const sorted: any[] = []
+    const entryPoints = scripts
+        .filter((s) => s[0] != "module")
+        .map((s) => new MainModule(assertDefined(s[1]), assertDefined(s[2])))
 
-	const done: Set<string> = new Set()
+    const sorted: any[] = []
 
-	const add = (m: any) => {
-		if (!done.has(m.name.value)) {
-			sorted.push(m)
-			done.add(m.name.value)
-		}
-	}
+    const done: Set<string> = new Set()
 
-	for (let m of modules) {
-		if (!done.has(m.name.value)) {
-			m.filterDependencies(modules).forEach(add)
-			add(m)
-		}
-	}
+    const add = (m: any) => {
+        if (!done.has(m.name.value)) {
+            sorted.push(m)
+            done.add(m.name.value)
+        }
+    }
 
-	entryPoints.forEach(add)
+    for (let m of modules) {
+        if (!done.has(m.name.value)) {
+            m.filterDependencies(modules).forEach(add)
+            add(m)
+        }
+    }
 
-	// collect validatorTypes
-	const validatorTypes: {[name: string]: any} = {}
+    entryPoints.forEach(add)
 
-	scripts.forEach(ep => {
-		if (ep[0] == "spending") {
-			validatorTypes[ep[1].value] = ValidatorHashType
-		} else if (ep[0] == "minting") {
-			validatorTypes[ep[1].value] = MintingPolicyHashType
-		}
-	})
+    // collect validatorTypes
+    const validatorTypes: { [name: string]: any } = {}
 
-	const globalScope = GlobalScope.new(validatorTypes)
+    scripts.forEach((ep) => {
+        if (ep[0] == "spending") {
+            validatorTypes[ep[1].value] = ValidatorHashType
+        } else if (ep[0] == "minting") {
+            validatorTypes[ep[1].value] = MintingPolicyHashType
+        }
+    })
 
-	const topScope = new TopScope(globalScope)
+    const globalScope = GlobalScope.new(validatorTypes)
 
-	// loop through the modules
+    const topScope = new TopScope(globalScope)
 
-	for (let i = 0; i < sorted.length; i++) {
-		const m = sorted[i]
+    // loop through the modules
 
-		// reuse main ModuleScope for post module
-		const moduleScope = new ModuleScope(topScope)
+    for (let i = 0; i < sorted.length; i++) {
+        const m = sorted[i]
 
-		m.evalTypes(moduleScope)
+        // reuse main ModuleScope for post module
+        const moduleScope = new ModuleScope(topScope)
 
-		topScope.setScope(m.name, moduleScope)
-	}
+        m.evalTypes(moduleScope)
+
+        topScope.setScope(m.name, moduleScope)
+    }
 }
 
 export class Repository {
     #path: string // package.json path
     #version: string
     #lastLoaded: Date
-    #scripts: {[name: string]: Script}
-    
+    #scripts: { [name: string]: Script }
+
     constructor(path: string, version: string, lastModified: Date) {
         this.#path = path
         this.#version = version
@@ -295,14 +302,17 @@ export class Repository {
     updateFile(helios: HeliosLibrary, path: string, src: string) {
         const { Source } = helios
 
-        if (!(path in this.#scripts) || ((path in this.#scripts) && (this.#scripts[path].src.raw != src))) {
+        if (
+            !(path in this.#scripts) ||
+            (path in this.#scripts && this.#scripts[path].src.raw != src)
+        ) {
             this.#scripts[path] = new Script(path, new Source(src))
         }
     }
 
     async diagnose(helios: HeliosLibrary, diagnostics: DiagnosticCollection) {
         // no need to re-diagnose if nothing changed (a change would reset the ast to null)
-        if (this.scripts.every(s => s.ast !== null )) {
+        if (this.scripts.every((s) => s.ast !== null)) {
             return
         }
 
@@ -312,13 +322,16 @@ export class Repository {
 
         // only do type evaluation of the clean scripts
         if (compareVersions(helios.VERSION, "v0.14.3") >= 0) {
-            const filtered = this.scripts.filter(s => s.ast != null)
+            const filtered = this.scripts.filter((s) => s.ast != null)
 
             if (filtered.length > 0) {
-                evalTypes(helios, filtered.map(f => f.ast))
+                evalTypes(
+                    helios,
+                    filtered.map((f) => f.ast)
+                )
             }
         }
 
-        this.scripts.forEach(s => s.collectErrors(diagnostics))
+        this.scripts.forEach((s) => s.collectErrors(diagnostics))
     }
 }

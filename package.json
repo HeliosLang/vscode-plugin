@@ -10,10 +10,12 @@
         "url": "https://github.com/hyperion-bt/helios-ide-plugins"
     },
     "scripts": {
-        "build": "tsc && vsce package --no-dependencies",
-        "postinstall": "pnpm run build ; pnpm run package",
+        "build": "pnpm run test:types && node ./esbuild.mjs && vsce package --no-dependencies",
+        "deploy": "vsce publish",
         "package": "vsce package --no-dependencies && code --install-extension ./helios-0.1.8.vsix ; true",
-        "deploy": "vsce publish"
+        "postinstall": "pnpm run build ; pnpm run package",
+        "prettify": "prettier . --write",
+        "test:types": "tsc --noEmit"
     },
     "engines": {
         "vscode": "^1.77.0"
@@ -55,8 +57,31 @@
             {
                 "type": "helios",
                 "label": "Helios Debugger",
-                "languages": ["helios"],
-                "configurationAttributes": { "launch": { "properties": {} } }
+                "program": "./dist/debugAdapter.js",
+                "languages": [
+                    "helios"
+                ],
+                "configurationAttributes": {
+                    "launch": {
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Name of the helios debug session",
+                                "default": "Hello world"
+                            }
+                        },
+                        "required": [
+                            "name"
+                        ]
+                    }
+                },
+                "initialConfigurations": [
+                    {
+                        "type": "helios",
+                        "request": "launch",
+                        "name": "Launch Helios Debugger"
+                    }
+                ]
             }
         ],
         "viewsWelcome": [
@@ -70,7 +95,7 @@
             "debug": [
                 {
                     "type": "webview",
-                    "id": "helios.runView",
+                    "id": "helios.entryPointAndArguments",
                     "name": "Helios Entry Point & Arguments",
                     "visibility": "visible",
                     "when": "!virtualWorkspace && debugStartLanguage == helios"
@@ -79,26 +104,38 @@
         },
         "commands": [
             {
-                "command": "helios.showRunView"
+                "title": "Show Helios Entry Point & Arguments View",
+                "command": "helios.showEntryPointAndArguments"
             }
         ]
     },
     "main": "./dist/index.js",
     "activationEvents": [
-        "onLanguage:helios",
-        "onView:helios.runView",
-        "onCommand:helios.showRunView",
         "onDebugInitialConfigurations",
         "onDebugDynamicConfigurations:helios",
         "onDebugResolve:helios"
     ],
+    "prettier": {
+        "trailingComma": "none",
+        "tabWidth": 4,
+        "semi": false,
+        "singleQuote": false
+    },
     "dependencies": {
+        "@vscode/debugadapter": "^1.68.0",
+        "@vscode/debugprotocol": "^1.68.0",
         "@vscode/vsce": "^3.0.0",
         "vscode-nls": "^5.2.0"
     },
     "devDependencies": {
+        "@helios-lang/codec-utils": "^0.3.4",
+        "@helios-lang/compiler": "^0.17.22",
+        "@helios-lang/compiler-utils": "^0.5.16",
+        "@helios-lang/crypto": "^0.2.3",
         "@types/node": "^18.15.11",
         "@types/vscode": "^1.77.0",
+        "esbuild": "^0.25.9",
+        "prettier": "^3.6.2",
         "typescript": "^5.0.4"
     }
 }

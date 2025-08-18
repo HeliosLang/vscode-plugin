@@ -1,14 +1,10 @@
-import {
-	languages
-} from "vscode"
+import { languages } from "vscode"
 
-import {
-    Cache
-} from "./cache"
+import { Cache } from "./cache"
 
 export function registerHoverProvider(cache: Cache) {
     languages.registerHoverProvider("helios", {
-		provideHover: (document, position, token) => {
+        provideHover: (document, position, token) => {
             const lib = cache.loadCachedLibrary(document.fileName)
 
             if (lib) {
@@ -20,6 +16,6 @@ export function registerHoverProvider(cache: Cache) {
                     contents: []
                 }
             }
-		}
-	})
+        }
+    })
 }

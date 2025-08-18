@@ -1,1429 +1,1445 @@
 {
-  	"scopeName": "source.helios",
-  	"patterns": [
-		{
-			"include": "#comments"
-		},
-		{
-			"include": "#header"
-		},
-		{
-			"include": "#body"
-		}
-	],
-	"repository": {
-		"comments": {
-			"patterns": [
-				{
-					"name": "comment.line.double-slash.helios",
-					"match": "//.*"
-				},
-				{
-					"name": "comment.block.helios",
-					"begin": "/\\*",
-					"end": "\\*/"
-				}
-			]
-		},
-		"header": {
-			"patterns": [
-				{
-					"name": "header.helios",
-					"begin": "\\s*\\b(minting|mixed|module|spending|staking|testing)\\b",
-					"beginCaptures": {
-						"1": {"name": "keyword.other.scriptpurpose.helios"}
-					},
-					"end": "([a-zA-Z][a-zA-Z0-9_]*\\b)",
-					"endCapture": {
-						"1": {"name": "scriptname.helios"}
-					},
-					"patterns": [
-						{
-							"include": "#comments"
-						}
-					]
-				}
-			]
-		},
-		"body": {
-			"patterns": [
-				{
-					"name": "body.helios",
-					"begin": "",
-					"end": "\\z",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#statements"
-						}
-					]
-				}
-			]
-		},
-		"statements": {
-			"patterns": [
-				{
-					"include": "#import"
-				},
-				{
-					"include": "#const"
-				},
-				{
-					"include": "#struct"
-				},
-				{
-					"include": "#enum"
-				},
-				{
-					"include": "#func-statement"
-				}
-			]
-		},
-		"import": {
-			"name": "statement.import.helios",
-			"begin": "\\b(import)\\b",
-			"beginCaptures": {
-				"1": {"name": "keyword.other.import.helios"}
-			},
-			"end": "((\"[^\"]*\")|((?!from)((Cip67|ScriptContext)|([a-zA-Z][a-zA-Z_0-9]*))\\b))",
-			"endCaptures": {
-				"2": {"name": "string.quoted.double.helios"},
-				"5": {"name": "support.class.helios"},
-				"6": {"name": "importedmodulename.helios"}
-			},
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"begin": "\\{",
-					"end": "}",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"match": "\\b(as)\\b",
-							"name": "keyword.other.as.helios"
-						},
-						{
-							"match": "[a-zA-Z][a-zA-Z0-9_]*",
-							"name": "variable.other.import.helios"
-						}
-					]
-				},
-				{
-					"match": "\\b(from)\\b",
-					"name": "keyword.other.from.helios"
-				}
-			]
-		},
-		"const": {
-			"name": "statement.const.helios",
-			"begin": "\\b(const)\\b",
-			"beginCaptures": {
-				"1": {"name": "storage.type.const.helios"}
-			},
-			"end": "(?=(\\b(const|enum|func|import|struct)\\b))",
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"begin": "[a-zA-Z][a-zA-Z0-9_]*",
-					"beginCaptures": {
-						"0": {"name": "variable.other.const.helios"}
-					},
-					"end": "(?=[=])",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"begin": ":",
-							"beginCaptures": {
-								"0": {"name": "keyword.operator.colon.helios"}
-							},
-							"end": "(?=[=])",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"include": "#types"
-								}
-							]
-						}
-					]
-				},
-				{
-					"begin": "=",
-					"beginCaptures": {
-						"0": {"name": "keyword.operator.assignment.const.helios"}
-					},
-					"end": "(?=(\\b(const|enum|func|import|struct)\\b))",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#non-assignment"
-						}
-					]
-				}
-			]
-		},
-		"struct": {
-			"name": "statement.struct.helios",
-			"begin": "\\b(struct)\\b",
-			"beginCaptures": {
-				"1": {"name": "storage.struct.helios"}
-			},
-			"end": "}",
-			"endCaptures": {
-				"0": {"name": "group.braces.struct.helios"}
-			},
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"begin": "[a-zA-Z][a-zA-Z0-9_]*",
-					"beginCaptures": {
-						"0": {"name": "entity.name.type.helios"}
-					},
-					"end": "(?=\\{)",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"begin": "(?=\\[)",
-							"end": "\\]",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"include": "#type-parameters"
-								}
-							]
-						}
-					]
-				},
+    "scopeName": "source.helios",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#header"
+        },
+        {
+            "include": "#body"
+        }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.double-slash.helios",
+                    "match": "//.*"
+                },
+                {
+                    "name": "comment.block.helios",
+                    "begin": "/\\*",
+                    "end": "\\*/"
+                }
+            ]
+        },
+        "header": {
+            "patterns": [
+                {
+                    "name": "header.helios",
+                    "begin": "\\s*\\b(minting|mixed|module|spending|staking|testing)\\b",
+                    "beginCaptures": {
+                        "1": { "name": "keyword.other.scriptpurpose.helios" }
+                    },
+                    "end": "([a-zA-Z][a-zA-Z0-9_]*\\b)",
+                    "endCapture": {
+                        "1": { "name": "scriptname.helios" }
+                    },
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        }
+                    ]
+                }
+            ]
+        },
+        "body": {
+            "patterns": [
+                {
+                    "name": "body.helios",
+                    "begin": "",
+                    "end": "\\z",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#statements"
+                        }
+                    ]
+                }
+            ]
+        },
+        "statements": {
+            "patterns": [
+                {
+                    "include": "#import"
+                },
+                {
+                    "include": "#const"
+                },
+                {
+                    "include": "#struct"
+                },
+                {
+                    "include": "#enum"
+                },
+                {
+                    "include": "#func-statement"
+                }
+            ]
+        },
+        "import": {
+            "name": "statement.import.helios",
+            "begin": "\\b(import)\\b",
+            "beginCaptures": {
+                "1": { "name": "keyword.other.import.helios" }
+            },
+            "end": "((\"[^\"]*\")|((?!from)((Cip67|ScriptContext)|([a-zA-Z][a-zA-Z_0-9]*))\\b))",
+            "endCaptures": {
+                "2": { "name": "string.quoted.double.helios" },
+                "5": { "name": "support.class.helios" },
+                "6": { "name": "importedmodulename.helios" }
+            },
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "begin": "\\{",
+                    "end": "}",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "match": "\\b(as)\\b",
+                            "name": "keyword.other.as.helios"
+                        },
+                        {
+                            "match": "[a-zA-Z][a-zA-Z0-9_]*",
+                            "name": "variable.other.import.helios"
+                        }
+                    ]
+                },
+                {
+                    "match": "\\b(from)\\b",
+                    "name": "keyword.other.from.helios"
+                }
+            ]
+        },
+        "const": {
+            "name": "statement.const.helios",
+            "begin": "\\b(const)\\b",
+            "beginCaptures": {
+                "1": { "name": "storage.type.const.helios" }
+            },
+            "end": "(?=(\\b(const|enum|func|import|struct)\\b))",
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "begin": "[a-zA-Z][a-zA-Z0-9_]*",
+                    "beginCaptures": {
+                        "0": { "name": "variable.other.const.helios" }
+                    },
+                    "end": "(?=[=])",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "begin": ":",
+                            "beginCaptures": {
+                                "0": { "name": "keyword.operator.colon.helios" }
+                            },
+                            "end": "(?=[=])",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#types"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "begin": "=",
+                    "beginCaptures": {
+                        "0": {
+                            "name": "keyword.operator.assignment.const.helios"
+                        }
+                    },
+                    "end": "(?=(\\b(const|enum|func|import|struct)\\b))",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#non-assignment"
+                        }
+                    ]
+                }
+            ]
+        },
+        "struct": {
+            "name": "statement.struct.helios",
+            "begin": "\\b(struct)\\b",
+            "beginCaptures": {
+                "1": { "name": "storage.struct.helios" }
+            },
+            "end": "}",
+            "endCaptures": {
+                "0": { "name": "group.braces.struct.helios" }
+            },
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "begin": "[a-zA-Z][a-zA-Z0-9_]*",
+                    "beginCaptures": {
+                        "0": { "name": "entity.name.type.helios" }
+                    },
+                    "end": "(?=\\{)",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "begin": "(?=\\[)",
+                            "end": "\\]",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#type-parameters"
+                                }
+                            ]
+                        }
+                    ]
+                },
 
-				{
-					"name": "statement.struct.body.helios",
-					"begin": "\\{",
-					"beginCaptures": {
-						"0": {"name": "group.braces.struct.helios"}
-					},
-					"end": "(?=})",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#struct-field"
-						},
-						{
-							"include": "#const"
-						},
-						{
-							"include": "#func-statement"
-						}
-					]
-				}
-			]
-		},
-		"enum": {
-			"name": "statement.enum.helios",
-			"begin": "\\b(enum)\\b",
-			"beginCaptures": {
-				"1": {"name": "storage.enum.helios"}
-			},
-			"end": "}",
-			"endCaptures": {
-				"0": {"name": "group.braces.enum.helios"}
-			},
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"begin": "[a-zA-Z][a-zA-Z0-9_]*",
-					"beginCaptures": {
-						"0": {"name": "entity.name.type.helios"}
-					},
-					"end": "(?=\\{)",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"begin": "(?=\\[)",
-							"end": "\\]",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"include": "#type-parameters"
-								}
-							]
-						}
-					]
-				},
-				{
-					"begin": "\\{",
-					"beginCaptures": {
-						"0": {"name": "group.braces.struct.helios"}
-					},
-					"end": "(?=})",
-					"name": "statement.enum.body.helios",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#enum-variant"
-						},
-						{
-							"include": "#const"
-						},
-						{
-							"include": "#func-statement"
-						}
-					]
-				}
-			]
-		},
-		"struct-field": {
-			"patterns": [
-				{
-					"begin": ":",
-					"beginCaptures": {
-						"0": {"name": "keyword.operator.colon.helios"}
-					},
-					"end": "$",
-					"name": "field.helios",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#string-literal"
-						},
-						{
-							"include": "#types"
-						}
-					]
-				}
-			]
-		},
-		"enum-variant": {
-			"patterns": [
-				{
-					"begin": "([a-zA-Z][a-zA-Z0-9_]*)(?=\\s*\\{)",
-					"beginCaptures": {
-						"1": {"name": "enum.variant.name.helios"}
-					},
-					"end": "}",
-					"endCaptures": {
-						"0": {"name": "group.braces.enum-variant.helios"}
-					},
-					"patterns": [
-						{
-							"begin": "\\{",
-							"end": "(?=})",
-							"patterns": [
-								{
-									"include": "#struct-field"
-								}
-							]
-						}
-					]
-				}
-			]
-		},
-		"func-statement": {
-			"name": "statement.func.helios",
-			"begin": "\\b(func)\\b",
-			"beginCaptures": {
-				"1": {"name": "storage.function.helios"}
-			},
-			"end": "}",
-			"endCaptures": {
-				"0": {"name": "group.braces.func.helios"}
-			},
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"begin": "[a-zA-Z][a-zA-Z0-9_]*\\b",
-					"beginCaptures": {
-						"0": {"name": "variable.other.function.helios"}
-					},
-					"end": "(?=})",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include" : "#func-definition"
-						}
-					]
-				}
-			]
-		},
-		"expressions": {
-			"patterns": [
-				{
-					"include": "#assignment"
-				},
-				{
-					"include": "#non-assignment"
-				}
-			]
-		},
-		"non-assignment": {
-			"patterns": [
-				{
-					"include": "#literals"
-				},
-				{
-					"include": "#operators"	
-				},
-				{
-					"include": "#func-expression"
-				},
-				{
-					"include": "#parentheses"
-				},
-				{
-					"include": "#if-else"
-				},
-				{
-					"include": "#switch"
-				},
-				{
-					"match": "\\b(assert|error)\\b",
-					"name": "keyword.other.error.helios"
-				},
-				{
-					"match": "\\b(print)\\b",
-					"name": "support.function.helios"
-				},
-				{
-					"match": "\\b(self)\\b",
-					"name": "variable.language.helios"
-				},
-				{
-					"include": "#literal-constructor-with-type"
-				},
-				{
-					"include": "#literal-constructor-without-type"
-				},
-				{
-					"include": "#associated-member"
-				},
-				{
-					"include": "#parametric-type"
-				}
-			]
-		},
-		"literals": {
-			"patterns": [
-				{
-					"include": "#string-literal"
-				},
-				{
-					"name": "constant.numeric.decimal.helios",
-					"match": "\\b[0-9][0-9_]*(\\.[0-9][0-9_]*)?"
-				},
-				{
-					"name": "constant.character.helios",
-					"match": "#[a-f0-9]*"
-				},
-				{
-					"name": "constant.language.boolean.helios",
-					"match": "\\b(true|false)\\b"
-				}
-			]
-		},
-		"string-literal": {
-			"name": "string.quoted.double.helios",
-			"begin": "\"",
-			"end": "\"",
-			"patterns": [
-				{
-				  "name": "constant.character.escape.helios",
-				  "match": "\\\\."
-				}
-			]
-		},
-		"operators": {
-			"patterns": [
-				{
-			        "name": "keyword.operator.comparison.helios",
-			        "match": "(<=|>=|==|!=|<|>)"
-				},
-				{
-				    "name": "keyword.operator.logical.helios",
-				    "match": "(&&|\\|\\|)"
-				},
-				{
-				    "name": "keyword.operator.math.helios",
-				    "match": "(\\+|\\-|/|\\*)"
-				},
-				{
-				    "name": "keyword.operator.dcolon.helios",
-				    "match": "::"
-				},
-				{
-				    "name": "keyword.operator.colon.helios",
-				    "match": ":"
-				},
-				{
-				    "name": "keyword.operator.semicolon.helios",
-				    "match": ";"
-				},
-				{
-					"name": "keyword.operator.dot.helios",
-					"match": "\\."
-				},
-				{
-					"match": "\\b[_]\\b",
-					"name": "keyword.operator.underscore.helios"
-				},
-				{
-				    "name": "keyword.operator.darrow.helios",
-				    "match": "=>"
-				},
-				{
-					"name": "keyword.operator.pipe.helios",
-					"match": "(\\||\\|\\.)"
-				}
-			]
-		},
-		"if": {
-			"begin": "\\b(if)\\b",
-			"beginCaptures": {
-				"1": {"name": "keyword.other.branch.helios"}
-			},
-			"end": "}",
-			"endCaptures": {
-				"0": {"name": "group.braces.branch.helios"}
-			},
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"begin": "\\(",
-					"end": "\\)",
-					"name": "group.parentheses.branch.condition.helios",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#expressions"
-						}
-					]
-				},
-				{
-					"begin": "\\{",
-					"end": "(?=})",
-					"name": "group.parentheses.branch.body.helios",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#expressions"
-						}
-					]
-				}
-			]
-		},
-		"else": {
-			"begin": "\\b(else)\\b",
-			"beginCaptures": {
-				"1": {"name": "keyword.other.branch.helios"}
-			},
-			"end": "}",
-			"endCaptures": {
-				"0": {"name": "group.braces.branch.helios"}
-			},
-			"patterns": [
-				{
-					"match": "\\b(if)\\b",
-					"name": "keyword.other.branch.helios"
-				},
-				{
-					"include": "#comments"
-				},
-				{
-					"begin": "\\(",
-					"end": "\\)",
-					"name": "group.parentheses.branch.condition.helios",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#expressions"
-						}
-					]
-				},
-				{
-					"begin": "\\{",
-					"end": "(?=})",
-					"name": "group.parentheses.branch.body.helios",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#expressions"
-						}
-					]
-				}
-			]
-		},
-		"if-else": {
-			"patterns": [
-				{
-					"include": "#if"
-				},
-				{
-					"include": "#else"
-				}
-			]
-		},
-		"types": {
-			"patterns": [
-				{
-					"begin": "(?=(\\(\\s*[a-zA-Z_0-9,?:->\\[\\]\\(\\)\\s]*\\)\\s*\\->))",
-					"end": "->",
-					"endCaptures": {
-						"0": {"name": "keyword.operator.arrow.helios"}
-					},
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"begin": "(?=\\()",
-							"end": "\\)",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"begin": "\\(",
-									"beginCaptures": {
-										"0": {"name": "group.parentheses.func.args.helios"}
-									},
-									"end": "(?=[,\\)])",
-									"patterns": [
-										{
-											"include": "#comments"
-										},
-										{
-											"include": "#func-arg-type"
-										}
-									] 
-								},
-								{
-									"begin": "\\,",
-									"end": "(?=[,\\)])",
-									"patterns": [
-										{
-											"include": "#comments"
-										},
-										{
-											"include": "#func-arg-type"
-										}
-									]
-								}
-							]
-						}
-					]
-				},
-				{
-					"begin": "\\[",
-					"end": "\\]",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#types"
-						}
-					]
-				},
-				{
-					"match": "[a-zA-Z][a-zA-Z0-9_]*",
-					"name": "entity.name.type.helios"
-				},
-				{
-					"match": "::",
-					"name": "keyword.operator.dcolon.helios"
-				},
-				{
-					"match": "[?]",
-					"name": "keyword.operator.optionalarg.helios"
-				}
-			]
-		},
-		"func-arg-type": {
-			"patterns": [
-				{
-					"begin": "([a-zA-Z][a-zA-Z0-9_]*)\\s*(:)",
-					"beginCaptures": {
-						"2": {"name": "keyword.operator.colon.helios"}
-					},
-					"end": "(?=[,\\)])",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#types"
-						}
-					]
-				},
-				{
-					"include": "#types"
-				}
-			]
-		},
-		"parentheses": {
-			"begin": "\\(",
-			"end": "\\)",
-			"name": "group.parentheses.helios",
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"include": "#expressions"
-				}
-			]
-		},
-		"switch": {
-			"name": "switch.helios",
-			"begin": "\\b(switch)\\b",
-			"beginCaptures": {
-				"1": {"name": "keyword.other.helios"}
-			},
-			"end": "}",
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"name": "switch.body.helios",
-					"begin": "(?=(\\{))",
-					"end": "(?=})",
-					"endCaptures": {
-						"0": "group.braces.switch.helios"
-					},
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"name": "switch.case.first.pattern.helios",
-							"begin": "\\{",
-							"beginCaptures": {
-								"0": "group.braces.switch.helios"
-							},
-							"end": "(?=(=>))",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"include": "#switch-case-pattern"
-								}
-							]
-						},
-						{
-							"name": "switch.case.pattern.helios",
-							"begin": "[,]",
-							"beginCaptures": {
-								"0": "keyword.operator.comma.helios"
-							},
-							"end": "(?=(=>))",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"include": "#switch-case-pattern"
-								}
-							]
-						},
-						{
-							"name": "switch.case.body.helios",
-							"begin": "(=>)",
-							"beginCaptures": {
-								"1": {"name": "keyword.operator.darrow.switch.helios"}
-							},
-							"end": "(?=[,}])",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"begin": "\\{",
-									"beginCaptures": {
-										"0": {"name": "group.braces.switch.case.helios"}
-									},
-									"end": "}",
-									"endCaptures": {
-										"0": {"name": "group.braces.switch.case.helios"}
-									},
-									"patterns": [
-										{
-											"include": "#comments"
-										},
-										{
-											"include": "#expressions"
-										}
-									]
-								},
-								{
-									"include": "#expressions"
-								}
-							]
-						}
-					]
-				}
-			]
-		},
-		"switch-case-pattern": {
-			"patterns": [
-				{
-					"match": "\\b(else)\\b",
-					"captures": {
-						"1": {"name": "keyword.other.else.helios"}
-					}
-				},
-				{
-					"include": "#multi-switch-case-pattern"
-				},
-				{
-					"include": "#single-switch-case-pattern"
-				}
-			]
-		},
-		"multi-switch-case-pattern": {
-			"name": "switch.destructuring.multi.helios",
-			"begin": "(?=(\\())",
-			"end": "\\)",
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"begin": "\\(",
-					"end": "(?=[,\\)])",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#single-switch-case-pattern"
-						}
-					]
-				},
-				{
-					"begin": "\\,",
-					"end": "(?=[,\\)])", 
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#single-switch-case-pattern"
-						}
-					]
-				}
-			]
-		},
-		"single-switch-case-pattern":  {
-			"patterns": [
-				{
-					"match": "\\b(_)\\b",
-					"captures": {
-						"1": {"name": "keyword.other.else.helios"}
-					}
-				},
-				{
-					"match": "([a-zA-Z][a-zA-Z0-9_]*)\\s*(:)",
-					"captures": {
-						"1": {"name": "variable.other.assignment.helios"},
-						"2": {"name": "keyword.operator.colon.helios"}
-					}
-				},
-				{
-					"begin": "\\b([a-zA-Z][a-zA-Z0-9_]*)\\s*(?=\\{)",
-					"beginCaptures": {						
-						"1": {"name": "entity.name.type.helios"},
-						"2": {"name": "group.braces.switch.case.destructuring.helios"}
-					},
-					"end": "}",
-					"endCaptures": {
-						"0": {"name": "group.braces.switch.case.destructuring.helios"}
-					},
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#destructuring-braces"
-						}
-					]
-				},
-				{
-					"match": "[a-zA-Z][a-zA-Z0-9_]*",
-					"captures": {
-						"0": {"name": "entity.name.type.helios"}
-					}
-				}
-			]
-		},
-		"destructuring-braces": {
-			"patterns": [
-				{
-					"name": "destructuring.braces.first.helios",
-					"begin": "\\{",
-					"end": "(?=[,}])",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#destructuring"
-						}
-					]
-				},
-				{
-					"name": "destructuring.braces.next.helios",
-					"begin": "\\,",
-					"end": "(?=[,}])",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#destructuring"
-						}
-					]
-				}
-			]
-		},
-		"destructuring": {
-			"patterns": [
-				{
-					"name": "destructuring.named.unnested.helios",
-					"begin": "([a-zA-Z][a-zA-Z0-9_]*)\\s*(?<![:])(:)(?![:])",
-					"beginCaptures": {
-						"1": {"name": "variable.other.assignment.helios"},
-						"3": {"name": "keyword.operator.colon.helios"}
-					},
-					"end": "(?=[,}\\)])",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#types"
-						},
-						{
-							"begin": "(?=\\{)",
-							"end": "}",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"include": "#destructuring-braces"
-								}
-							]
-						}
-					]
-				},
-				{
-					"name": "destructuring.nested.helios",
-					"begin": "(?=(((\\[])|([a-zA-Z]))[a-zA-Z0-9_:\\s\\[\\]]*\\{))",
-					"end": "}",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#types"
-						},
-						{
-							"include": "#destructuring-braces"
-						}
-					]
-				},
-				{
-					"name": "destructuring.nested.helios",
-					"begin": "(?=\\{)",
-					"end": "}",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#destructuring-braces"
-						}
-					]
-				},
-				{
-					"match": "[a-zA-Z][a-zA-Z0-9_]*",
-					"name": "variable.other.assignment.helios"
-				},
-				{
-					"match": "_",
-					"name": "keyword.operator.underscore.helios"
-				}
-			]
-		},
-		"associated-member": {
-			"match": "([a-zA-Z][a-zA-Z0-9_]*)?\\s*(\\[\\s*([a-zA-Z][a-zA-Z0-9_]*)?\\s*\\])?\\s*([a-zA-Z][a-zA-Z0-9_]*)?\\s*(::)",
-			"captures": {
-				"1": {"name": "entity.name.type.helios"},
-				"3": {"name": "entity.name.type.helios"},
-				"4": {"name": "entity.name.type.helios"},
-				"5": {"name": "keyword.operator.dcolon.helios"}
-			},
-			"name": "associated.member.helios"
-		},
-		"parametric-type": {
-			"name": "typeparameter.helios",
-			"begin": "[a-zA-Z][a-zA-Z0-9_]*\\s*\\[",
-			"end": "\\]",
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"include": "#types"
-				}
-			]
-		},
-		"literal-constructor-with-type": {
-			"begin": "([a-zA-Z_\\[\\]][a-zA-Z0-9_\\[\\]]*)\\s*(?=\\{)",
-			"beginCaptures": {
-				"1": {"name": "entity.name.type.helios"}
-			},
-			"end": "}",
-			"endCaptures": {
-				"0": {"name": "group.braces.close.literal.helios"}
-			},
-			"name": "literal.constructor.helios",
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"begin": "\\{",
-					"end": "(?=})",
-					"name": "literal.constructor.inner.helios",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#expressions"
-						}
-					]
-				}
-			]
-		},
-		"literal-constructor-without-type": {
-			"begin": "\\{",
-			"end": "}",
-			"name": "literal.implicit.constructor.helios",
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"include": "#expressions"
-				}
-			]
-		},
-		"assignment": {
-			"begin": "(?=([^;][^;]*(?<![!=><])=(?![=><])))",
-			"end": "(?=;)",
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"name": "assignment.lhs.parentheses.helios",
-					"begin": "(?=\\()",
-					"end": "\\)\\s*(?=((?<![!=><])=(?![=><])))",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"begin": "\\(",
-							"end": "(?=[,\\)])",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"include": "#destructuring"
-								}
-							] 
-						},
-						{
-							"begin": "\\,",
-							"end": "(?=[,\\)])",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"include": "#destructuring"
-								}
-							]
-						}
-					]
-				},
-				{
-					"name": "assignment.lhs.braces.helios",
-					"begin": "(?=\\{)",
-					"end": "\\}\\s*(?=((?<![!=><])=(?![=><])))",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"begin": "\\{",
-							"end": "(?=[,\\}])",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"include": "#destructuring"
-								}
-							] 
-						},
-						{
-							"begin": "\\,",
-							"end": "(?=[,\\}])",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"include": "#destructuring"
-								}
-							]
-						}
-					]
-				},
-				{
-					"begin": "\\b([a-zA-Z][a-zA-Z0-9_]*)\\s*(?<![:])(:)(?![:])",
-					"beginCaptures": {
-						"1": {"name": "variable.other.assignment.helios"},
-						"2": {"name": "keyword.operator.colon.helios"}
-					},
-					"end": "(?=((?<![!=><])=(?![=><])))",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#types"
-						},
-						{
-							"begin": "(?=\\{)",
-							"end": "}",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"include": "#destructuring-braces"
-								}
-							]
-						}
-					]
-				},
-				{
-					"begin": "(?=(((\\[])|([a-zA-Z]))[a-zA-Z0-9_:\\s\\[\\]]*\\{))",
-					"end": "}\\s*(?=((?<![!=><])=(?![=><])))",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#types"
-						},
-						{
-							"include": "#destructuring-braces"
-						}
-					]
-				},
-				{
-					"name": "assignment.lhs.simple.helios",
-					"match": "([a-zA-Z][a-zA-Z0-9_]*)\\s*(?=((?<![!=><])=(?![=><])))",
-					"captures": {
-						"1": {"name": "variable.other.assignment.helios"}
-					}
-				},
-				{
-					"name": "assignment.rhs.helios",
-					"begin": "(?<![=><])=(?![=><])",
-					"beginCaptures": {
-						"0": {"name": "keyword.operator.assignment.helios"}
-					},
-					"end": "(?=;)",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#expressions"
-						}
-					]
-				}
-			]
-		},
-		"func-expression": {
-			"name": "expression.func.helios",
-			"begin": "(?=(\\[[a-zA-Z_0-9,?=:->\\[\\]\\(\\)\\s]*\\]\\s*)?(\\(\\s*[a-zA-Z_][a-zA-Z_0-9,?=:->\\[\\]\\(\\)\\s]*\\)\\s*\\->))",
-			"end": "}",
-			"endCaptures": {
-				"0": {"name": "group.braces.func.helios"}
-			},
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"include": "#func-definition"
-				}
-			]
-		},
-		"func-definition": {
-			"begin": "(?=((\\[[a-zA-Z_0-9,?=:->\\[\\]\\(\\)\\s]*\\]\\s*)?\\())",
-			"end": "(?=})",
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"begin": "(?=(\\[[a-zA-Z_0-9,?=:->\\[\\]\\(\\)\\s]*\\]\\s*\\())",
-					"end": "\\]",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#type-parameters"
-						}
-					]
-				},
-				{
-					"begin": "(?=\\()",
-					"end": "\\)",
-					"endCaptures": {
-						"0": {"name": "group.parentheses.func.args.helios"}
-					},
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"begin": "\\(",
-							"beginCaptures": {
-								"0": {"name": "group.parentheses.func.args.helios"}
-							},
-							"end": "(?=[,\\)])",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"include": "#func-arg"
-								}
-							] 
-						},
-						{
-							"begin": "\\,",
-							"end": "(?=[,\\)])",
-							"patterns": [
-								{
-									"include": "#comments"
-								},
-								{
-									"include": "#func-arg"
-								}
-							]
-						}
-					]
-				},
-				{
-					"begin": "\\->",
-					"beginCaptures": {
-						"0": {"name": "keyword.operator.arrow.helios"}
-					},
-					"end": "(?=\\{)",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#types"
-						}
-					]
-				},
-				{
-					"begin": "\\{",
-					"beginCaptures": {
-						"0": {"name": "group.braces.open.func.helios"}
-					},
-					"end": "(?=})",
-					"name": "func.definition.body.helios",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#expressions"
-						}
-					]
-				}
-			]
-		},
-		"func-arg": {
-			"patterns": [
-				{
-					"begin": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*(:)",
-					"beginCaptures": {
-						"1": {"name": "variable.other.function.helios"},
-						"2": {"name": "keyword.operator.colon.helios"}
-					},
-					"end": "(?=[=,\\)])",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#types"
-						}
-					]
-				},
-				{
-					"begin": "[=]",
-					"beginCaptures": {
-						"0": {"name": "keyword.operator.assignment.helios"}
-					},
-					"end": "(?=[=,\\)])",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#non-assignment"
-						}
-					]
-				},
-				{
-					"match": "\\b(self)\\b",
-					"name": "variable.language.helios"
-				},
-				{
-					"match": "\\b[_]\\b",
-					"name": "keyword.operator.underscore.helios"
-				},
-				{
-					"match": "[a-zA-Z_][a-zA-Z0-9_]*",
-					"name": "variable.other.function.helios"
-				}
-			]
-		},
-		"type-parameters": {
-			"begin": "(?=\\[)",
-			"end": "(?=\\])",
-			"patterns": [
-				{
-					"include": "#comments"
-				},
-				{
-					"begin": "\\[",
-					"beginCaptures": {
-						"0": {"name": "group.braces.typeparameters.helios"}
-					},
-					"end": "(?=[,\\]])",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#type-parameter"
-						}
-					] 
-				},
-				{
-					"begin": "\\,",
-					"end": "(?=[,\\]])",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#type-parameter"
-						}
-					]
-				}
-			]
-		},
-		"type-parameter": {
-			"patterns": [
-				{
-					"begin": "([a-zA-Z][a-zA-Z0-9_]*)\\s*(:)",
-					"beginCaptures": {
-						"1": {"name": "entity.name.type.helios"},
-						"2": {"name": "keyword.operator.colon.helios"}
-					},
-					"end": "(?=[=,\\]])",
-					"patterns": [
-						{
-							"include": "#comments"
-						},
-						{
-							"include": "#types"
-						}
-					]
-				},
-				{
-					"begin": "[a-zA-Z][a-zA-Z0-9_]*",
-					"beginCaptures": {
-						"0": {"name": "entity.name.type.helios"}
-					},
-					"end": "(?=[=,\\]])"
-				}
-			]
-		}
-	}
+                {
+                    "name": "statement.struct.body.helios",
+                    "begin": "\\{",
+                    "beginCaptures": {
+                        "0": { "name": "group.braces.struct.helios" }
+                    },
+                    "end": "(?=})",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#struct-field"
+                        },
+                        {
+                            "include": "#const"
+                        },
+                        {
+                            "include": "#func-statement"
+                        }
+                    ]
+                }
+            ]
+        },
+        "enum": {
+            "name": "statement.enum.helios",
+            "begin": "\\b(enum)\\b",
+            "beginCaptures": {
+                "1": { "name": "storage.enum.helios" }
+            },
+            "end": "}",
+            "endCaptures": {
+                "0": { "name": "group.braces.enum.helios" }
+            },
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "begin": "[a-zA-Z][a-zA-Z0-9_]*",
+                    "beginCaptures": {
+                        "0": { "name": "entity.name.type.helios" }
+                    },
+                    "end": "(?=\\{)",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "begin": "(?=\\[)",
+                            "end": "\\]",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#type-parameters"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "begin": "\\{",
+                    "beginCaptures": {
+                        "0": { "name": "group.braces.struct.helios" }
+                    },
+                    "end": "(?=})",
+                    "name": "statement.enum.body.helios",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#enum-variant"
+                        },
+                        {
+                            "include": "#const"
+                        },
+                        {
+                            "include": "#func-statement"
+                        }
+                    ]
+                }
+            ]
+        },
+        "struct-field": {
+            "patterns": [
+                {
+                    "begin": ":",
+                    "beginCaptures": {
+                        "0": { "name": "keyword.operator.colon.helios" }
+                    },
+                    "end": "$",
+                    "name": "field.helios",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#string-literal"
+                        },
+                        {
+                            "include": "#types"
+                        }
+                    ]
+                }
+            ]
+        },
+        "enum-variant": {
+            "patterns": [
+                {
+                    "begin": "([a-zA-Z][a-zA-Z0-9_]*)(?=\\s*\\{)",
+                    "beginCaptures": {
+                        "1": { "name": "enum.variant.name.helios" }
+                    },
+                    "end": "}",
+                    "endCaptures": {
+                        "0": { "name": "group.braces.enum-variant.helios" }
+                    },
+                    "patterns": [
+                        {
+                            "begin": "\\{",
+                            "end": "(?=})",
+                            "patterns": [
+                                {
+                                    "include": "#struct-field"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "func-statement": {
+            "name": "statement.func.helios",
+            "begin": "\\b(func)\\b",
+            "beginCaptures": {
+                "1": { "name": "storage.function.helios" }
+            },
+            "end": "}",
+            "endCaptures": {
+                "0": { "name": "group.braces.func.helios" }
+            },
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "begin": "[a-zA-Z][a-zA-Z0-9_]*\\b",
+                    "beginCaptures": {
+                        "0": { "name": "variable.other.function.helios" }
+                    },
+                    "end": "(?=})",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#func-definition"
+                        }
+                    ]
+                }
+            ]
+        },
+        "expressions": {
+            "patterns": [
+                {
+                    "include": "#assignment"
+                },
+                {
+                    "include": "#non-assignment"
+                }
+            ]
+        },
+        "non-assignment": {
+            "patterns": [
+                {
+                    "include": "#literals"
+                },
+                {
+                    "include": "#operators"
+                },
+                {
+                    "include": "#func-expression"
+                },
+                {
+                    "include": "#parentheses"
+                },
+                {
+                    "include": "#if-else"
+                },
+                {
+                    "include": "#switch"
+                },
+                {
+                    "match": "\\b(assert|error)\\b",
+                    "name": "keyword.other.error.helios"
+                },
+                {
+                    "match": "\\b(print)\\b",
+                    "name": "support.function.helios"
+                },
+                {
+                    "match": "\\b(self)\\b",
+                    "name": "variable.language.helios"
+                },
+                {
+                    "include": "#literal-constructor-with-type"
+                },
+                {
+                    "include": "#literal-constructor-without-type"
+                },
+                {
+                    "include": "#associated-member"
+                },
+                {
+                    "include": "#parametric-type"
+                }
+            ]
+        },
+        "literals": {
+            "patterns": [
+                {
+                    "include": "#string-literal"
+                },
+                {
+                    "name": "constant.numeric.decimal.helios",
+                    "match": "\\b[0-9][0-9_]*(\\.[0-9][0-9_]*)?"
+                },
+                {
+                    "name": "constant.character.helios",
+                    "match": "#[a-f0-9]*"
+                },
+                {
+                    "name": "constant.language.boolean.helios",
+                    "match": "\\b(true|false)\\b"
+                }
+            ]
+        },
+        "string-literal": {
+            "name": "string.quoted.double.helios",
+            "begin": "\"",
+            "end": "\"",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.helios",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        "operators": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.comparison.helios",
+                    "match": "(<=|>=|==|!=|<|>)"
+                },
+                {
+                    "name": "keyword.operator.logical.helios",
+                    "match": "(&&|\\|\\|)"
+                },
+                {
+                    "name": "keyword.operator.math.helios",
+                    "match": "(\\+|\\-|/|\\*)"
+                },
+                {
+                    "name": "keyword.operator.dcolon.helios",
+                    "match": "::"
+                },
+                {
+                    "name": "keyword.operator.colon.helios",
+                    "match": ":"
+                },
+                {
+                    "name": "keyword.operator.semicolon.helios",
+                    "match": ";"
+                },
+                {
+                    "name": "keyword.operator.dot.helios",
+                    "match": "\\."
+                },
+                {
+                    "match": "\\b[_]\\b",
+                    "name": "keyword.operator.underscore.helios"
+                },
+                {
+                    "name": "keyword.operator.darrow.helios",
+                    "match": "=>"
+                },
+                {
+                    "name": "keyword.operator.pipe.helios",
+                    "match": "(\\||\\|\\.)"
+                }
+            ]
+        },
+        "if": {
+            "begin": "\\b(if)\\b",
+            "beginCaptures": {
+                "1": { "name": "keyword.other.branch.helios" }
+            },
+            "end": "}",
+            "endCaptures": {
+                "0": { "name": "group.braces.branch.helios" }
+            },
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "begin": "\\(",
+                    "end": "\\)",
+                    "name": "group.parentheses.branch.condition.helios",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#expressions"
+                        }
+                    ]
+                },
+                {
+                    "begin": "\\{",
+                    "end": "(?=})",
+                    "name": "group.parentheses.branch.body.helios",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#expressions"
+                        }
+                    ]
+                }
+            ]
+        },
+        "else": {
+            "begin": "\\b(else)\\b",
+            "beginCaptures": {
+                "1": { "name": "keyword.other.branch.helios" }
+            },
+            "end": "}",
+            "endCaptures": {
+                "0": { "name": "group.braces.branch.helios" }
+            },
+            "patterns": [
+                {
+                    "match": "\\b(if)\\b",
+                    "name": "keyword.other.branch.helios"
+                },
+                {
+                    "include": "#comments"
+                },
+                {
+                    "begin": "\\(",
+                    "end": "\\)",
+                    "name": "group.parentheses.branch.condition.helios",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#expressions"
+                        }
+                    ]
+                },
+                {
+                    "begin": "\\{",
+                    "end": "(?=})",
+                    "name": "group.parentheses.branch.body.helios",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#expressions"
+                        }
+                    ]
+                }
+            ]
+        },
+        "if-else": {
+            "patterns": [
+                {
+                    "include": "#if"
+                },
+                {
+                    "include": "#else"
+                }
+            ]
+        },
+        "types": {
+            "patterns": [
+                {
+                    "begin": "(?=(\\(\\s*[a-zA-Z_0-9,?:->\\[\\]\\(\\)\\s]*\\)\\s*\\->))",
+                    "end": "->",
+                    "endCaptures": {
+                        "0": { "name": "keyword.operator.arrow.helios" }
+                    },
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "begin": "(?=\\()",
+                            "end": "\\)",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "begin": "\\(",
+                                    "beginCaptures": {
+                                        "0": {
+                                            "name": "group.parentheses.func.args.helios"
+                                        }
+                                    },
+                                    "end": "(?=[,\\)])",
+                                    "patterns": [
+                                        {
+                                            "include": "#comments"
+                                        },
+                                        {
+                                            "include": "#func-arg-type"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "begin": "\\,",
+                                    "end": "(?=[,\\)])",
+                                    "patterns": [
+                                        {
+                                            "include": "#comments"
+                                        },
+                                        {
+                                            "include": "#func-arg-type"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "begin": "\\[",
+                    "end": "\\]",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#types"
+                        }
+                    ]
+                },
+                {
+                    "match": "[a-zA-Z][a-zA-Z0-9_]*",
+                    "name": "entity.name.type.helios"
+                },
+                {
+                    "match": "::",
+                    "name": "keyword.operator.dcolon.helios"
+                },
+                {
+                    "match": "[?]",
+                    "name": "keyword.operator.optionalarg.helios"
+                }
+            ]
+        },
+        "func-arg-type": {
+            "patterns": [
+                {
+                    "begin": "([a-zA-Z][a-zA-Z0-9_]*)\\s*(:)",
+                    "beginCaptures": {
+                        "2": { "name": "keyword.operator.colon.helios" }
+                    },
+                    "end": "(?=[,\\)])",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#types"
+                        }
+                    ]
+                },
+                {
+                    "include": "#types"
+                }
+            ]
+        },
+        "parentheses": {
+            "begin": "\\(",
+            "end": "\\)",
+            "name": "group.parentheses.helios",
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "include": "#expressions"
+                }
+            ]
+        },
+        "switch": {
+            "name": "switch.helios",
+            "begin": "\\b(switch)\\b",
+            "beginCaptures": {
+                "1": { "name": "keyword.other.helios" }
+            },
+            "end": "}",
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "name": "switch.body.helios",
+                    "begin": "(?=(\\{))",
+                    "end": "(?=})",
+                    "endCaptures": {
+                        "0": "group.braces.switch.helios"
+                    },
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "name": "switch.case.first.pattern.helios",
+                            "begin": "\\{",
+                            "beginCaptures": {
+                                "0": "group.braces.switch.helios"
+                            },
+                            "end": "(?=(=>))",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#switch-case-pattern"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "switch.case.pattern.helios",
+                            "begin": "[,]",
+                            "beginCaptures": {
+                                "0": "keyword.operator.comma.helios"
+                            },
+                            "end": "(?=(=>))",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#switch-case-pattern"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "switch.case.body.helios",
+                            "begin": "(=>)",
+                            "beginCaptures": {
+                                "1": {
+                                    "name": "keyword.operator.darrow.switch.helios"
+                                }
+                            },
+                            "end": "(?=[,}])",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "begin": "\\{",
+                                    "beginCaptures": {
+                                        "0": {
+                                            "name": "group.braces.switch.case.helios"
+                                        }
+                                    },
+                                    "end": "}",
+                                    "endCaptures": {
+                                        "0": {
+                                            "name": "group.braces.switch.case.helios"
+                                        }
+                                    },
+                                    "patterns": [
+                                        {
+                                            "include": "#comments"
+                                        },
+                                        {
+                                            "include": "#expressions"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "include": "#expressions"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "switch-case-pattern": {
+            "patterns": [
+                {
+                    "match": "\\b(else)\\b",
+                    "captures": {
+                        "1": { "name": "keyword.other.else.helios" }
+                    }
+                },
+                {
+                    "include": "#multi-switch-case-pattern"
+                },
+                {
+                    "include": "#single-switch-case-pattern"
+                }
+            ]
+        },
+        "multi-switch-case-pattern": {
+            "name": "switch.destructuring.multi.helios",
+            "begin": "(?=(\\())",
+            "end": "\\)",
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "begin": "\\(",
+                    "end": "(?=[,\\)])",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#single-switch-case-pattern"
+                        }
+                    ]
+                },
+                {
+                    "begin": "\\,",
+                    "end": "(?=[,\\)])",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#single-switch-case-pattern"
+                        }
+                    ]
+                }
+            ]
+        },
+        "single-switch-case-pattern": {
+            "patterns": [
+                {
+                    "match": "\\b(_)\\b",
+                    "captures": {
+                        "1": { "name": "keyword.other.else.helios" }
+                    }
+                },
+                {
+                    "match": "([a-zA-Z][a-zA-Z0-9_]*)\\s*(:)",
+                    "captures": {
+                        "1": { "name": "variable.other.assignment.helios" },
+                        "2": { "name": "keyword.operator.colon.helios" }
+                    }
+                },
+                {
+                    "begin": "\\b([a-zA-Z][a-zA-Z0-9_]*)\\s*(?=\\{)",
+                    "beginCaptures": {
+                        "1": { "name": "entity.name.type.helios" },
+                        "2": {
+                            "name": "group.braces.switch.case.destructuring.helios"
+                        }
+                    },
+                    "end": "}",
+                    "endCaptures": {
+                        "0": {
+                            "name": "group.braces.switch.case.destructuring.helios"
+                        }
+                    },
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#destructuring-braces"
+                        }
+                    ]
+                },
+                {
+                    "match": "[a-zA-Z][a-zA-Z0-9_]*",
+                    "captures": {
+                        "0": { "name": "entity.name.type.helios" }
+                    }
+                }
+            ]
+        },
+        "destructuring-braces": {
+            "patterns": [
+                {
+                    "name": "destructuring.braces.first.helios",
+                    "begin": "\\{",
+                    "end": "(?=[,}])",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#destructuring"
+                        }
+                    ]
+                },
+                {
+                    "name": "destructuring.braces.next.helios",
+                    "begin": "\\,",
+                    "end": "(?=[,}])",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#destructuring"
+                        }
+                    ]
+                }
+            ]
+        },
+        "destructuring": {
+            "patterns": [
+                {
+                    "name": "destructuring.named.unnested.helios",
+                    "begin": "([a-zA-Z][a-zA-Z0-9_]*)\\s*(?<![:])(:)(?![:])",
+                    "beginCaptures": {
+                        "1": { "name": "variable.other.assignment.helios" },
+                        "3": { "name": "keyword.operator.colon.helios" }
+                    },
+                    "end": "(?=[,}\\)])",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#types"
+                        },
+                        {
+                            "begin": "(?=\\{)",
+                            "end": "}",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#destructuring-braces"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "destructuring.nested.helios",
+                    "begin": "(?=(((\\[])|([a-zA-Z]))[a-zA-Z0-9_:\\s\\[\\]]*\\{))",
+                    "end": "}",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#types"
+                        },
+                        {
+                            "include": "#destructuring-braces"
+                        }
+                    ]
+                },
+                {
+                    "name": "destructuring.nested.helios",
+                    "begin": "(?=\\{)",
+                    "end": "}",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#destructuring-braces"
+                        }
+                    ]
+                },
+                {
+                    "match": "[a-zA-Z][a-zA-Z0-9_]*",
+                    "name": "variable.other.assignment.helios"
+                },
+                {
+                    "match": "_",
+                    "name": "keyword.operator.underscore.helios"
+                }
+            ]
+        },
+        "associated-member": {
+            "match": "([a-zA-Z][a-zA-Z0-9_]*)?\\s*(\\[\\s*([a-zA-Z][a-zA-Z0-9_]*)?\\s*\\])?\\s*([a-zA-Z][a-zA-Z0-9_]*)?\\s*(::)",
+            "captures": {
+                "1": { "name": "entity.name.type.helios" },
+                "3": { "name": "entity.name.type.helios" },
+                "4": { "name": "entity.name.type.helios" },
+                "5": { "name": "keyword.operator.dcolon.helios" }
+            },
+            "name": "associated.member.helios"
+        },
+        "parametric-type": {
+            "name": "typeparameter.helios",
+            "begin": "[a-zA-Z][a-zA-Z0-9_]*\\s*\\[",
+            "end": "\\]",
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "include": "#types"
+                }
+            ]
+        },
+        "literal-constructor-with-type": {
+            "begin": "([a-zA-Z_\\[\\]][a-zA-Z0-9_\\[\\]]*)\\s*(?=\\{)",
+            "beginCaptures": {
+                "1": { "name": "entity.name.type.helios" }
+            },
+            "end": "}",
+            "endCaptures": {
+                "0": { "name": "group.braces.close.literal.helios" }
+            },
+            "name": "literal.constructor.helios",
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "begin": "\\{",
+                    "end": "(?=})",
+                    "name": "literal.constructor.inner.helios",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#expressions"
+                        }
+                    ]
+                }
+            ]
+        },
+        "literal-constructor-without-type": {
+            "begin": "\\{",
+            "end": "}",
+            "name": "literal.implicit.constructor.helios",
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "include": "#expressions"
+                }
+            ]
+        },
+        "assignment": {
+            "begin": "(?=([^;][^;]*(?<![!=><])=(?![=><])))",
+            "end": "(?=;)",
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "name": "assignment.lhs.parentheses.helios",
+                    "begin": "(?=\\()",
+                    "end": "\\)\\s*(?=((?<![!=><])=(?![=><])))",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "begin": "\\(",
+                            "end": "(?=[,\\)])",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#destructuring"
+                                }
+                            ]
+                        },
+                        {
+                            "begin": "\\,",
+                            "end": "(?=[,\\)])",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#destructuring"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "assignment.lhs.braces.helios",
+                    "begin": "(?=\\{)",
+                    "end": "\\}\\s*(?=((?<![!=><])=(?![=><])))",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "begin": "\\{",
+                            "end": "(?=[,\\}])",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#destructuring"
+                                }
+                            ]
+                        },
+                        {
+                            "begin": "\\,",
+                            "end": "(?=[,\\}])",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#destructuring"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "begin": "\\b([a-zA-Z][a-zA-Z0-9_]*)\\s*(?<![:])(:)(?![:])",
+                    "beginCaptures": {
+                        "1": { "name": "variable.other.assignment.helios" },
+                        "2": { "name": "keyword.operator.colon.helios" }
+                    },
+                    "end": "(?=((?<![!=><])=(?![=><])))",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#types"
+                        },
+                        {
+                            "begin": "(?=\\{)",
+                            "end": "}",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#destructuring-braces"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "begin": "(?=(((\\[])|([a-zA-Z]))[a-zA-Z0-9_:\\s\\[\\]]*\\{))",
+                    "end": "}\\s*(?=((?<![!=><])=(?![=><])))",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#types"
+                        },
+                        {
+                            "include": "#destructuring-braces"
+                        }
+                    ]
+                },
+                {
+                    "name": "assignment.lhs.simple.helios",
+                    "match": "([a-zA-Z][a-zA-Z0-9_]*)\\s*(?=((?<![!=><])=(?![=><])))",
+                    "captures": {
+                        "1": { "name": "variable.other.assignment.helios" }
+                    }
+                },
+                {
+                    "name": "assignment.rhs.helios",
+                    "begin": "(?<![=><])=(?![=><])",
+                    "beginCaptures": {
+                        "0": { "name": "keyword.operator.assignment.helios" }
+                    },
+                    "end": "(?=;)",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#expressions"
+                        }
+                    ]
+                }
+            ]
+        },
+        "func-expression": {
+            "name": "expression.func.helios",
+            "begin": "(?=(\\[[a-zA-Z_0-9,?=:->\\[\\]\\(\\)\\s]*\\]\\s*)?(\\(\\s*[a-zA-Z_][a-zA-Z_0-9,?=:->\\[\\]\\(\\)\\s]*\\)\\s*\\->))",
+            "end": "}",
+            "endCaptures": {
+                "0": { "name": "group.braces.func.helios" }
+            },
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "include": "#func-definition"
+                }
+            ]
+        },
+        "func-definition": {
+            "begin": "(?=((\\[[a-zA-Z_0-9,?=:->\\[\\]\\(\\)\\s]*\\]\\s*)?\\())",
+            "end": "(?=})",
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "begin": "(?=(\\[[a-zA-Z_0-9,?=:->\\[\\]\\(\\)\\s]*\\]\\s*\\())",
+                    "end": "\\]",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#type-parameters"
+                        }
+                    ]
+                },
+                {
+                    "begin": "(?=\\()",
+                    "end": "\\)",
+                    "endCaptures": {
+                        "0": { "name": "group.parentheses.func.args.helios" }
+                    },
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "begin": "\\(",
+                            "beginCaptures": {
+                                "0": {
+                                    "name": "group.parentheses.func.args.helios"
+                                }
+                            },
+                            "end": "(?=[,\\)])",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#func-arg"
+                                }
+                            ]
+                        },
+                        {
+                            "begin": "\\,",
+                            "end": "(?=[,\\)])",
+                            "patterns": [
+                                {
+                                    "include": "#comments"
+                                },
+                                {
+                                    "include": "#func-arg"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "begin": "\\->",
+                    "beginCaptures": {
+                        "0": { "name": "keyword.operator.arrow.helios" }
+                    },
+                    "end": "(?=\\{)",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#types"
+                        }
+                    ]
+                },
+                {
+                    "begin": "\\{",
+                    "beginCaptures": {
+                        "0": { "name": "group.braces.open.func.helios" }
+                    },
+                    "end": "(?=})",
+                    "name": "func.definition.body.helios",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#expressions"
+                        }
+                    ]
+                }
+            ]
+        },
+        "func-arg": {
+            "patterns": [
+                {
+                    "begin": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*(:)",
+                    "beginCaptures": {
+                        "1": { "name": "variable.other.function.helios" },
+                        "2": { "name": "keyword.operator.colon.helios" }
+                    },
+                    "end": "(?=[=,\\)])",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#types"
+                        }
+                    ]
+                },
+                {
+                    "begin": "[=]",
+                    "beginCaptures": {
+                        "0": { "name": "keyword.operator.assignment.helios" }
+                    },
+                    "end": "(?=[=,\\)])",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#non-assignment"
+                        }
+                    ]
+                },
+                {
+                    "match": "\\b(self)\\b",
+                    "name": "variable.language.helios"
+                },
+                {
+                    "match": "\\b[_]\\b",
+                    "name": "keyword.operator.underscore.helios"
+                },
+                {
+                    "match": "[a-zA-Z_][a-zA-Z0-9_]*",
+                    "name": "variable.other.function.helios"
+                }
+            ]
+        },
+        "type-parameters": {
+            "begin": "(?=\\[)",
+            "end": "(?=\\])",
+            "patterns": [
+                {
+                    "include": "#comments"
+                },
+                {
+                    "begin": "\\[",
+                    "beginCaptures": {
+                        "0": { "name": "group.braces.typeparameters.helios" }
+                    },
+                    "end": "(?=[,\\]])",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#type-parameter"
+                        }
+                    ]
+                },
+                {
+                    "begin": "\\,",
+                    "end": "(?=[,\\]])",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#type-parameter"
+                        }
+                    ]
+                }
+            ]
+        },
+        "type-parameter": {
+            "patterns": [
+                {
+                    "begin": "([a-zA-Z][a-zA-Z0-9_]*)\\s*(:)",
+                    "beginCaptures": {
+                        "1": { "name": "entity.name.type.helios" },
+                        "2": { "name": "keyword.operator.colon.helios" }
+                    },
+                    "end": "(?=[=,\\]])",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        },
+                        {
+                            "include": "#types"
+                        }
+                    ]
+                },
+                {
+                    "begin": "[a-zA-Z][a-zA-Z0-9_]*",
+                    "beginCaptures": {
+                        "0": { "name": "entity.name.type.helios" }
+                    },
+                    "end": "(?=[=,\\]])"
+                }
+            ]
+        }
+    }
 }

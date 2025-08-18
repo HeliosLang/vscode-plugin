@@ -1,0 +1,12 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "build with esbuild",
+        "type": "shell",
+        "command": "node ${workspaceFolder}/esbuild.mjs",
+        "problemMatcher": []
+      }
+    ]
+}
+  

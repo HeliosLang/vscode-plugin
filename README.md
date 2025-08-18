@@ -1,11 +1,13 @@
 # helios vscode extension
 
 Features:
- * Syntax highlighting for .hl files.
- * Syntax error diagnostics
- * Helios Runner available in the Run and Debug view
+
+- Syntax highlighting for .hl files.
+- Syntax error diagnostics
+- Helios Runner available in the Run and Debug view
 
 ## Further reading
+
 https://macromates.com/manual/en/language_grammars#naming-conventions
 
 ## Debugging
