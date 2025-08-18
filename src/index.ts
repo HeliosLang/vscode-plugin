@@ -23,7 +23,8 @@ export function activate(context: ExtensionContext) {
     //const cache = new Cache()
     let initialized = false
 
-    const entryPointAndArgumentsViewProvider = new EntryPointAndArgumentsViewProvider()
+    const entryPointAndArgumentsViewProvider =
+        new EntryPointAndArgumentsViewProvider()
 
     // keep the set of Helios sources up-to-date
     // upon change: sources open in the editor result in recompilation if there is any change
@@ -33,23 +34,27 @@ export function activate(context: ExtensionContext) {
     const retryWithBackoff = async <T>(
         fn: () => Thenable<T>,
         retries: number = 5,
-        backoff: number = 1000,
+        backoff: number = 1000
     ): Promise<T> => {
-        let attempt = 0;
+        let attempt = 0
         while (attempt < retries) {
             entryPointAndArgumentsViewProvider.log(`attemp ${attempt}`)
             try {
-                const result = await fn();
+                const result = await fn()
                 if (Array.isArray(result) && result.length === 0) {
-                    entryPointAndArgumentsViewProvider.log("Empty array returned")
+                    entryPointAndArgumentsViewProvider.log(
+                        "Empty array returned"
+                    )
                 }
-                return result;
+                return result
             } catch (error) {
-                attempt++;
+                attempt++
                 if (attempt >= retries) {
-                    throw error;
+                    throw error
                 }
-                await new Promise((resolve) => setTimeout(resolve, backoff * attempt));
+                await new Promise((resolve) =>
+                    setTimeout(resolve, backoff * attempt)
+                )
             }
         }
         entryPointAndArgumentsViewProvider.log("Failed after maximum retries")
@@ -57,19 +62,29 @@ export function activate(context: ExtensionContext) {
     }
 
     const setASTs = () => {
-        if (window.activeTextEditor && isHeliosExt(window.activeTextEditor.document.fileName)) {
+        if (
+            window.activeTextEditor &&
+            isHeliosExt(window.activeTextEditor.document.fileName)
+        ) {
             const p = programs[window.activeTextEditor.document.uri.toString()]
 
             if (p) {
-                entryPointAndArgumentsViewProvider.setAST(basename(window.activeTextEditor.document.fileName), p)                
+                entryPointAndArgumentsViewProvider.setAST(
+                    basename(window.activeTextEditor.document.fileName),
+                    p
+                )
             } else {
-                entryPointAndArgumentsViewProvider.log(`${window.activeTextEditor.document.uri.toString()} not found in programs`)
+                entryPointAndArgumentsViewProvider.log(
+                    `${window.activeTextEditor.document.uri.toString()} not found in programs`
+                )
             }
         } else {
-            entryPointAndArgumentsViewProvider.log("no window active or not helios file")
+            entryPointAndArgumentsViewProvider.log(
+                "no window active or not helios file"
+            )
         }
 
-        window.visibleTextEditors.forEach(_editor => {
+        window.visibleTextEditors.forEach((_editor) => {
             // TODO
         })
     }
@@ -78,18 +93,23 @@ export function activate(context: ExtensionContext) {
         // recompile open textDocuments
         // a program is the root AST object
         const todo: TextDocument[] = []
-        if (window.activeTextEditor && isHeliosExt(window.activeTextEditor.document.fileName)) {
+        if (
+            window.activeTextEditor &&
+            isHeliosExt(window.activeTextEditor.document.fileName)
+        ) {
             todo.push(window.activeTextEditor.document)
         }
 
-        todo.forEach((d) => {            
+        todo.forEach((d) => {
             const key = d.uri.toString()
             entryPointAndArgumentsViewProvider.log("compiling " + key)
 
             const s = sources[key]
 
             if (!s) {
-                entryPointAndArgumentsViewProvider.log(key + "not available in sources ")
+                entryPointAndArgumentsViewProvider.log(
+                    key + "not available in sources "
+                )
                 return
             }
 
@@ -103,17 +123,37 @@ export function activate(context: ExtensionContext) {
             // TODO: what about cross referencing other scripts?
             try {
                 const p = new Program(s, {
-                    moduleSources: Object.values(sources).filter(s => s.purpose == "module"),
-                    validatorTypes: Object.fromEntries(Object.values(sources).filter(s => s.purpose != undefined && s.moduleName != undefined && s.purpose != "module" && !s.purpose?.startsWith("tests")).map(s => {
-                        return [s.moduleName as string, getScriptHashType(s.purpose as string)]
-                    })),
+                    moduleSources: Object.values(sources).filter(
+                        (s) => s.purpose == "module"
+                    ),
+                    validatorTypes: Object.fromEntries(
+                        Object.values(sources)
+                            .filter(
+                                (s) =>
+                                    s.purpose != undefined &&
+                                    s.moduleName != undefined &&
+                                    s.purpose != "module" &&
+                                    !s.purpose?.startsWith("tests")
+                            )
+                            .map((s) => {
+                                return [
+                                    s.moduleName as string,
+                                    getScriptHashType(s.purpose as string)
+                                ]
+                            })
+                    ),
                     throwCompilerErrors: false
                 })
 
                 entryPointAndArgumentsViewProvider.log("compiled " + key)
                 programs[key] = p
-            } catch(e) {
-                entryPointAndArgumentsViewProvider.log("failed to compile program: " + (e as Error).message + "| sources: " + Object.keys(sources).join(", "))
+            } catch (e) {
+                entryPointAndArgumentsViewProvider.log(
+                    "failed to compile program: " +
+                        (e as Error).message +
+                        "| sources: " +
+                        Object.keys(sources).join(", ")
+                )
 
                 //console.log("failed to compile program: ", e)
             }
@@ -135,8 +175,10 @@ export function activate(context: ExtensionContext) {
             })
 
             sources[key] = source
-        } catch(e) {
-            console.log(`failed to get helios source of ${d.fileName}: ${(e as Error).message} (${content.split("\n").slice(0, 5).join("\n")})`)
+        } catch (e) {
+            console.log(
+                `failed to get helios source of ${d.fileName}: ${(e as Error).message} (${content.split("\n").slice(0, 5).join("\n")})`
+            )
         }
     }
 
@@ -151,29 +193,31 @@ export function activate(context: ExtensionContext) {
         }
 
         if (!initialized) {
-            return workspace.findFiles("**/*.hl", "**/node_modules/**").then((uris) => {
-                //entryPointAndArgumentsViewProvider.log(`found ${uris.length} uris: ` + uris.map(u => u.toString()).join(", ") + " in " + (workspace.workspaceFolders ?? []).map(f => f.uri.toString()).join(","));
+            return workspace
+                .findFiles("**/*.hl", "**/node_modules/**")
+                .then((uris) => {
+                    //entryPointAndArgumentsViewProvider.log(`found ${uris.length} uris: ` + uris.map(u => u.toString()).join(", ") + " in " + (workspace.workspaceFolders ?? []).map(f => f.uri.toString()).join(","));
 
-                return Promise.all(uris.map((uri) =>
-                        workspace.openTextDocument(uri)
-                    )).then((docs) => {
+                    return Promise.all(
+                        uris.map((uri) => workspace.openTextDocument(uri))
+                    ).then((docs) => {
                         docs.forEach(setHeliosDocument)
                     })
-                }
-            ).then(() => {
-                initialized = true
-                loadOpenHeliosDocuments()
-                return recompileOpenASTs()
-            })
+                })
+                .then(() => {
+                    initialized = true
+                    loadOpenHeliosDocuments()
+                    return recompileOpenASTs()
+                })
         } else {
             loadOpenHeliosDocuments()
         }
     }
 
     // only load all Helios files upon activation, then update them using workspace.textDocuments upon specific events
-    // Helios sources are loaded into 
+    // Helios sources are loaded into
 
-    // TODO: intelligent recompilation, update means something changed, we have a map of file locations to 
+    // TODO: intelligent recompilation, update means something changed, we have a map of file locations to
     //const updateFiles = () => {
     //    // one AST per file, isn't the most efficient, but makes sense in the multi-validator setting
     //    // events update the set of sources
@@ -203,31 +247,41 @@ export function activate(context: ExtensionContext) {
         window.registerWebviewViewProvider(
             "helios.entryPointAndArguments",
             entryPointAndArgumentsViewProvider,
-            { webviewOptions: { retainContextWhenHidden: true } } 
+            { webviewOptions: { retainContextWhenHidden: true } }
         )
     )
-    
+
     context.subscriptions.push(
-        debug.registerDebugConfigurationProvider('helios', {
-          resolveDebugConfiguration: (folder, config, token) => {
-            // This is called when the user hits Run and Debug for type "mylang"
-            console.log("Debugging helios function in resolveDebugConfiguration!", config)
+        debug.registerDebugConfigurationProvider("helios", {
+            resolveDebugConfiguration: (folder, config, token) => {
+                // This is called when the user hits Run and Debug for type "mylang"
+                console.log(
+                    "Debugging helios function in resolveDebugConfiguration!",
+                    config
+                )
 
-            debug.activeDebugConsole.appendLine("Hello from my extension 👋")
+                debug.activeDebugConsole.appendLine(
+                    "Hello from my extension 👋"
+                )
 
-            // Return the (possibly modified) config, or 'undefined' to cancel the launch
-            return {...config, name: "Hell oworld"}
-          },
+                // Return the (possibly modified) config, or 'undefined' to cancel the launch
+                return { ...config, name: "Hell oworld" }
+            }
         })
     )
 
-    context.subscriptions.push(debug.onDidStartDebugSession((session) => {
-        //if (session.type === 'helios') {
-            console.log("Debugging helios function in onDidStartDebugSession!", session)
+    context.subscriptions.push(
+        debug.onDidStartDebugSession((session) => {
+            //if (session.type === 'helios') {
+            console.log(
+                "Debugging helios function in onDidStartDebugSession!",
+                session
+            )
 
-            debug.activeDebugConsole.appendLine("Hello from my extension 👋");
-        //}
-    }))
+            debug.activeDebugConsole.appendLine("Hello from my extension 👋")
+            //}
+        })
+    )
 
     loadHeliosDocuments()
     //updateFiles()
@@ -278,9 +332,6 @@ export function activate(context: ExtensionContext) {
     //        }
     //    })
     //)
-
-
-    
 }
 
 export function deactivate() {
@@ -288,7 +339,5 @@ export function deactivate() {
 }
 
 function convertTextDocumentToSource(d: TextDocument) {
-    return {
-        
-    }
+    return {}
 }

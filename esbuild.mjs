@@ -21,7 +21,7 @@ async function main() {
         outfile: join(dstBaseDir, "index.js"),
         entryPoints: [join(srcBaseDir, "index.ts")],
         tsconfig: join(repoRoot, "tsconfig.json")
-    })  
+    })
 
     await build({
         bundle: true,
@@ -33,8 +33,7 @@ async function main() {
         outfile: join(dstBaseDir, "debugAdapter.js"),
         entryPoints: [join(srcBaseDir, "debugAdapter.ts")],
         tsconfig: join(repoRoot, "tsconfig.json")
-    })  
+    })
 }
 
 main()
-

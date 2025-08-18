@@ -18,7 +18,7 @@ import { Cache } from "./cache"
 import { log } from "./log"
 import { isHeliosExt } from "./repository"
 
-const vscodeStyleSheet = `` 
+const vscodeStyleSheet = ``
 
 /**
  * Display
@@ -45,7 +45,7 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
     ) {
         this.#view = view
 
-        this.#view.webview.options = { 
+        this.#view.webview.options = {
             enableScripts: true
         }
 
@@ -80,14 +80,13 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
     }
 
     setAST(fileName: string, ast: Program | undefined) {
-        
         this.#activeAST = ast
 
         // TODO: send a message to update the html
-        
+
         // send the list of entrypoints
         let entryPoints: string[] = []
-        
+
         if (ast) {
             const key = ast.entryPoint.mainModule.name.value
 
@@ -103,7 +102,11 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
         console.log(`setting fileName: ${fileName}`)
 
         if (this.#view) {
-            this.#view.webview.postMessage({ command: "setEntryPoints", entryPoints, fileName})
+            this.#view.webview.postMessage({
+                command: "setEntryPoints",
+                entryPoints,
+                fileName
+            })
         } else {
             this.log("view not available")
         }
@@ -128,18 +131,24 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
                 const key = this.#activeAST.entryPoint.mainModule.name.value
 
                 if (key in this.#activeAST.userFunctions) {
-                    const userFn = this.#activeAST.userFunctions[key][entryPoint]
+                    const userFn =
+                        this.#activeAST.userFunctions[key][entryPoint]
 
                     // assume that by default the userFunc depends on the script context
                     let requiresScriptContext = true
 
                     if (this.#activeAST.props.validatorTypes) {
-                        console.log(`compiling ${entryPoint} to check if ScriptContext is required`)
+                        console.log(
+                            `compiling ${entryPoint} to check if ScriptContext is required`
+                        )
 
-                        const validatorTypes = this.#activeAST.props.validatorTypes
+                        const validatorTypes =
+                            this.#activeAST.props.validatorTypes
 
                         const { requiresScriptContext: rsc } = userFn.toIR({
-                            hashDependencies: genDummyHashes(Object.keys(validatorTypes)),
+                            hashDependencies: genDummyHashes(
+                                Object.keys(validatorTypes)
+                            ),
                             validatorTypes: validatorTypes,
                             optimize: false
                         })
@@ -150,24 +159,27 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
                     } else {
                         console.log("validatorTypes not set?")
                     }
-                    
+
                     try {
                         const constStmnt = userFn.mainConst
 
                         this.setArgNames([], requiresScriptContext)
-                    } catch(_e) {
+                    } catch (_e) {
                         const fnStmnt = userFn.mainFunc
 
-                        this.setArgNames(fnStmnt.argNames, requiresScriptContext)
+                        this.setArgNames(
+                            fnStmnt.argNames,
+                            requiresScriptContext
+                        )
                     }
-                } 
+                }
             }
         }
     }
 
     /**
      * For debugging
-     * @param msg 
+     * @param msg
      */
     log(msg: string) {
         if (this.#view) {
@@ -179,10 +191,14 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
         this.#argValues = {}
         this.#scriptContext = ""
 
-        const nonIgnoredNames = names.filter(n => n != "_")
+        const nonIgnoredNames = names.filter((n) => n != "_")
 
         if (this.#view) {
-            console.log("setting arg names to: ", nonIgnoredNames, requiresScriptContext)
+            console.log(
+                "setting arg names to: ",
+                nonIgnoredNames,
+                requiresScriptContext
+            )
             this.#view.webview.postMessage({
                 command: "setArgNames",
                 argNames: nonIgnoredNames,
@@ -557,7 +573,7 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
     private async run(file: string, input: string) {
         return
         //log("Running webview logic (compilation shouldn't happen as part of webview though)...")
-//
+        //
         //let doc: TextDocument | undefined
         //const open = workspace.textDocuments.find((d) => d.fileName === file)
         //if (open) {
@@ -579,7 +595,7 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
         //    )
         //    return
         //}
-//
+        //
         //const repo = this.#cache.loadCachedRepository(doc.fileName)
         //if (!repo) {
         //    log(
@@ -587,9 +603,9 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
         //    )
         //    return
         //}
-//
+        //
         //const requireFromRepo = createRequire(repo.path)
-//
+        //
         //let Program: any
         //let makeUplcDataValue: any
         //let decodeUplcData: any
@@ -601,7 +617,7 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
         //let makeConstrData: any
         //let boolToUplcData: any
         //let stringToUplcData: any
-//
+        //
         //try {
         //    // we must use contract-utils to build, because of builtin Scripts:: module (scripts can be imported anywhere)
         //    const cPath = requireFromRepo.resolve("@helios-lang/compiler")
@@ -624,11 +640,11 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
         //    log("Failed to load @helios-lang/compiler from workspace")
         //    return
         //}
-//
+        //
         //// this doesn't work?
         //const program = new Program(doc.getText())
         //const uplc = program.compile(false)
-//
+        //
         //const args = [] as any[]
         //if (input.trim().length > 0) {
         //    try {
@@ -652,7 +668,7 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
         //        return
         //    }
         //}
-//
+        //
         //try {
         //    const res = uplc.eval(args)
         //    res.logs.forEach((l: string) => log(l))
@@ -671,8 +687,6 @@ export class EntryPointAndArgumentsViewProvider implements WebviewViewProvider {
         //    log("Runtime error: " + e.message)
         //}
     }
-
-    
 }
 
 function jsonToData(obj: any, fns: any): any {
@@ -708,9 +722,7 @@ function jsonToData(obj: any, fns: any): any {
             return makeByteArrayData({ bytes: fns.hexToBytes(obj.bytes) })
         }
         if ("list" in obj) {
-            return makeListData(
-                obj.list.map((x: any) => jsonToData(x, fns))
-            )
+            return makeListData(obj.list.map((x: any) => jsonToData(x, fns)))
         }
         if ("map" in obj) {
             return makeMapData(

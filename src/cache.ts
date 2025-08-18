@@ -6,7 +6,7 @@ import { Repository } from "./repository"
 
 /**
  * TODO: clean up
- * 
+ *
  * `Cache` maps Helios versions to the actual library
  *  and maps fileNames to packageJson fileNames (assumes files are very rarely moved between repositories)
  * check the last modification date of packageJson files (a more recent version of Helios could've been installed while the IDE is open)

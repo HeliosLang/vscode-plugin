@@ -15,6 +15,7 @@
         "package": "vsce package --no-dependencies && code --install-extension ./helios-0.1.8.vsix ; true",
         "postinstall": "pnpm run build ; pnpm run package",
         "prettify": "prettier . --write",
+        "test": "pnpm run test:types",
         "test:types": "tsc --noEmit"
     },
     "engines": {
