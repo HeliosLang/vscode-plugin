@@ -265,7 +265,16 @@ export function activate(context: ExtensionContext) {
                 )
 
                 // Return the (possibly modified) config, or 'undefined' to cancel the launch
-                return { ...config, name: "Hell oworld" }
+                if (!config.type || !config.request) {
+                    return {
+                        ...config,
+                        type: config.type ?? "helios",
+                        request: config.request ?? "launch",
+                        name: config.name ?? "Launch Helios Debugger"
+                    }
+                }
+
+                return config
             }
         })
     )
