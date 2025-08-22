@@ -1,0 +1,69 @@
+.error {
+    color: red;
+}
+
+.link {
+    cursor: pointer;
+}
+
+.path {
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 10px;
+    gap: 8px;
+    align-items: start;
+    justify-content: start;
+}
+
+.formRow {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 2px;
+}
+
+.formSection {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 4px;
+}
+
+.invalidInput {
+    border: solid 1px #f00 !important;
+    box-sizing: border-box;
+}
+
+.visibleInputError,
+.invisibleInputError {
+    line-height: 10px;
+    font-size: 10px;
+    height: 10px;
+    color: #f00;
+    margin: 0;
+    padding: 0;
+}
+
+.visibleInputError {
+    visibility: visible;
+}
+
+.invisibleInputError {
+    visibility: hidden;
+}
+
+.validatedInputWrapper {
+    position: relative;
+    width: 100%;
+}
+
+.argLabel > span {
+    font-family: monospace;
+    font-size: 0.9em;
+}

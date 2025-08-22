@@ -4,7 +4,7 @@
         {
             "label": "build with esbuild",
             "type": "shell",
-            "command": "node ${workspaceFolder}/esbuild.mjs",
+            "command": "pnpm -C ${workspaceFolder} run build",
             "problemMatcher": []
         },
         {
@@ -21,9 +21,13 @@
         },
         {
             "label": "prelaunch",
-            "dependsOn": ["build with esbuild", "package with vsce", "install with code"],
+            "dependsOn": [
+                "build with esbuild",
+                "package with vsce",
+                "install with code"
+            ],
             "dependsOrder": "sequence",
             "group": "build"
-          }
+        }
     ]
 }

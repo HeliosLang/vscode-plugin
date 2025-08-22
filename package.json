@@ -9,14 +9,23 @@
         "type": "git",
         "url": "https://github.com/hyperion-bt/helios-ide-plugins"
     },
+    "workspaces": [
+        "packages/*",
+        "apps/*"
+    ],
     "scripts": {
-        "build": "pnpm run test:types && node ./esbuild.mjs && vsce package --no-dependencies",
+        "build": "pnpm run build:views && pnpm run build:adapter && pnpm run build:extension",
+        "build:adapter": "pnpm -C ./apps/DebugAdapter run build ",
+        "build:extension": "pnpm -C ./apps/Extension run build",
+        "build:views": "pnpm run build:view:args",
+        "build:view:args": "pnpm -C ./apps/ArgsView run build",
         "deploy": "vsce publish",
         "package": "vsce package --no-dependencies && code --install-extension ./helios-0.1.8.vsix ; true",
-        "postinstall": "pnpm run build ; pnpm run package",
         "prettify": "prettier . --write",
         "test": "pnpm run test:types",
-        "test:types": "tsc --noEmit"
+        "test:types": "pnpm run test:types:adapter && pnpm run test:types:extension",
+        "test:types:adapter": "pnpm -C ./apps/DebugAdapter run test:types",
+        "test:types:extension": "pnpm -C ./apps/Extension run test:types"
     },
     "engines": {
         "vscode": "^1.77.0"
@@ -61,32 +70,28 @@
                 "languages": [
                     "helios"
                 ],
-
                 "program": "./dist/debugAdapter.js",
                 "runtime": "node",
-                
                 "configurationAttributes": {
                     "launch": {
                         "properties": {
-                            "entryPoint": {
+                            "uplcProgram": {
                                 "type": "string",
-                                "description": "Entry point to debug",
-                                "default": "main"
+                                "description": "UPLCProgram cbor hex"
+                            },
+                            "args": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "Program arguments"
                             }
                         },
                         "required": [
-                            "entryPoint"
+                            "uplcProgram"
                         ]
                     }
                 },
-                "initialConfigurations": [
-                    {
-                        "type": "helios",
-                        "request": "launch",
-                        "name": "Launch Helios Debugger",
-                        "entryPoint": "main"
-                    }
-                ],
                 "when": "!virtualWorkspace && debugStartLanguage == helios"
             }
         ],
@@ -114,7 +119,7 @@
             }
         ]
     },
-    "main": "./dist/index.js",
+    "main": "./dist/extension.js",
     "activationEvents": [
         "onDebug:helios"
     ],
@@ -124,21 +129,10 @@
         "semi": false,
         "singleQuote": false
     },
-    "dependencies": {
-        "@vscode/debugadapter": "^1.68.0",
-        "@vscode/debugprotocol": "^1.68.0",
-        "@vscode/vsce": "^3.0.0",
-        "vscode-nls": "^5.2.0"
-    },
     "devDependencies": {
-        "@helios-lang/codec-utils": "^0.3.4",
-        "@helios-lang/compiler": "^0.17.22",
-        "@helios-lang/compiler-utils": "^0.5.16",
-        "@helios-lang/crypto": "^0.2.3",
-        "@types/node": "^18.15.11",
-        "@types/vscode": "^1.77.0",
+        "@vscode/vsce": "^3.0.0",
+        "vscode-nls": "^5.2.0",
         "esbuild": "^0.25.9",
-        "prettier": "^3.6.2",
-        "typescript": "^5.0.4"
+        "prettier": "^3.6.2"
     }
 }

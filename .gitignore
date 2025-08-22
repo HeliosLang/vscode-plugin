@@ -1,4 +1,5 @@
 *.vsix
+dist
 dist/**
 *.swp
 *.log

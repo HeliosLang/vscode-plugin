@@ -1,0 +1,5 @@
+packages:
+    - "packages/schemas"
+    - "apps/ArgsView"
+    - "apps/DebugAdapter"
+    - "apps/Extension"

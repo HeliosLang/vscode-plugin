@@ -16,9 +16,7 @@ import {
 import { compareVersions, HeliosLibrary } from "./library"
 
 export function isHeliosExt(fileName: string): boolean {
-    const ext = extname(fileName)
-
-    return ext == ".hl" || ext == ".helios"
+    return fileName.endsWith(".hl") || fileName.endsWith(".helios")
 }
 
 class Script {
