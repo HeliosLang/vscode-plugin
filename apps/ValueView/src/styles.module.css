@@ -1,0 +1,12 @@
+.main {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 10px;
+}
+
+.actions {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin-top: 20px;
+}

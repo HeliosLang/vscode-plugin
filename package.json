@@ -14,18 +14,24 @@
         "apps/*"
     ],
     "scripts": {
-        "build": "pnpm run build:views && pnpm run build:adapter && pnpm run build:extension",
+        "build": "pnpm run build:packages && pnpm run build:views && pnpm run build:adapter && pnpm run build:extension",
         "build:adapter": "pnpm -C ./apps/DebugAdapter run build ",
         "build:extension": "pnpm -C ./apps/Extension run build",
-        "build:views": "pnpm run build:view:args",
+        "build:packages": "pnpm run build:package:components && pnpm run build:package:schemas",
+        "build:package:components": "pnpm -C ./packages/components run build",
+        "build:package:schemas": "pnpm -C ./packages/schemas run build",
+        "build:views": "pnpm run build:view:args && pnpm run build:view:value",
         "build:view:args": "pnpm -C ./apps/ArgsView run build",
+        "build:view:value": "pnpm -C ./apps/ValueView run build",
         "deploy": "vsce publish",
         "package": "vsce package --no-dependencies && code --install-extension ./helios-0.1.8.vsix ; true",
         "prettify": "prettier . --write",
         "test": "pnpm run test:types",
-        "test:types": "pnpm run test:types:adapter && pnpm run test:types:extension",
+        "test:types": "pnpm run test:types:schemas && pnpm run test:types:components && pnpm run test:types:adapter && pnpm run test:types:extension",
         "test:types:adapter": "pnpm -C ./apps/DebugAdapter run test:types",
-        "test:types:extension": "pnpm -C ./apps/Extension run test:types"
+        "test:types:components": "pnpm -C ./packages/components run test:types",
+        "test:types:extension": "pnpm -C ./apps/Extension run test:types",
+        "test:types:schemas": "pnpm -C ./packages/schemas run test:types"
     },
     "engines": {
         "vscode": "^1.77.0"

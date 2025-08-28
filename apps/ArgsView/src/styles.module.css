@@ -62,8 +62,3 @@
     position: relative;
     width: 100%;
 }
-
-.argLabel > span {
-    font-family: monospace;
-    font-size: 0.9em;
-}

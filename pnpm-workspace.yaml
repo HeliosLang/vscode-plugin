@@ -1,5 +1,7 @@
 packages:
+    - "packages/components"
     - "packages/schemas"
     - "apps/ArgsView"
     - "apps/DebugAdapter"
     - "apps/Extension"
+    - "apps/ValueView"

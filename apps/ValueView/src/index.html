@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+    <body>
+        <style>
+            :root {
+                color-scheme: light dark;
+            }
+
+            label {
+                color: inherit;
+                background-color: inherit;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                background-color: var(--vscode-sideBar-background);
+                color: var(--vscode-foreground);
+            }
+
+            a {
+                color: var(--vscode-textLink-foreground);
+                text-decoration: none;
+            }
+
+            a:hover {
+                color: var(--vscode-textLink-activeForeground);
+                text-decoration: underline;
+            }
+
+            input,
+            select,
+            textarea {
+                background: var(--vscode-input-background);
+                color: var(--vscode-input-foreground);
+                border: var(--vscode-input-border);
+                border-radius: 2px;
+                padding: 6px 8px;
+                outline: none;
+                width: calc(100%);
+                box-sizing: border-box;
+            }
+
+            input::placeholder,
+            textarea::placeholder {
+                color: var(--vscode-input-placeholderForeground);
+            }
+
+            input:focus,
+            select:focus,
+            textarea:focus {
+                background: var(--vscode-inputOption-activeBackground);
+                border: var(--vscode-inputOption-activeBorder);
+                color: var(--vscode-inputOption-activeForeground);
+            }
+
+            input:invalid,
+            textarea:invalid {
+                border: var(--vscode-inputValidation-errorBorder);
+            }
+
+            button {
+                background: var(--vscode-button-background);
+                color: var(--vscode-button-foreground);
+                border: 0;
+                border-radius: 2px;
+                cursor: pointer;
+            }
+
+            button:hover,
+            button:disabled {
+                background: var(--vscode-button-hoverBackground);
+            }
+
+            button.secondary {
+                background: var(--vscode-button-secondaryBackground);
+                color: var(--vscode-button-secondaryForeground);
+            }
+
+            button.secondary:hover {
+                background: var(--vscode-button-secondaryHoverBackground);
+            }
+        </style>
+        <div id="root"></div>
+        <script nonce="123456789" type="module" src="/index.tsx"></script>
+    </body>
+</html>

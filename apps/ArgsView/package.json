@@ -5,10 +5,13 @@
     "type": "module",
     "devDependencies": {
         "@helios-lang/codec-utils": "^0.3.4",
+        "@helios-lang/compiler-utils": "^0.5.17",
+        "@helios-lang/type-utils": "^0.3.0",
         "@helios-lang/uplc": "^0.7.18",
         "@types/react": "^19.1.10",
         "@types/react-dom": "^19.1.7",
         "@vitejs/plugin-react": "^5.0.1",
+        "components": "workspace:*",
         "effect": "^3.17.8",
         "react": "^19.1.1",
         "react-dom": "^19.1.1",

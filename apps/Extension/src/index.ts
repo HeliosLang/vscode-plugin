@@ -6,168 +6,66 @@ import {
     workspace,
     type TextDocument
 } from "vscode"
-import { basename } from "node:path"
-import { getScriptHashType, Program } from "@helios-lang/compiler"
-import { makeHeliosSource, type Source } from "@helios-lang/compiler-utils"
-//import { Cache } from "./cache"
-//import { registerDiagnostics } from "./diagnostics"
+import { Program } from "@helios-lang/compiler"
+import { type TypeSchema } from "@helios-lang/type-utils"
 //import { registerHoverProvider } from "./hover"
-import { EntryPointAndArgumentsViewProvider } from "./viewProviders"
+import { ArgsViewProvider } from "./ArgsViewProvider"
 import { isHeliosExt } from "./repository"
 import { bytesToHex } from "@helios-lang/codec-utils"
-import { registerDiagnostics } from "./diagnostics"
-//import { log } from "./log"
+import { DiagnosticsProvider } from "./diagnostics"
+import { ValueViewsProvider } from "./ValueViewsProvider"
+import { ValuesProvider as ValuesProvider } from "./ValuesProvider"
+import { type Store } from "schemas"
+import { ASTProvider } from "./ASTProvider"
+import { TypeSchemasProvider } from "./TypeSchemasProvider"
 
 // called when plugin is loaded
 // TODO: how to properly handle different compiler versions?
 // what if no compiler is installed? (eg. a pure helios repo, or simply only opening a helios file as an auditor -> the included helios library should internally have the option to use older library versions)
-export function activate(context: ExtensionContext) {
-    //const cache = new Cache()
-    let initialized = false
+export function activate(extensionContext: ExtensionContext) {
+    // wire everything together
+    const schemasProvider = new TypeSchemasProvider()
 
-    const entryPointAndArgumentsViewProvider =
-        new EntryPointAndArgumentsViewProvider(context)
+    const valuesProvider = new ValuesProvider(schemasProvider)
 
-    // keep the set of Helios sources up-to-date
-    // upon change: sources open in the editor result in recompilation if there is any change
-    const sources: Record<string, Source> = {}
-    const programs: Record<string, Program> = {}
+    const valueViewCollection = new ValueViewsProvider(
+        extensionContext,
+        schemasProvider,
+        valuesProvider
+    )
 
-    const refreshDiagnostics = registerDiagnostics(context, programs)
+    const argsViewProvider = new ArgsViewProvider(
+        extensionContext,
+        schemasProvider,
+        valuesProvider,
+        valueViewCollection
+    )
 
-    const setASTs = () => {
-        if (
-            window.activeTextEditor &&
-            isHeliosExt(window.activeTextEditor.document.uri.toString())
-        ) {
-            const p = programs[window.activeTextEditor.document.uri.toString()]
+    const diagnostics = new DiagnosticsProvider()
+
+    const astProvider = new ASTProvider((programs: Record<string, Program>) => {
+        for (let openTextEditor of window.visibleTextEditors) {
+            diagnostics.refresh(programs, openTextEditor.document)
+        }
+
+        if (!window.activeTextEditor) {
+            return
+        }
+
+        const key = window.activeTextEditor.document.uri.toString()
+
+        if (isHeliosExt(key)) {
+            const p = programs[key]
 
             if (p) {
-                entryPointAndArgumentsViewProvider.setAST(
-                    window.activeTextEditor.document.uri.toString(),
-                    p
-                )
+                argsViewProvider.setAST(p)
             } else {
-                console.log(
-                    `${window.activeTextEditor.document.uri.toString()} not found in programs`
-                )
+                argsViewProvider.setAST(undefined)
             }
         }
-    }
 
-    const recompileOpenASTs = () => {
-        //entryPointAndArgumentsViewProvider.reset()
-
-        // recompile open textDocuments
-        // a program is the root AST object
-        const todo: TextDocument[] = []
-        if (
-            window.activeTextEditor &&
-            isHeliosExt(window.activeTextEditor.document.fileName)
-        ) {
-            todo.push(window.activeTextEditor.document)
-        }
-
-        todo.forEach((d) => {
-            const key = d.uri.toString()
-
-            const s = sources[key]
-
-            if (!s) {
-                return
-            }
-
-            // TODO: change this to use the makeProgram function
-            // TODO: what about cross referencing other scripts?
-            try {
-                const p = new Program(s, {
-                    moduleSources: Object.values(sources).filter(
-                        (ms) => ms.purpose == "module" && ms.name != s.name
-                    ),
-                    validatorTypes: Object.fromEntries(
-                        Object.values(sources)
-                            .filter(
-                                (s) =>
-                                    s.purpose != undefined &&
-                                    s.moduleName != undefined &&
-                                    s.purpose != "module" &&
-                                    !s.purpose?.startsWith("test")
-                            )
-                            .map((s) => {
-                                return [
-                                    s.moduleName as string,
-                                    getScriptHashType(s.purpose as string)
-                                ]
-                            })
-                    ),
-                    throwCompilerErrors: false,
-                    allowModuleEntryPoint: true
-                })
-
-                programs[key] = p
-            } catch (e) {
-                console.error(
-                    "failed to compile program: " +
-                        (e as Error).message +
-                        "| sources: " +
-                        Object.keys(sources).join(", ")
-                )
-            }
-        })
-
-        refreshDiagnostics()
-        setASTs()
-    }
-
-    const setHeliosDocument = (d: TextDocument) => {
-        const key = d.uri.toString()
-
-        const content = d.getText()
-
-        try {
-            const source = makeHeliosSource(content, {
-                name: d.uri.toString() // prefer uri over fileName
-            })
-
-            sources[key] = source
-        } catch (e) {
-            console.log(
-                `failed to get helios source of ${d.fileName}: ${(e as Error).message} (${content.split("\n").slice(0, 5).join("\n")})`
-            )
-        }
-    }
-
-    const updateHeliosDocument = (d: TextDocument) => {
-        setHeliosDocument(d)
-        return recompileOpenASTs()
-    }
-
-    const loadHeliosDocuments = () => {
-        const loadOpenHeliosDocuments = () => {
-            workspace.textDocuments.forEach(setHeliosDocument)
-        }
-
-        if (!initialized) {
-            return workspace
-                .findFiles("**/*.hl", "**/node_modules/**")
-                .then((uris) => {
-                    //entryPointAndArgumentsViewProvider.log(`found ${uris.length} uris: ` + uris.map(u => u.toString()).join(", ") + " in " + (workspace.workspaceFolders ?? []).map(f => f.uri.toString()).join(","));
-
-                    return Promise.all(
-                        uris.map((uri) => workspace.openTextDocument(uri))
-                    ).then((docs) => {
-                        docs.forEach(setHeliosDocument)
-                    })
-                })
-                .then(() => {
-                    initialized = true
-                    loadOpenHeliosDocuments()
-                    return recompileOpenASTs()
-                })
-        } else {
-            loadOpenHeliosDocuments()
-        }
-    }
+        schemasProvider.setSchemas(collectTypeSchemas(programs))
+    })
 
     // only load all Helios files upon activation, then update them using workspace.textDocuments upon specific events
     // Helios sources are loaded into
@@ -196,10 +94,10 @@ export function activate(context: ExtensionContext) {
 
     //registerHoverProvider(cache)
 
-    context.subscriptions.push(
+    extensionContext.subscriptions.push(
         window.registerWebviewViewProvider(
             "helios.entryPointAndArguments",
-            entryPointAndArgumentsViewProvider,
+            argsViewProvider,
             {
                 webviewOptions: {
                     retainContextWhenHidden: true
@@ -208,18 +106,12 @@ export function activate(context: ExtensionContext) {
         )
     )
 
-    commands.executeCommand("setContext", "heliosDebugActive", true)
-
-    context.subscriptions.push(
+    extensionContext.subscriptions.push(
         debug.registerDebugConfigurationProvider("helios", {
-            resolveDebugConfiguration: (folder, config, token) => {
+            resolveDebugConfiguration: (_folder, config, _token) => {
                 // This is called when the user hits Run and Debug for type "mylang"
-
-                // TODO: also send UPLC cborHex, source code mapping, arguments (CBOR hex), and ScriptContext (CBOR hex) to debug process
-                // entryPoint isn't used during the run, but still provides useful information during debugging
-
                 const uplcProgramAndArgs =
-                    entryPointAndArgumentsViewProvider.uplcProgramAndArgs
+                    argsViewProvider.compileProgramAndArgs()
 
                 if (!uplcProgramAndArgs) {
                     return undefined
@@ -227,6 +119,8 @@ export function activate(context: ExtensionContext) {
 
                 const { uplcProgram, args } = uplcProgramAndArgs
 
+                // TODO: also send UPLC cborHex, source code mapping, arguments (CBOR hex), and ScriptContext (CBOR hex) to debug process
+                // entryPoint isn't used during the run, but still provides useful information during debugging
                 return {
                     name: config.name ?? "Launch Helios Debugger",
                     type: config.type ?? "helios",
@@ -248,8 +142,6 @@ export function activate(context: ExtensionContext) {
     //    })
     //)
 
-    loadHeliosDocuments()
-
     //context.subscriptions.push(
     //    commands.registerCommand("helios.showEntryPointAndArguments", () =>
     //        entryPointAndArgumentsViewProvider.reveal()
@@ -264,26 +156,26 @@ export function activate(context: ExtensionContext) {
     //    entryPointAndArgumentsViewProvider.reveal()
     //}
 
-    context.subscriptions.push(
+    extensionContext.subscriptions.push(
         window.onDidChangeActiveTextEditor((editor) => {
             if (editor && isHeliosExt(editor.document.fileName)) {
-                recompileOpenASTs()
+                astProvider.recompileOpenASTs()
             }
         })
     )
 
-    context.subscriptions.push(
+    extensionContext.subscriptions.push(
         workspace.onDidOpenTextDocument((doc) => {
             if (isHeliosExt(doc.uri.toString())) {
-                updateHeliosDocument(doc)
+                astProvider.updateSource(doc)
             }
         })
     )
 
-    context.subscriptions.push(
+    extensionContext.subscriptions.push(
         workspace.onDidChangeTextDocument((event) => {
             if (isHeliosExt(event.document.uri.toString())) {
-                updateHeliosDocument(event.document)
+                astProvider.updateSource(event.document)
             }
         })
     )
@@ -296,12 +188,35 @@ export function activate(context: ExtensionContext) {
     //        }
     //    })
     //)
+
+    commands.executeCommand("setContext", "heliosDebugActive", true)
+    astProvider.init()
 }
 
 export function deactivate() {
     return
 }
 
-function convertTextDocumentToSource(d: TextDocument) {
-    return {}
+function collectTypeSchemas(
+    programs: Record<string, Program>
+): Record<string, TypeSchema> {
+    const result: Record<string, TypeSchema> = {}
+
+    for (let programKey in programs) {
+        const p = programs[programKey]
+
+        const types = p.userTypes
+
+        for (let moduleName in types) {
+            const moduleTypes = types[moduleName]
+
+            // just keep the inner name
+
+            for (let typeName in moduleTypes) {
+                result[typeName] = moduleTypes[typeName].toSchema()
+            }
+        }
+    }
+
+    return result
 }

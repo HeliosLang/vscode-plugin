@@ -15,12 +15,16 @@
     ],
     "sideEffects": false,
     "scripts": {
-        "build": "tsc"
+        "build": "tsc",
+        "test:types": "tsc --noemit"
     },
     "devDependencies": {
         "typescript": "^5.5.0"
     },
     "dependencies": {
+        "@helios-lang/codec-utils": "^0.3.4",
+        "@helios-lang/type-utils": "^0.3.0",
+        "@helios-lang/uplc": "^0.7.18",
         "effect": "^3.17.8"
     }
 }
