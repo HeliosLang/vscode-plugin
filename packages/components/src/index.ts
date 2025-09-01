@@ -10,12 +10,12 @@ export {
     useChangeValueName,
     useClickError
 } from "./events"
+export { ThickMinusIcon } from "./icons/ThickMinusIcon"
+export { ThickPlusIcon } from "./icons/ThickPlusIcon"
+export { TrashCanIcon } from "./icons/TrashCanIcon"
 export { ArgInput } from "./input/ArgInput"
-export {
-    GenericInputAction,
-    ThickMinusIcon,
-    ThickPlusIcon
-} from "./input/GenericInput"
+export { ByteArrayLikeInput } from "./input/ByteArrayLikeInput"
+export { IconButton } from "./input/IconButton"
 export { Select } from "./input/Select"
 export { ScriptContextInput } from "./input/ScriptContextInput"
 export { ValidatedInput } from "./input/ValidatedInput"

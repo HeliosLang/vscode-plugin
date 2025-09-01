@@ -24,48 +24,28 @@ import { TypeSchemasProvider } from "./TypeSchemasProvider"
 // what if no compiler is installed? (eg. a pure helios repo, or simply only opening a helios file as an auditor -> the included helios library should internally have the option to use older library versions)
 export function activate(extensionContext: ExtensionContext) {
     // wire everything together
-    const schemasProvider = new TypeSchemasProvider()
+    const astProvider = new ASTProvider()
+
+    const schemasProvider = new TypeSchemasProvider(astProvider)
 
     const valuesProvider = new ValuesProvider(schemasProvider)
 
     const valueViewCollection = new ValueViewsProvider(
         extensionContext,
+        astProvider,
         schemasProvider,
         valuesProvider
     )
 
     const argsViewProvider = new ArgsViewProvider(
         extensionContext,
+        astProvider,
         schemasProvider,
         valuesProvider,
         valueViewCollection
     )
 
-    const diagnostics = new DiagnosticsProvider()
-
-    const astProvider = new ASTProvider((programs: Record<string, Program>) => {
-        for (let openTextEditor of window.visibleTextEditors) {
-            diagnostics.refresh(programs, openTextEditor.document)
-        }
-
-        if (!window.activeTextEditor) {
-            return
-        }
-
-        const key = window.activeTextEditor.document.uri.toString()
-
-        if (isHeliosExt(key)) {
-            const p = programs[key]
-
-            if (p) {
-                argsViewProvider.setAST(p)
-            } else {
-                argsViewProvider.setAST(undefined)
-            }
-        }
-
-        schemasProvider.setSchemas(collectTypeSchemas(programs))
-    })
+    new DiagnosticsProvider(astProvider)
 
     // only load all Helios files upon activation, then update them using workspace.textDocuments upon specific events
     // Helios sources are loaded into
@@ -97,12 +77,7 @@ export function activate(extensionContext: ExtensionContext) {
     extensionContext.subscriptions.push(
         window.registerWebviewViewProvider(
             "helios.entryPointAndArguments",
-            argsViewProvider,
-            {
-                webviewOptions: {
-                    retainContextWhenHidden: true
-                }
-            }
+            argsViewProvider
         )
     )
 
@@ -195,28 +170,4 @@ export function activate(extensionContext: ExtensionContext) {
 
 export function deactivate() {
     return
-}
-
-function collectTypeSchemas(
-    programs: Record<string, Program>
-): Record<string, TypeSchema> {
-    const result: Record<string, TypeSchema> = {}
-
-    for (let programKey in programs) {
-        const p = programs[programKey]
-
-        const types = p.userTypes
-
-        for (let moduleName in types) {
-            const moduleTypes = types[moduleName]
-
-            // just keep the inner name
-
-            for (let typeName in moduleTypes) {
-                result[typeName] = moduleTypes[typeName].toSchema()
-            }
-        }
-    }
-
-    return result
 }

@@ -1,4 +1,7 @@
+import { TypeSchema } from "@helios-lang/type-utils"
 import { Schema } from "effect"
+import { convertFieldsToUplcData } from "./values"
+import { bytesToHex } from "@helios-lang/codec-utils"
 
 export const Store = Schema.mutable(
     Schema.Struct({
@@ -35,33 +38,72 @@ export class StoreHelper {
         return this.store.values
     }
 
-    getValue(type: string, name: string): string | undefined {
-        return this.store.values[type]?.[name]
+    getFields(contextKey: string): Record<string, string> | undefined {
+        return this.store.values[contextKey]
     }
 
-    getTypeValues(type: string): Record<string, string> {
-        return this.store.values[type] ?? {}
-    }
+    getValue(contextKey: string, schema: TypeSchema): string | undefined {
+        const fields = this.store.values[contextKey]
 
-    getTypeOptionsWithNIL(type: string): string[] {
-        return Object.keys(this.store.values[type] ?? {}).concat(["NIL"])
-    }
-
-    hasValue(type: string, name: string): boolean {
-        return this.store.values[type]?.[name] !== undefined
-    }
-
-    findValueNames(type: string, value: string): string[] {
-        const obj = this.store.values[type]
-
-        if (!obj) {
-            return []
+        if (!fields) {
+            return undefined
         }
+
+        return bytesToHex(convertFieldsToUplcData(schema, fields).toCbor())
+    }
+
+    getFieldValue(contextKey: string, fieldName: string): string | undefined {
+        return this.store.values[contextKey]?.[fieldName]
+    }
+
+    /**
+     * Looks for entries with `typeName::` prefix, and returns a record where the keys are without that prefix
+     * @param typeName
+     * @returns
+     */
+    getTypeValues(typeName: string): Record<string, Record<string, string>> {
+        const prefix = typeName + "::"
+
+        const result: Record<string, Record<string, string>> = {}
+
+        for (let key in this.store.values) {
+            if (key.startsWith(prefix)) {
+                result[key.slice(prefix.length)] = this.store.values[key]
+            }
+        }
+
+        return result
+    }
+
+    getTypeOptions(typeName: string): string[] {
+        return Object.keys(this.getTypeValues(typeName))
+    }
+
+    /**
+     * @param key
+     * Format: `typeName::valueName`
+     *
+     * @returns
+     */
+    hasValue(key: string): boolean {
+        return key in this.store.values
+    }
+
+    findValueNames(
+        typeName: string,
+        schema: TypeSchema,
+        cborHex: string
+    ): string[] {
+        const options = this.getTypeValues(typeName)
 
         const valueNames: string[] = []
 
-        for (let valueName in obj) {
-            if (obj[valueName] == value) {
+        for (let valueName in options) {
+            if (
+                bytesToHex(
+                    convertFieldsToUplcData(schema, options[valueName]).toCbor()
+                ) == cborHex
+            ) {
                 valueNames.push(valueName)
             }
         }
@@ -69,18 +111,32 @@ export class StoreHelper {
         return valueNames
     }
 
-    getPreferredValueName(key: string, name: string): string | undefined {
-        const fullKey = `${key}::${name}`
+    getValidLink(contextKey: string, fieldName: string): string | undefined {
+        const fullKey = `${contextKey}::${fieldName}`
 
-        if (fullKey in this.store.links) {
-            const [before, ...after] = this.store.links[fullKey].split("::")
-            const preferName = after.join("::")
+        const link = this.store.links[fullKey]
 
-            if (this.hasValue(before, preferName)) {
-                return preferName
-            }
+        if (!link) {
+            return undefined
         }
 
-        return undefined
+        if (!this.hasValue(link)) {
+            return undefined
+        }
+
+        return link
+    }
+
+    getValidLinkValueName(
+        contextKey: string,
+        fieldName: string
+    ): string | undefined {
+        const link = this.getValidLink(contextKey, fieldName)
+
+        if (!link) {
+            return undefined
+        }
+
+        return link.split("::").slice(1).join("::")
     }
 }

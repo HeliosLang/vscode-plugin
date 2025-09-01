@@ -16,7 +16,8 @@ export default defineConfig({
         minify: false,
         lib: {
             entry: join(srcDir, "index.ts"),
-            fileName: "index",
+            fileName: (_format, entryName) => `${entryName}.js`,
+            cssFileName: "index",
             formats: ["es"]
         },
         rollupOptions: {

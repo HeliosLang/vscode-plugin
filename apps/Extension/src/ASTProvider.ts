@@ -7,19 +7,52 @@ import {
 import { getScriptHashType, Program, ProgramProps } from "@helios-lang/compiler"
 import { isHeliosExt } from "./repository"
 
+type CompileListener = (programs: Record<string, Program>) => void
+export type CompileActiveDocumentListener = (program: Program | undefined) => void
+
 export class ASTProvider {
     private initialized: boolean
     private sources: Record<string, Source>
-    private programs: Record<string, Program>
-    private onCompile: (programs: Record<string, Program>) => void // collect all TypeSchemas?
+    readonly programs: Record<string, Program>
 
-    constructor(onCompile: (programs: Record<string, Program>) => void) {
+    private compileListeners: CompileListener[]
+    private compileActiveTextEditorListeners: CompileActiveDocumentListener[]
+
+    constructor() {
         this.initialized = false
         this.sources = {}
         this.programs = {}
-        this.onCompile = onCompile
+
+        this.compileListeners = []
+        this.compileActiveTextEditorListeners = []
     }
 
+    get activeDocumentProgram(): Program | undefined {
+        if (!window.activeTextEditor) {
+            return
+        }
+
+        const key = window.activeTextEditor.document.uri.toString()
+
+        if (isHeliosExt(key)) {
+            return this.programs[key]
+        } else {
+            return undefined
+        }
+    }
+
+    addCompileListener(listener: CompileListener) {
+        this.compileListeners.push(listener)
+    }
+
+    addCompileActiveDocumentListener(listener: CompileActiveDocumentListener) {
+        this.compileActiveTextEditorListeners.push(listener)
+    }
+
+    removeCompileActiveDocumentListener(listener: CompileActiveDocumentListener) {
+        this.compileActiveTextEditorListeners = this.compileActiveTextEditorListeners.filter(l => l != listener)
+    }
+    
     updateSource(doc: TextDocument) {
         this.setSource(doc)
         this.recompileOpenASTs()
@@ -44,10 +77,6 @@ export class ASTProvider {
                 this.loadKnownDocs()
                 this.recompileOpenASTs()
             })
-    }
-
-    private loadKnownDocs() {
-        workspace.textDocuments.forEach((d) => this.setSource(d))
     }
 
     recompileOpenASTs() {
@@ -77,7 +106,7 @@ export class ASTProvider {
             }
         })
 
-        this.onCompile(this.programs)
+        this.handleCompile()
     }
 
     private compileProgram(s: Source): Program {
@@ -104,6 +133,25 @@ export class ASTProvider {
             throwCompilerErrors: false,
             allowModuleEntryPoint: true
         })
+    }
+
+    private handleCompile() {
+        this.compileListeners.forEach(l => l(this.programs))
+
+        if (!window.activeTextEditor) {
+            return
+        }
+
+        const key = window.activeTextEditor.document.uri.toString()
+
+        if (isHeliosExt(key)) {
+            const p = this.programs[key]
+            this.compileActiveTextEditorListeners.forEach(l => l(p))
+        }
+    }
+
+    private loadKnownDocs() {
+        workspace.textDocuments.forEach((d) => this.setSource(d))
     }
 
     private setSource(doc: TextDocument) {

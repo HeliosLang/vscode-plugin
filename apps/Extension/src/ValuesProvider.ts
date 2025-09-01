@@ -2,13 +2,22 @@ import { Schema } from "effect"
 import {
     ChangeFieldValueEvent,
     convertFieldsToUplcData,
+    correctTagChange,
     CreateValueEvent,
     makeDefaultFieldValues,
-    Store
+    makeDefaultValue,
+    makeNilFieldValues,
+    makeNilValue,
+    resolveSchema,
+    Store,
+    tryResolveSchema,
+    validateUplcData
 } from "schemas"
 import { Uri, workspace } from "vscode"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import { TypeSchemasProvider } from "./TypeSchemasProvider"
+import { expectDefined, TypeSchema } from "@helios-lang/type-utils"
+import { decodeUplcData } from "@helios-lang/uplc"
 
 const STORE_REL_PATH = [".vscode", "heliosdebugger.json"]
 
@@ -83,12 +92,64 @@ export class ValuesProvider {
     }
 
     /**
+     * Removes fields from the values
+     * Removes links that target this value (and set corresponding field value to NIL)
+     * Removes links used by this value
+     * @param typeName
+     * @param valueName
+     */
+    deleteValue(typeName: string, valueName: string): void {
+        const key = `${typeName}::${valueName}`
+
+        if (key in this.store.values) {
+            delete this.store.values[key]
+        }
+
+        for (let linkKey in this.store.links) {
+            if (linkKey.startsWith(key + "::")) {
+                delete this.store.links[linkKey]
+            } else {
+                const linkValue = this.store.links[linkKey]
+
+                if (linkValue == key) {
+                    delete this.store.links[linkKey]
+
+                    // TODO: reusable split functions
+                    const linkKeyParts = linkKey.split("::")
+                    const contextKey = linkKeyParts
+                        .slice(0, linkKeyParts.length - 1)
+                        .join("::")
+                    const fieldName = linkKeyParts[linkKeyParts.length - 1]
+
+                    const schema = this.schemasProvider.resolveSchema(typeName)
+                    const fieldValue = makeNilValue(schema)
+
+                    this.setFieldValue(contextKey, fieldName, fieldValue)
+                }
+            }
+        }
+
+        this.flush()
+    }
+
+    /**
      *
      * @param event
      */
     handleChangeFieldValue(event: ChangeFieldValueEvent): void {
         console.log("Received event: ", JSON.stringify(event, undefined, 4))
+
         this.setFieldValue(event.contextKey, event.fieldName, event.fieldValue)
+
+        // at this point all values have been updated recursively, we can now change the link
+        const linkKey = `${event.contextKey}::${event.fieldName}`
+        if (event.link) {
+            this.store_.links[linkKey] = event.link
+        } else if (linkKey in this.store_.links) {
+            delete this.store_.links[linkKey]
+        }
+
+        this.flush()
     }
 
     /**
@@ -145,14 +206,34 @@ export class ValuesProvider {
             values[contextKey][fieldName] = fieldValue
         }
 
+        // lazy, because doesn't work with ArgsPanelContext
+        let schema_: TypeSchema | undefined = undefined
+
+        const schema = (): TypeSchema => {
+            if (!schema_) {
+                console.log(`Resolving schema ${contextKey}`)
+                const keyParts = contextKey.split("::")
+                const typeName = keyParts
+                    .slice(0, keyParts.length - 1)
+                    .join("::")
+    
+                schema_ = resolveSchema(this.schemasProvider.schemas, typeName)
+                console.log(`Resolved schema ${contextKey}`)
+            }
+
+            return schema_
+        }
+
+        if (fieldName == "_tag") {
+            correctTagChange(schema(), parseInt(fieldValue), values[contextKey])
+        }
+
         let fullValue_: string | undefined = undefined
 
         const fullValue = (): string => {
             if (!fullValue_) {
-                const schema = this.schemasProvider.resolveSchema(contextKey)
-
                 fullValue_ = bytesToHex(
-                    convertFieldsToUplcData(schema, values[contextKey]).toCbor()
+                    convertFieldsToUplcData(schema(), values[contextKey]).toCbor()
                 )
             }
 
@@ -173,8 +254,6 @@ export class ValuesProvider {
                 this.setFieldValue(linkContextKey, linkFieldName, fullValue())
             }
         }
-
-        this.flush()
     }
 
     private flush() {

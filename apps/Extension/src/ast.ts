@@ -1,4 +1,4 @@
-import { type ArgsPanelEntryPoint } from "schemas"
+import { genDummyHash, type ArgsPanelEntryPoint } from "schemas"
 import { bytesToHex, encodeUtf8 } from "@helios-lang/codec-utils"
 import { Program } from "@helios-lang/compiler"
 import { type ErrorCollector } from "@helios-lang/compiler-utils"
@@ -13,14 +13,15 @@ export function collectEntryPointInfo(
         return undefined
     }
 
-    let args: { name: string; type: string }[] = []
+    let args: { name: string; type: string, optional: boolean }[] = []
     let needsScriptContext = false
     let needsCurrentValidator = false
 
     if (entryPoint == "main") {
         args = ast.entryPoint.mainFunc.args.map((a) => ({
             name: a.name.value,
-            type: a.type.toString()
+            type: a.type.toString(),
+            optional: false
         }))
 
         // main function that don't actually depend on the ScriptContext are rare and shouldn't exist
@@ -38,7 +39,8 @@ export function collectEntryPointInfo(
 
             args = fnStmnt.args.map((a) => ({
                 name: a.name.value,
-                type: a.type.toString()
+                type: a.type.toString(),
+                optional: a.isOptional
             }))
         } catch (_e) {
             // is a const, nothing needs to change
@@ -88,8 +90,22 @@ export function collectErrorUris(errors: ErrorCollector | undefined): string[] {
     return Array.from(s).map((f) => f)
 }
 
-export function collectValidatorNames(ast: Program): string[] {
-    return Object.keys(ast.props.validatorTypes ?? {})
+export function collectValidators(ast: Program | undefined): {name: string, purpose: string}[] {
+    if (!ast) {
+        return []
+    }
+    
+    return Object.entries(ast.props.validatorTypes ?? {}).map(([key, value]) => {
+        return {
+            name: key,
+            purpose: {
+                "ScriptHash": "mixed",
+                "ValidatorHash": "spending",
+                "StakingValidatorHash": "staking",
+                "MintingPolicyHash": "minting"
+            }[value.name] ?? "mixed"
+        }
+    })
 }
 
 // TODO: compile with source map
@@ -157,7 +173,7 @@ function genDummyHashes(validators: string[]): Record<string, string> {
     let result: Record<string, string> = {}
 
     for (let name of validators) {
-        result[name] = bytesToHex(blake2b(encodeUtf8(name), 28))
+        result[name] = genDummyHash(name)
     }
 
     return result

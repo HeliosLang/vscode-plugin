@@ -1,4 +1,4 @@
-import { ChangeEvent, useCallback, useMemo, useState } from "react"
+import { ChangeEvent, ReactNode, useCallback, useMemo, useState } from "react"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import { makeListData } from "@helios-lang/uplc"
 import { useChangeFieldValue } from "../events"
@@ -11,11 +11,12 @@ import { useUplcData } from "./useUplcData"
 type RatioListInputProps = {
     fieldName: string
     fieldValue: string
+    label?: ReactNode
 }
 
 const TYPE_NAME = "[]Ratio"
 
-export function RatioListInput({ fieldName, fieldValue }: RatioListInputProps) {
+export function RatioListInput({ fieldName, fieldValue, label }: RatioListInputProps) {
     const initialListValue = useListData(useUplcData(fieldValue))
 
     const initialRatioListValue = useMemo(() => {
@@ -73,7 +74,7 @@ export function RatioListInput({ fieldName, fieldValue }: RatioListInputProps) {
 
     return (
         <>
-            <ArgLabel name={fieldName} type={TYPE_NAME} />
+            {label || <ArgLabel name={fieldName} type={TYPE_NAME} />}
             <ValidatedInput
                 value={value}
                 onChange={handleChange}

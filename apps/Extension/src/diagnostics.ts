@@ -5,11 +5,13 @@ import {
     DiagnosticCollection,
     Range,
     Position,
-    DiagnosticSeverity
+    DiagnosticSeverity,
+    window
 } from "vscode"
 
 import { isHeliosExt } from "./repository"
 import { Program } from "@helios-lang/compiler"
+import { ASTProvider } from "./ASTProvider"
 
 function isHeliosScript(document: TextDocument): boolean {
     return isHeliosExt(document.fileName)
@@ -18,8 +20,14 @@ function isHeliosScript(document: TextDocument): boolean {
 export class DiagnosticsProvider {
     private diagnostics: DiagnosticCollection
 
-    constructor() {
+    constructor(astProvider: ASTProvider) {
         this.diagnostics = languages.createDiagnosticCollection("helios")
+
+        astProvider.addCompileListener((programs: Record<string, Program>) => {
+            for (let openTextEditor of window.visibleTextEditors) {
+                this.refresh(programs, openTextEditor.document)
+            }
+        })
     }
 
     async refresh(programs: Record<string, Program>, document: TextDocument) {

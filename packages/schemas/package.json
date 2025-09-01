@@ -23,6 +23,8 @@
     },
     "dependencies": {
         "@helios-lang/codec-utils": "^0.3.4",
+        "@helios-lang/crypto": "^0.2.3",
+        "@helios-lang/ledger": "^0.7.19",
         "@helios-lang/type-utils": "^0.3.0",
         "@helios-lang/uplc": "^0.7.18",
         "effect": "^3.17.8"

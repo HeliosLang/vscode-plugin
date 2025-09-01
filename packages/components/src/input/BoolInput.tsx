@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react"
+import { ReactNode, useCallback, useMemo, useState } from "react"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import { decodeUplcData, makeConstrData, UplcData } from "@helios-lang/uplc"
 import { useChangeFieldValue } from "../events"
@@ -8,12 +8,13 @@ import { Select } from "./Select"
 type BoolInputProps = {
     fieldName: string
     fieldValue: string
+    label?: ReactNode
 }
 
 const OPTIONS = ["true", "false"]
 const TYPE_NAME = "Bool"
 
-export function BoolInput({ fieldName, fieldValue }: BoolInputProps) {
+export function BoolInput({ fieldName, fieldValue, label }: BoolInputProps) {
     const initialBoolValue: string = useMemo(() => {
         if (!fieldValue) {
             return "true"
@@ -52,7 +53,7 @@ export function BoolInput({ fieldName, fieldValue }: BoolInputProps) {
 
     return (
         <>
-            <ArgLabel name={fieldName} type={TYPE_NAME} />
+            {label || <ArgLabel name={fieldName} type={TYPE_NAME} />}
             <Select options={OPTIONS} onChange={handleChange} value={value} />
         </>
     )

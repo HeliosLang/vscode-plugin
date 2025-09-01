@@ -1,254 +1,197 @@
 import { ReactNode, useCallback, useMemo } from "react"
-import { ArgLabel } from "./ArgLabel"
-import styles from "./styles.module.css"
-import { Select } from "./Select"
-import { useVsCodeApi } from "../vscode"
 import {
-    CreateValueEvent,
     makeNilValue,
     makeUniqueValueName,
-    resolveSchema,
+    tryResolveSchema,
     type EditValueEvent
 } from "schemas"
-import { useChangeFieldValue } from "../events"
 import { useStoreHelper, useTypeSchemas, useContextKey } from "../context"
+import { useChangeFieldValue, useCreateValue } from "../events"
+import { PencilIcon } from "../icons/PencilIcon"
+import { useVsCodeApi } from "../vscode"
+import { ArgLabel } from "./ArgLabel"
+import { Select } from "./Select"
+
+import styles from "./styles.module.css"
+import { IconButton } from "./IconButton"
 
 type GenericInputProps = {
     fieldName: string
     fieldType: string
     fieldValue: string
+    label?: ReactNode
 }
 
-function makeCreateMessage(type: string): string {
+export function makeCreateMessage(type: string): string {
     return `Create new ${type} value`
 }
+
+export const DEFAULT_VALUE_NAME = "NIL"
 
 export function GenericInput({
     fieldName,
     fieldType,
-    fieldValue
+    fieldValue,
+    label
 }: GenericInputProps) {
     const contextKey = useContextKey()
     const vscode = useVsCodeApi()
     const store = useStoreHelper()
-    const typeSchemas = useTypeSchemas()
-    const changeValue = useChangeFieldValue()
-    const preferValueName = store.getPreferredValueName(contextKey, fieldName)
 
-    // nil is always available
+    // NIL is always available
     const options = useMemo(() => {
-        return store.getTypeOptionsWithNIL(fieldType)
+        return store
+            .getTypeOptions(fieldType)
+            .concat([DEFAULT_VALUE_NAME, makeCreateMessage(fieldType)])
     }, [store, fieldType])
 
-    const initialValueName = useMemo(() => {
-        if (!fieldValue) {
-            return undefined
-        }
-
-        // TODO: get preferred name from store
-        if (
-            preferValueName &&
-            store.getValue(fieldType, preferValueName) == fieldValue
-        ) {
-            return preferValueName
-        }
-
-        const schema = resolveSchema(typeSchemas, fieldType)
-
-        if (makeNilValue(schema) == fieldValue) {
-            return "NIL"
-        }
-
-        // look for value in store, if it appears, use the associated name
-        const cborHex = fieldValue
-
-        if (fieldType in store) {
-            const valueNames = store.findValueNames(fieldType, cborHex)
-
-            if (valueNames.length == 0) {
-                return undefined
-            } else if (valueNames.length == 1) {
-                return valueNames[0]
-            } else if (preferValueName) {
-                const i = valueNames.indexOf(preferValueName)
-
-                if (i != -1) {
-                    return valueNames[i]
-                } else {
-                    return valueNames[0]
-                }
-            } else {
-                return valueNames[0]
-            }
-        }
-
-        // if not found, then we must create a unique name, and restore the value in the store
-        // but that should be done in an effect
-        return undefined
-    }, [store, fieldType, options, fieldValue, typeSchemas, preferValueName])
-
-    const handleCreate = useCallback(
-        (uniqueName: string) => {
-            const event: CreateValueEvent = {
-                kind: "CreateValue",
-                typeName: fieldType,
-                valueName: uniqueName,
-                callerContextKey: contextKey,
-                callerFieldName: fieldName,
-                linkToCaller: true
-            }
-
-            vscode.postMessage(event)
-        },
-        [vscode, fieldName, store, fieldType, contextKey]
+    const valueName = useCurrentGenericInputValue(
+        fieldName,
+        fieldType,
+        fieldValue
     )
 
-    const handleSelect = useCallback(
-        (valueName: string) => {
-            if (valueName == makeCreateMessage(fieldType)) {
+    const handleSelect = useSelectGenericValue(fieldName, fieldType)
+
+    const handleEdit = useCallback(() => {
+        if (valueName) {
+            vscode.postMessage({
+                kind: "EditValue",
+                typeName: fieldType,
+                valueName: valueName,
+                callerContextKey: contextKey,
+                callerFieldName: fieldName
+            } satisfies EditValueEvent)
+        }
+    }, [vscode, fieldType, valueName, contextKey])
+
+    return (
+        <>
+            {label || <ArgLabel name={fieldName} type={fieldType} />}
+            <div className={styles.genericInputRow}>
+                <Select
+                    value={valueName}
+                    className={styles.notFullWidth}
+                    options={options}
+                    onChange={handleSelect}
+                />
+                <IconButton
+                    onClick={handleEdit}
+                    disabled={valueName == DEFAULT_VALUE_NAME}
+                    tooltip={valueName == DEFAULT_VALUE_NAME ? `Can't edit ${DEFAULT_VALUE_NAME}` : undefined}
+                >
+                    <PencilIcon />
+                </IconButton>
+            </div>
+        </>
+    )
+}
+
+export function useSelectGenericValue(fieldName: string, fieldType: string) {
+    const schemas = useTypeSchemas()
+    const store = useStoreHelper()
+    const changeValue = useChangeFieldValue()
+    const createValue = useCreateValue()
+
+    return useCallback(
+        (newValueName: string) => {
+            if (newValueName == makeCreateMessage(fieldType)) {
                 const uniqueName = makeUniqueValueName(store.values, fieldType)
-                handleCreate(uniqueName)
+
+                createValue({
+                    typeName: fieldType,
+                    valueName: uniqueName,
+                    callerFieldName: fieldName,
+                    linkToCaller: true
+                })
             } else {
-                if (valueName == "NIL") {
-                    const schema = resolveSchema(typeSchemas, fieldType)
+                const schema = tryResolveSchema(schemas, fieldType)
+
+                if (!schema) {
+                    return
+                }
+
+                if (newValueName == DEFAULT_VALUE_NAME) {
                     changeValue({
                         fieldName,
                         fieldType,
                         fieldValue: makeNilValue(schema)
                     })
                 } else {
-                    const valueCborHex = store.getValue(fieldType, valueName)
+                    const targetKey = `${fieldType}::${newValueName}`
+                    const valueCborHex = store.getValue(targetKey, schema)
 
                     if (valueCborHex) {
                         changeValue({
                             fieldName,
                             fieldType,
                             fieldValue: valueCborHex,
-                            link: `${fieldType}::${valueName}`
+                            link: `${fieldType}::${newValueName}`
                         })
                     }
                 }
             }
         },
         [
+            schemas,
             store,
-            fieldType,
             fieldName,
-            fieldValue,
+            fieldType,
             changeValue,
-            typeSchemas,
-            handleCreate
+            createValue
         ]
     )
+}
 
-    const optionsWithCreate = useMemo(() => {
-        return options.concat(makeCreateMessage(fieldType))
-    }, [options, fieldType])
+export function useCurrentGenericInputValue(
+    fieldName: string,
+    fieldType: string,
+    fieldValue: string
+): string {
+    const contextKey = useContextKey()
+    const store = useStoreHelper()
+    const schemas = useTypeSchemas()
+    const prefer = store.getValidLinkValueName(contextKey, fieldName)
 
-    const handleEdit = useCallback(() => {
-        if (initialValueName) {
-            const event: EditValueEvent = {
-                kind: "EditValue",
-                typeName: fieldType,
-                valueName: initialValueName,
-                callerContextKey: contextKey,
-                callerFieldName: fieldName
-            }
-
-            vscode.postMessage(event)
+    return useMemo(() => {
+        if (!fieldValue) {
+            return DEFAULT_VALUE_NAME
         }
-    }, [vscode, fieldType, initialValueName, contextKey])
 
-    return (
-        <>
-            <ArgLabel name={fieldName} type={fieldType} />
-            <div className={styles.genericInputRow}>
-                <Select
-                    value={initialValueName}
-                    className={styles.notFullWidth}
-                    options={optionsWithCreate}
-                    onChange={handleSelect}
-                />
-                <GenericInputAction
-                    onClick={handleEdit}
-                    disabled={initialValueName == "NIL"}
-                >
-                    <PencilIcon />
-                </GenericInputAction>
-            </div>
-            <p>Prefer: {preferValueName}</p>
-        </>
-    )
-}
+        const schema = tryResolveSchema(schemas, fieldType)
 
-type GenericInputActionProps = {
-    children: ReactNode
-    disabled?: boolean
-    onClick: () => void
-}
+        if (!schema) {
+            return DEFAULT_VALUE_NAME
+        }
 
-export function GenericInputAction({
-    children,
-    disabled,
-    onClick
-}: GenericInputActionProps) {
-    return (
-        <button
-            className={styles.genericInputAction}
-            onClick={onClick}
-            disabled={disabled}
-        >
-            {children}
-        </button>
-    )
-}
+        if (prefer) {
+            const preferKey = `${fieldType}::${prefer}`
+            if (store.getValue(preferKey, schema) == fieldValue) {
+                return prefer
+            }
+        }
 
-function PencilIcon() {
-    return (
-        <svg
-            className={styles.icon}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-        >
-            <path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />
-        </svg>
-    )
-}
+        if (makeNilValue(schema) == fieldValue) {
+            return DEFAULT_VALUE_NAME
+        }
 
-export function TrashCanIcon() {
-    return (
-        <svg
-            className={styles.icon}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-        >
-            <g transform="translate(12 12) scale(1.2) translate(-12 -12)">
-                <path d="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z" />
-            </g>
-        </svg>
-    )
-}
+        // look for value in store, if it appears, use the associated name
+        const valueNames = store.findValueNames(fieldType, schema, fieldValue)
 
-export function ThickPlusIcon() {
-    return (
-        <svg
-            className={styles.icon}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-        >
-            <path d="M20 14H14V20H10V14H4V10H10V4H14V10H20V14Z" />
-        </svg>
-    )
-}
+        if (valueNames.length == 0) {
+            return DEFAULT_VALUE_NAME
+        } else if (valueNames.length == 1) {
+            return valueNames[0]
+        } else if (prefer) {
+            const i = valueNames.indexOf(prefer)
 
-export function ThickMinusIcon() {
-    return (
-        <svg
-            className={styles.icon}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-        >
-            <path d="M20 14H4V10H20" />
-        </svg>
-    )
+            if (i != -1) {
+                return valueNames[i]
+            } else {
+                return valueNames[0]
+            }
+        } else {
+            return valueNames[0]
+        }
+    }, [fieldType, fieldValue, store, prefer, schemas])
 }

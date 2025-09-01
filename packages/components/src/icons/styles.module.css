@@ -1,0 +1,10 @@
+.icon {
+    color: var(--vscode-button-foreground);
+    width: 1.2em;
+    height: 1.2em;
+    display: inline-block;
+}
+
+.icon :where(path, rect, circle, ellipse, polygon, g) {
+    fill: currentColor;
+}

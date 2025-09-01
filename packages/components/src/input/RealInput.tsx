@@ -1,4 +1,4 @@
-import { ChangeEvent, useCallback, useMemo, useState } from "react"
+import { ChangeEvent, ReactNode, useCallback, useMemo, useState } from "react"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import { makeIntData, UplcData } from "@helios-lang/uplc"
 import { useChangeFieldValue } from "../events"
@@ -9,11 +9,13 @@ import { useUplcData } from "./useUplcData"
 type RealInputProps = {
     fieldName: string
     fieldValue: string
+    label?: ReactNode
 }
 
 const TYPE_NAME = "Real"
+const DEFAULT_VALUE = "3.141592"
 
-export function RealInput({ fieldName, fieldValue }: RealInputProps) {
+export function RealInput({ fieldName, fieldValue, label }: RealInputProps) {
     const data = useUplcData(fieldValue)
 
     const initialRealValue = useMemo(() => {
@@ -25,7 +27,7 @@ export function RealInput({ fieldName, fieldValue }: RealInputProps) {
     }, [data])
 
     const [value, setValue] = useState(
-        initialRealValue ? initialRealValue.toString() : "3.141592"
+        initialRealValue ? initialRealValue.toString() : DEFAULT_VALUE
     )
     const changeValue = useChangeFieldValue()
 
@@ -51,13 +53,12 @@ export function RealInput({ fieldName, fieldValue }: RealInputProps) {
 
     return (
         <>
-            <ArgLabel name={fieldName} type={TYPE_NAME} />
+            {label || <ArgLabel name={fieldName} type={TYPE_NAME} />}
             <ValidatedInput
                 value={value}
                 onChange={handleChange}
                 error={error}
             />
-            <p>Initial value: {fieldValue}</p>
         </>
     )
 }

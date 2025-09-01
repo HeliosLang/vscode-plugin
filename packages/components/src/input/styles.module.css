@@ -67,24 +67,13 @@
 }
 
 .genericInputAction:disabled {
-    background: var(--vscode-button-hoverBackground);
+    opacity: 0.6;
     cursor: not-allowed;
 }
 
 select.notFullWidth {
     width: unset !important;
     flex-grow: 1;
-}
-
-.icon {
-    color: var(--vscode-button-foreground);
-    width: 1.2em;
-    height: 1.2em;
-    display: inline-block;
-}
-
-.icon :where(path, rect, circle, ellipse, polygon, g) {
-    fill: currentColor;
 }
 
 .center {

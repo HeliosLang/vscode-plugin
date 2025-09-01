@@ -13,6 +13,7 @@ export {
     ChangeValueNameEvent,
     ClickErrorEvent,
     CreateValueEvent,
+    DeleteValueEvent,
     EditValueEvent,
     PanelIsReadyEvent,
     PanelEvent
@@ -20,11 +21,22 @@ export {
 export { StoreHelper, Store } from "./store"
 export {
     convertFieldsToUplcData,
+    correctTagChange,
+    deriveTypeName,
+    genDummyHash,
     makeDefaultFieldValues,
     makeDefaultValue,
     makeNilFieldValues,
     makeNilValue,
     makeUniqueValueName,
     resolveSchema,
-    slugifyTypeName
+    slugifyTypeName,
+    tryResolveSchema,
+    validateUplcData,
+    makeOptionVariantSchemas,
+    DCERT_VARIANTS,
+    SCRIPT_PURPOSE_VARIANTS,
+    SPENDING_CREDENTIAL_VARIANTS,
+    STAKING_HASH_VARIANTS,
+    TX_OUTPUT_DATUM_VARIANTS
 } from "./values"

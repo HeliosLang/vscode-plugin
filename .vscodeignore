@@ -4,3 +4,5 @@ apps
 README.md
 .gitignore
 packages
+*.yaml
+*.md

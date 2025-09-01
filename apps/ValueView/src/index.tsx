@@ -1,38 +1,51 @@
 import {
-    ArgInput,
-    GenericInputAction,
-    ThickMinusIcon,
-    ThickPlusIcon,
+    IconButton,
+    TrashCanIcon,
     useChangeValueName,
     useContextKey,
-    useListData,
     useStoreHelper,
     useTypeSchemas,
-    useUplcData,
     useVsCodeApi,
     ValidatedInput
 } from "components"
 import { ChangeEvent, StrictMode, useCallback, useMemo, useState } from "react"
 import { createRoot } from "react-dom/client"
 import { ErrorBoundary } from "react-error-boundary"
-import { useValuePanelContext } from "./useValuePanelContext"
 import {
-    ChangeFieldValueEvent,
-    makeDefaultValue,
-    resolveSchema,
+    DeleteValueEvent,
+    tryResolveSchema,
     type ValuePanelContext
 } from "schemas"
-import { bytesToHex, decodeUtf8 } from "@helios-lang/codec-utils"
-import {
-    expectDefined,
-    FieldTypeSchema,
-    TypeSchema,
-    type StructTypeSchema
-} from "@helios-lang/type-utils"
-import { makeListData, type UplcData } from "@helios-lang/uplc"
+import { TypeSchema } from "@helios-lang/type-utils"
+import { EnumForm } from "./EnumForm"
+import { ListForm } from "./ListForm"
+import { MapForm } from "./MapForm"
+import { OptionForm } from "./OptionForm"
+import { StructForm } from "./StructForm"
+import { TupleForm } from "./TupleForm"
+import { TxForm } from "./TxForm"
+import { useValuePanelContext } from "./useValuePanelContext"
 
-import styles from "./styles.module.css"
 import "components/styles.module.css"
+import styles from "./styles.module.css"
+import { AssetClassForm } from "./AssetClassForm"
+import { MintingPolicyHashForm } from "./MintingPolicyHashForm"
+import { useReservedNames } from "./useReservedNames"
+import { PubKeyHashForm } from "./PubKeyHashForm"
+import { DatumHashForm } from "./DatumHashForm"
+import { ValidatorHashForm } from "./ValidatorHashForm"
+import { StakingValidatorHashForm } from "./StakingValidatorHashForm"
+import { SpendingCredentialForm } from "./SpendingCredentialForm"
+import { StakingHashForm } from "./StakingHashForm"
+import { StakingCredentialForm } from "./StakingCredentialForm"
+import { PubKeyForm } from "./PubKeyForm"
+import { TxOutputIdForm } from "./TxOutputIdForm"
+import { TxInputForm } from "./TxInputForm"
+import { TxOutputForm } from "./TxOutputForm"
+import { DCertForm } from "./DCertForm"
+import { TxOutputDatumForm } from "./TxOutputDatumForm"
+import { ScriptPurposeForm } from "./ScriptPurposeForm"
+import { DataForm } from "./DataForm"
 
 const root = document.getElementById("root") as HTMLElement
 
@@ -46,19 +59,54 @@ createRoot(root).render(
 
 function Main() {
     const context = useValuePanelContext()
+    const schemas = useTypeSchemas()
+    const schema = useMemo(() => {
+        if (!context) {
+            return undefined
+        }
+        return tryResolveSchema(schemas, context.typeName)
+    }, [schemas, context])
 
     if (!context) {
-        return <p>Loading...</p>
+        return <p>Loading context...</p>
+    } else if (!schema) {
+        return <p>Loading type schema...</p>
     }
 
     return (
         <div className={styles.main}>
-            <h2>{context.typeName} value</h2>
+            <div className={styles.header}>
+                <h2>{context.typeName} value</h2>
+                <DeleteButton />
+            </div>
 
             <NameInput context={context} />
 
-            <MainInternal context={context} />
+            <MainInternal context={context} schema={schema} />
         </div>
+    )
+}
+
+function DeleteButton() {
+    const vscode = useVsCodeApi()
+    const context = useValuePanelContext()
+
+    const handleDelete = useCallback(() => {
+        if (!context) {
+            return
+        }
+
+        vscode.postMessage({
+            kind: "DeleteValue",
+            typeName: context.typeName,
+            valueName: context.valueName
+        } satisfies DeleteValueEvent)
+    }, [vscode, context])
+
+    return (
+        <IconButton onClick={handleDelete}>
+            <TrashCanIcon />
+        </IconButton>
     )
 }
 
@@ -71,15 +119,19 @@ function NameInput({ context }: NameInputProps) {
     const [error, setError] = useState("")
     const [name, setName] = useState(context.valueName)
     const changeName = useChangeValueName()
+    const reservedNames = useReservedNames(context)
 
     const handleChange = useCallback(
         (event: ChangeEvent<HTMLInputElement>) => {
             const newName = event.target.value.trim()
             setName(newName)
-
-            if (newName == "") {
+            
+            if (reservedNames.has(newName)) {
+                setError(`'${newName}' is reserved`)
+            } else if (newName == "") {
                 setError("empty")
-            } else if (store.hasValue(context.typeName, newName)) {
+            } else if (store.hasValue(`${context.typeName}::${newName}`)) {
+                // TODO: detect when it is the same or another value
                 setError(`'${newName}' already used`)
             } else if (
                 newName.includes(" ") ||
@@ -94,7 +146,7 @@ function NameInput({ context }: NameInputProps) {
                 changeName(newName)
             }
         },
-        [context, store, setError, setName, changeName]
+        [context, store, setError, setName, changeName, reservedNames]
     )
 
     return (
@@ -102,6 +154,7 @@ function NameInput({ context }: NameInputProps) {
             <label>
                 <h3>Name</h3>
             </label>
+
             <ValidatedInput
                 value={name}
                 onChange={handleChange}
@@ -113,50 +166,83 @@ function NameInput({ context }: NameInputProps) {
 
 type MainInternalProps = {
     context: ValuePanelContext
+    schema: TypeSchema
 }
 
-function MainInternal({ context }: MainInternalProps) {
-    const schemas = useTypeSchemas()
+function MainInternal({ context, schema }: MainInternalProps) {
     const store = useStoreHelper()
+    const contextKey = useContextKey()
 
     const type = context.typeName
-    const name = context.valueName
 
-    const initialValue = useMemo(() => {
-        return expectDefined(store.getValue(type, name))
-    }, [store, type, name])
+    const valueFields = useMemo(() => {
+        return store.getFields(contextKey)
+    }, [store, contextKey, schema])
 
-    if (type.startsWith("[]")) {
-        return (
-            <GenericListInput
-                itemType={type.slice(2)}
-                initialValue={initialValue}
-            />
-        )
-    } else if (type.startsWith("Map[")) {
-        const [keyType, ...valueType] = type.slice(4).split("]")
-
-        return (
-            <GenericMapInput
-                keyType={keyType}
-                valueType={valueType.join("")}
-                initialValue={initialValue}
-            />
-        )
-    } else if (type in schemas) {
-        const schema = schemas[type]
-
-        if (schema.kind == "struct") {
-            return (
-                <GenericStructInput
-                    schema={schema}
-                    initialValue={initialValue}
-                />
-            )
-        }
+    if (!valueFields) {
+        return <p>Loading value...</p>
     }
 
-    return <p>Unhandled type {type}</p>
+    switch (schema.kind) {
+        case "internal":
+            switch (schema.name) {
+                case "Address":
+                    return 
+                case "AssetClass":
+                    return <AssetClassForm fields={valueFields} />
+                case "Data":
+                    return <DataForm fields={valueFields} />
+                case "DatumHash":
+                    return <DatumHashForm fields={valueFields} />
+                case "DCert":
+                    return <DCertForm fields={valueFields} />
+                case "MintingPolicyHash":
+                    return <MintingPolicyHashForm fields={valueFields} />
+                case "PubKey":
+                    return <PubKeyForm fields={valueFields} />
+                case "PubKeyHash":
+                    return <PubKeyHashForm fields={valueFields} />
+                case "ScriptPurpose":
+                    return <ScriptPurposeForm fields={valueFields} />
+                case "SpendingCredential":
+                    return <SpendingCredentialForm fields={valueFields} />
+                case "StakingCredential":
+                    return <StakingCredentialForm fields={valueFields} />
+                case "StakingHash":
+                    return <StakingHashForm fields={valueFields} />
+                case "StakingValidatorHash":
+                    return <StakingValidatorHashForm fields={valueFields} />
+                case "Tx":
+                    return <TxForm fields={valueFields} />
+                case "TxInput":
+                    return <TxInputForm fields={valueFields} />
+                case "TxOutput":
+                    return <TxOutputForm fields={valueFields} />
+                case "TxOutputDatum":
+                    return <TxOutputDatumForm fields={valueFields} />
+                case "TxOutputId":
+                    return <TxOutputIdForm fields={valueFields} />
+                case "ValidatorHash":
+                    return <ValidatorHashForm fields={valueFields} />
+                default:
+                    return <p>Unhandled internal type '{schema.name}'</p>
+            }
+        case "enum":
+            return <EnumForm schema={schema} fields={valueFields} />
+        case "list":
+            return <ListForm schema={schema} fields={valueFields} />
+        case "map":
+            return <MapForm schema={schema} fields={valueFields} />
+        case "option":
+            return <OptionForm schema={schema} fields={valueFields} />
+        case "variant":
+        case "struct":
+            return <StructForm schema={schema} fields={valueFields} />
+        case "tuple":
+            return <TupleForm schema={schema} fields={valueFields} />
+        default:
+            return <p>Unhandled type '{type}'</p>
+    }
 }
 
 type ErrorMessageProps = {
@@ -165,293 +251,4 @@ type ErrorMessageProps = {
 
 function ErrorMessage({ error }: ErrorMessageProps) {
     return <p>{error.message}</p>
-}
-
-type GenericListInputProps = {
-    itemType: string
-    initialValue?: string
-}
-
-function GenericListInput({ itemType, initialValue }: GenericListInputProps) {
-    const data = useUplcData(initialValue)
-    const vscode = useVsCodeApi()
-    const schemas = useTypeSchemas()
-    const contextKey = useContextKey()
-
-    const initialListValue = useMemo(() => {
-        if (data?.kind == "list") {
-            return data
-        } else {
-            return makeListData([])
-        }
-    }, [data])
-
-    const n = initialListValue.length
-
-    const handleAddItem = useCallback(() => {
-        const schema = resolveSchema(schemas, itemType)
-        const fieldValue = makeDefaultValue(schema)
-        vscode.postMessage({
-            kind: "ChangeFieldValue",
-            contextKey: contextKey,
-            fieldType: itemType,
-            fieldName: `item-${n}`,
-            fieldValue
-        } satisfies ChangeFieldValueEvent)
-    }, [vscode, contextKey, n, itemType, schemas])
-
-    const handleRemoveItem = useCallback(() => {
-        vscode.postMessage({
-            kind: "ChangeFieldValue",
-            contextKey: contextKey,
-            fieldType: itemType,
-            fieldName: `item-${n - 1}`,
-            fieldValue: ""
-        } satisfies ChangeFieldValueEvent)
-    }, [vscode, contextKey, n, itemType])
-
-    return (
-        <>
-            <h3>Items ({n})</h3>
-            {initialListValue.items.map((item, i) => {
-                const initialValue = item
-                const cborHex = bytesToHex(initialValue.toCbor())
-
-                return (
-                    <ArgInput
-                        fieldName={"item-" + i.toString()}
-                        fieldType={itemType}
-                        fieldValue={cborHex}
-                    />
-                )
-            })}
-
-            <div className={styles.actions}>
-                <GenericInputAction onClick={handleAddItem}>
-                    <ThickPlusIcon />
-                </GenericInputAction>
-
-                <GenericInputAction
-                    onClick={handleRemoveItem}
-                    disabled={initialListValue.items.length == 0}
-                >
-                    <ThickMinusIcon />
-                </GenericInputAction>
-            </div>
-        </>
-    )
-}
-
-type GenericMapInputProps = {
-    keyType: string
-    valueType: string
-    initialValue?: string
-}
-
-function GenericMapInput({
-    keyType,
-    valueType,
-    initialValue
-}: GenericMapInputProps) {
-    const data = useUplcData(initialValue)
-
-    const initialMapValue = useMemo(() => {
-        if (data && data.kind == "map") {
-            return data
-        } else {
-            return undefined
-        }
-    }, [data])
-
-    const nItems = useState(initialMapValue ? initialMapValue.length : 1)
-
-    return (
-        <>
-            <h3>Entries</h3>
-            {new Array(nItems).map((_, i) => {
-                const initialKeyValue = expectDefined(
-                    initialMapValue?.items?.[i]?.[0]
-                )
-                const keyCborHex = bytesToHex(initialKeyValue.toCbor())
-
-                const initialValueValue = expectDefined(
-                    initialMapValue?.items?.[i]?.[1]
-                )
-                const valueCborHex = bytesToHex(initialValueValue.toCbor())
-
-                return (
-                    <div>
-                        <ArgInput
-                            fieldName={"key-" + i.toString()}
-                            fieldType={keyType}
-                            fieldValue={keyCborHex}
-                        />
-                        <ArgInput
-                            fieldName={"value-" + i.toString()}
-                            fieldType={valueType}
-                            fieldValue={valueCborHex}
-                        />
-                    </div>
-                )
-            })}
-        </>
-    )
-}
-
-type GenericStructInputProps = {
-    schema: StructTypeSchema
-    initialValue: string
-}
-
-function GenericStructInput({ schema, initialValue }: GenericStructInputProps) {
-    return (
-        <>
-            <h3>Fields</h3>
-
-            {schema.format == "singleton" ? (
-                <GenericSingletonStructInput
-                    field={schema.fieldTypes[0]}
-                    initialValue={initialValue}
-                />
-            ) : schema.format == "list" ? (
-                <GenericListStructInput
-                    fields={schema.fieldTypes}
-                    initialValue={initialValue}
-                />
-            ) : (
-                <GenericMapStructInput
-                    fields={schema.fieldTypes}
-                    initialValue={initialValue}
-                />
-            )}
-        </>
-    )
-}
-
-type GenericSingletonStructInputProps = {
-    field: FieldTypeSchema
-    initialValue: string
-}
-
-function GenericSingletonStructInput({
-    field,
-    initialValue
-}: GenericSingletonStructInputProps) {
-    return (
-        <ArgInput
-            fieldName={field.name}
-            fieldType={getTypeSchemaName(field.type)}
-            fieldValue={initialValue}
-        />
-    )
-}
-
-type GenericListStructInputProps = {
-    fields: FieldTypeSchema[]
-    initialValue?: string
-}
-
-function GenericListStructInput({
-    fields,
-    initialValue
-}: GenericListStructInputProps) {
-    const data = useUplcData(initialValue)
-    const initialListValue = useListData(data)
-
-    return (
-        <>
-            {fields.map((f, i) => {
-                const initialValue = expectDefined(initialListValue?.items?.[i])
-                const cborHex = bytesToHex(initialValue.toCbor())
-
-                return (
-                    <ArgInput
-                        key={f.name}
-                        fieldName={f.name}
-                        fieldType={getTypeSchemaName(f.type)}
-                        fieldValue={cborHex}
-                    />
-                )
-            })}
-        </>
-    )
-}
-
-type GenericMapStructInputProps = {
-    fields: FieldTypeSchema[]
-    initialValue?: string
-}
-
-function GenericMapStructInput({
-    fields,
-    initialValue
-}: GenericMapStructInputProps) {
-    const data = useUplcData(initialValue)
-
-    const initialMapEntries = useMemo(() => {
-        if (data?.kind == "map") {
-            const entries: Record<string, UplcData> = {}
-
-            for (let i = 0; i < data.items.length; i++) {
-                const [key, value] = data.items[i]
-
-                if (key.kind == "bytes") {
-                    try {
-                        const k = decodeUtf8(key.bytes)
-                        if (k == fields[i]?.key) {
-                            entries[k] = value
-                        }
-                    } catch (_) {
-                        continue
-                    }
-                }
-            }
-
-            return entries
-        } else {
-            return undefined
-        }
-    }, [data, fields])
-
-    return (
-        <>
-            {fields.map((f) => {
-                const initialValue = expectDefined(
-                    initialMapEntries?.[expectDefined(f.key)]
-                )
-                const cborHex = bytesToHex(initialValue.toCbor())
-
-                return (
-                    <ArgInput
-                        key={f.name}
-                        fieldName={f.name}
-                        fieldType={getTypeSchemaName(f.type)}
-                        fieldValue={cborHex}
-                    />
-                )
-            })}
-        </>
-    )
-}
-
-function getTypeSchemaName(schema: TypeSchema): string {
-    if (schema.kind == "internal") {
-        return schema.name
-    } else if (schema.kind == "list") {
-        return `[]${getTypeSchemaName(schema.itemType)}`
-    } else if (schema.kind == "map") {
-        return `Map[${getTypeSchemaName(schema.keyType)}]${getTypeSchemaName(schema.valueType)}`
-    } else if (schema.kind == "option") {
-        return `Option[${getTypeSchemaName(schema.someType)}]`
-    } else if (schema.kind == "reference") {
-        return schema.id.split("_").pop() || "unknown"
-    } else if (schema.kind == "enum" || schema.kind == "struct") {
-        return schema.name
-    } else if (schema.kind == "variant") {
-        return schema.name
-    } else if (schema.kind == "tuple") {
-        return `(${schema.itemTypes.map(getTypeSchemaName).join(",")})`
-    }
-
-    return "unknown"
 }

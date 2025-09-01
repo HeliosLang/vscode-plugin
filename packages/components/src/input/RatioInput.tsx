@@ -1,4 +1,4 @@
-import { ChangeEvent, useCallback, useMemo, useState } from "react"
+import { ChangeEvent, ReactNode, useCallback, useMemo, useState } from "react"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import {
     decodeUplcData,
@@ -9,16 +9,17 @@ import {
 import { useChangeFieldValue } from "../events"
 import { ArgLabel } from "./ArgLabel"
 import { ValidatedInput } from "./ValidatedInput"
-import { isValidInt } from "./IntInput"
+import { isValidInt } from "./IntLikeInput"
 
 type RatioInputProps = {
     fieldName: string
     fieldValue: string
+    label?: ReactNode
 }
 
 const TYPE_NAME = "Ratio"
 
-export function RatioInput({ fieldName, fieldValue }: RatioInputProps) {
+export function RatioInput({ fieldName, fieldValue, label }: RatioInputProps) {
     const initialRatioValue: [bigint, bigint] | undefined = useMemo(() => {
         return unpackRatioData(decodeUplcData(fieldValue))
     }, [fieldValue])
@@ -53,7 +54,7 @@ export function RatioInput({ fieldName, fieldValue }: RatioInputProps) {
 
     return (
         <>
-            <ArgLabel name={fieldName} type={TYPE_NAME} />
+            {label || <ArgLabel name={fieldName} type={TYPE_NAME} />}
             <ValidatedInput
                 value={value}
                 onChange={handleChange}

@@ -1,6 +1,3 @@
-import { ReactNode, StrictMode, useCallback, useId, useMemo } from "react"
-import { createRoot } from "react-dom/client"
-import { ErrorBoundary } from "react-error-boundary"
 import {
     ArgInput,
     ScriptContextInput,
@@ -11,12 +8,19 @@ import {
     useStoreHelper,
     useTypeSchemas
 } from "components"
-import { ArgsPanelEntryPoint, makeDefaultValue, resolveSchema } from "schemas"
+import { ReactNode, StrictMode, useCallback, useId, useMemo } from "react"
+import { createRoot } from "react-dom/client"
+import { ErrorBoundary } from "react-error-boundary"
+import {
+    ArgsPanelEntryPoint,
+    makeDefaultValue,
+    tryResolveSchema
+} from "schemas"
 import { expectDefined } from "@helios-lang/type-utils"
+import { useArgsPanelContext } from "./useArgsPanelContext"
 
 import "components/styles.module.css"
 import styles from "./styles.module.css"
-import { useArgsPanelContext } from "./useArgsPanelContext"
 
 const root = document.getElementById("root") as HTMLElement
 
@@ -205,13 +209,15 @@ function EntryPointForm({
             const argValues: Record<string, string> = {}
 
             for (let a of entryPointInfo.args) {
-                const value = store.getValue(contextKey, a.name)
+                const value = store.getFieldValue(contextKey, a.name)
 
                 if (value) {
                     argValues[a.name] = value
                 } else {
-                    const schema = resolveSchema(schemas, a.type)
-                    argValues[a.name] = makeDefaultValue(schema)
+                    const schema = tryResolveSchema(schemas, a.type)
+                    if (schema) {
+                        argValues[a.name] = makeDefaultValue(schema)
+                    }
                 }
             }
 
@@ -221,6 +227,12 @@ function EntryPointForm({
 
             return [argValues, scriptContextValue, currentValidatorValue]
         }, [entryPointInfo, store, contextKey, schemas])
+
+    if (
+        Object.keys(argValues).length < Object.keys(entryPointInfo.args).length
+    ) {
+        return <Loading />
+    }
 
     return (
         <FormSection>
@@ -243,7 +255,7 @@ function EntryPointForm({
 
             {entryPointInfo.needsScriptContext && (
                 <FormRow>
-                    <ScriptContextInput initialValue={scriptContextValue} />
+                    <ScriptContextInput value={scriptContextValue} />
                 </FormRow>
             )}
 

@@ -6,7 +6,6 @@ import {
     ChangeEntryPointEvent,
     ValueStoreContext,
     ArgsPanelContext,
-    ArgsPanelEntryPoint,
     PanelLoadingContext,
     makeDefaultValue,
     resolveSchema
@@ -24,7 +23,8 @@ import {
     TextEditor,
     TextEditorRevealType,
     Position,
-    Range
+    Range,
+    commands
 } from "vscode"
 import { bytesToHex, encodeUtf8, hexToBytes } from "@helios-lang/codec-utils"
 import { Program } from "@helios-lang/compiler"
@@ -48,10 +48,11 @@ import { ValuesProvider } from "./ValuesProvider"
 import {
     collectEntryPointInfo,
     collectErrorUris,
-    collectValidatorNames,
+    collectValidators as collectValidators,
     compileEntryPoint,
     entryPointIsConst
 } from "./ast"
+import { ASTProvider } from "./ASTProvider"
 
 type UPLCProgramWithArgs = {
     args: UplcData[] | undefined // undefined is used for consts that don't depend on script context
@@ -67,6 +68,7 @@ const ARGS_VIEW_REL_PATH = ["dist", "ArgsView", "index.html"]
  */
 export class ArgsViewProvider implements WebviewViewProvider {
     private readonly extensionContext: ExtensionContext
+    private readonly astProvider: ASTProvider
     private readonly schemasProvider: TypeSchemasProvider
     private readonly valuesProvider: ValuesProvider
     private readonly valueViewsProvider: ValueViewsProvider
@@ -78,18 +80,25 @@ export class ArgsViewProvider implements WebviewViewProvider {
 
     constructor(
         extensionContext: ExtensionContext,
+        astProvider: ASTProvider,
         schemasProvider: TypeSchemasProvider,
         valuesProvider: ValuesProvider,
         valueViewsProvider: ValueViewsProvider
     ) {
         this.extensionContext = extensionContext
+        this.astProvider = astProvider
         this.schemasProvider = schemasProvider
         this.valuesProvider = valuesProvider
         this.valueViewsProvider = valueViewsProvider
+
         this.view = undefined
         this.ast = undefined
         this.entryPoint = undefined
         this.entryPointHistory = {}
+
+        this.astProvider.addCompileActiveDocumentListener((ast: Program | undefined) => {
+            this.setAST(ast)
+        })
 
         this.schemasProvider.addListener((schemas) => {
             this.view?.webview?.postMessage({
@@ -142,6 +151,9 @@ export class ArgsViewProvider implements WebviewViewProvider {
                         break
                     case "ClickError":
                         this.handleClickError(event)
+                        break
+                    case "CreateValue":
+                        this.valueViewsProvider.handleCreateValue(event)
                         break
                     case "EditValue":
                         this.valueViewsProvider.handleEditValue(event)
@@ -212,7 +224,11 @@ export class ArgsViewProvider implements WebviewViewProvider {
             }
 
             try {
-                args.push(decodeUplcData(argValue))
+                if (argInfo.optional) {
+                    args.push(makeConstrData(0, [decodeUplcData(argValue)]))
+                } else {
+                    args.push(decodeUplcData(argValue))
+                }
             } catch (e) {
                 return undefined
             }
@@ -294,7 +310,7 @@ export class ArgsViewProvider implements WebviewViewProvider {
         const moduleUri: string = ast.entryPoint.mainModule.name.site.file
         const modulePurpose: string = ast.purpose
         const errorUris: string[] = collectErrorUris(ast.errors)
-        const allValidatorNames: string[] = collectValidatorNames(ast)
+        const allValidators: {name: string, purpose: string}[] = collectValidators(ast)
 
         // send the list of entrypoints
         const allEntryPoints: string[] =
@@ -317,7 +333,7 @@ export class ArgsViewProvider implements WebviewViewProvider {
             moduleUri,
             modulePurpose,
             errorUris,
-            allValidatorNames,
+            allValidators,
             allEntryPoints,
             entryPoint: collectEntryPointInfo(ast, this.entryPoint)
         } satisfies ArgsPanelContext)

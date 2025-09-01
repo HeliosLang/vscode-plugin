@@ -1,88 +1,10 @@
-import { ChangeEvent, useCallback, useMemo, useState } from "react"
-import { bytesToHex } from "@helios-lang/codec-utils"
-import { makeIntData, UplcData } from "@helios-lang/uplc"
-import { useChangeFieldValue } from "../events"
-import { ArgLabel } from "./ArgLabel"
-import { ValidatedInput } from "./ValidatedInput"
-import { useUplcData } from "./useUplcData"
+import { IntLikeInput } from "./IntLikeInput"
 
 type IntInputProps = {
     fieldName: string
     fieldValue: string
 }
 
-const TYPE_NAME = "Int"
-
 export function IntInput({ fieldName, fieldValue }: IntInputProps) {
-    const data = useUplcData(fieldValue)
-
-    const initialIntValue: bigint = useMemo(() => {
-        if (data?.kind == "int") {
-            return data.value
-        } else {
-            return 42n
-        }
-    }, [data])
-
-    const [value, setValue] = useState(initialIntValue.toString())
-    const changeValue = useChangeFieldValue()
-
-    const handleChange = useCallback(
-        (evt: ChangeEvent<HTMLInputElement>) => {
-            const newValue = evt.target.value
-            setValue(newValue)
-
-            if (isValidInt(newValue)) {
-                const dataHex = bytesToHex(parseIntData(newValue).toCbor())
-                changeValue({
-                    fieldName,
-                    fieldType: TYPE_NAME,
-                    fieldValue: dataHex
-                })
-            }
-        },
-        [setValue, fieldName, changeValue]
-    )
-
-    const error = validateInt(value)
-
-    return (
-        <>
-            <ArgLabel name={fieldName} type={TYPE_NAME} />
-            <ValidatedInput
-                value={value}
-                onChange={handleChange}
-                error={error}
-            />
-        </>
-    )
-}
-
-/**
- * Throws an error if not valid
- * @param value
- * @returns
- */
-export function parseIntData(value: string): UplcData {
-    return makeIntData(BigInt(value))
-}
-
-export function isValidInt(value: string): boolean {
-    return validateInt(value) == ""
-}
-
-export function validateInt(value: string): string {
-    const trimmed = value.trim()
-
-    if (trimmed == "") {
-        return "Empty"
-    }
-
-    try {
-        BigInt(trimmed)
-
-        return ""
-    } catch (_) {
-        return "Invalid format"
-    }
+    return <IntLikeInput typeName="Int" fieldName={fieldName} fieldValue={fieldValue} />
 }

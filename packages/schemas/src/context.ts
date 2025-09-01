@@ -6,7 +6,8 @@ export const ArgsPanelEntryPoint = Schema.Struct({
     args: Schema.Array(
         Schema.Struct({
             name: Schema.String,
-            type: Schema.String
+            type: Schema.String,
+            optional: Schema.Boolean
         })
     ),
     needsScriptContext: Schema.Boolean,
@@ -20,7 +21,10 @@ export const ArgsPanelContext = Schema.Struct({
     moduleUri: Schema.String,
     modulePurpose: Schema.String,
     moduleName: Schema.String,
-    allValidatorNames: Schema.Array(Schema.String),
+    allValidators: Schema.Array(Schema.Struct({
+        name: Schema.String, 
+        purpose: Schema.String
+    })),
     errorUris: Schema.Array(Schema.String),
     allEntryPoints: Schema.Array(Schema.String),
     entryPoint: Schema.optional(ArgsPanelEntryPoint)
@@ -37,7 +41,11 @@ export type PanelLoadingContext = Schema.Schema.Type<typeof PanelLoadingContext>
 export const ValuePanelContext = Schema.Struct({
     kind: Schema.Literal("ValuePanel"),
     typeName: Schema.String,
-    valueName: Schema.String
+    valueName: Schema.String,
+    allValidators: Schema.Array(Schema.Struct({
+        name: Schema.String,
+        purpose: Schema.String
+    }))
 })
 
 export type ValuePanelContext = Schema.Schema.Type<typeof ValuePanelContext>

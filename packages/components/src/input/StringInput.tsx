@@ -1,4 +1,4 @@
-import { ChangeEvent, useCallback, useMemo, useState } from "react"
+import { ChangeEvent, ReactNode, useCallback, useMemo, useState } from "react"
 import { useChangeFieldValue } from "../events"
 import { bytesToHex, decodeUtf8, encodeUtf8 } from "@helios-lang/codec-utils"
 import { makeByteArrayData } from "@helios-lang/uplc"
@@ -9,11 +9,12 @@ import { useUplcData } from "./useUplcData"
 type StringInputProps = {
     fieldName: string
     fieldValue: string
+    label?: ReactNode
 }
 
 const TYPE_NAME = "String"
 
-export function StringInput({ fieldName, fieldValue }: StringInputProps) {
+export function StringInput({ fieldName, fieldValue, label }: StringInputProps) {
     const data = useUplcData(fieldValue)
 
     const initialStringValue = useMemo(() => {
@@ -54,7 +55,7 @@ export function StringInput({ fieldName, fieldValue }: StringInputProps) {
 
     return (
         <>
-            <ArgLabel name={fieldName} type={TYPE_NAME} />
+            {label || <ArgLabel name={fieldName} type={TYPE_NAME} />}
             <ValidatedInput value={value} onChange={handleChange} error="" />
         </>
     )

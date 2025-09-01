@@ -51,6 +51,14 @@ export const CreateValueEvent = Schema.Struct({
 
 export type CreateValueEvent = Schema.Schema.Type<typeof CreateValueEvent>
 
+export const DeleteValueEvent = Schema.Struct({
+    kind: Schema.Literal("DeleteValue"),
+    typeName: Schema.String,
+    valueName: Schema.String
+})
+
+export type DeleteValueEvent = Schema.Schema.Type<typeof DeleteValueEvent>
+
 export const EditValueEvent = Schema.Struct({
     kind: Schema.Literal("EditValue"),
     typeName: Schema.String,
@@ -74,6 +82,7 @@ export const PanelEvent = Schema.Union(
     ClickErrorEvent,
     CreateValueEvent,
     CreateValueEvent,
+    DeleteValueEvent,
     EditValueEvent,
     PanelIsReadyEvent
 )

@@ -1,9 +1,9 @@
-import { ChangeEvent, useCallback, useMemo, useState } from "react"
+import { ChangeEvent, ReactNode, useCallback, useMemo, useState } from "react"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import { makeListData } from "@helios-lang/uplc"
 import { useChangeFieldValue } from "../events"
 import { ArgLabel } from "./ArgLabel"
-import { isValidInt, parseIntData } from "./IntInput"
+import { isValidInt, parseIntData } from "./IntLikeInput"
 import { ValidatedInput } from "./ValidatedInput"
 import { useListData } from "./useListData"
 import { useUplcData } from "./useUplcData"
@@ -11,11 +11,12 @@ import { useUplcData } from "./useUplcData"
 type IntListInputProps = {
     fieldName: string
     fieldValue: string
+    label?: ReactNode
 }
 
 const TYPE_NAME = "[]Int"
 
-export function IntListInput({ fieldName, fieldValue }: IntListInputProps) {
+export function IntListInput({ fieldName, fieldValue, label }: IntListInputProps) {
     const initialListValue = useListData(useUplcData(fieldValue))
 
     const initialIntListValue = useMemo(() => {
@@ -70,7 +71,7 @@ export function IntListInput({ fieldName, fieldValue }: IntListInputProps) {
 
     return (
         <>
-            <ArgLabel name={fieldName} type={TYPE_NAME} />
+            {label || <ArgLabel name={fieldName} type={TYPE_NAME} />}
             <ValidatedInput
                 value={value}
                 onChange={handleChange}

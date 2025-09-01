@@ -1,4 +1,4 @@
-import { ChangeEvent, useCallback, useMemo, useState } from "react"
+import { ChangeEvent, ReactNode, useCallback, useMemo, useState } from "react"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import { makeListData } from "@helios-lang/uplc"
 import { useChangeFieldValue } from "../events"
@@ -11,11 +11,12 @@ import { useUplcData } from "./useUplcData"
 type BoolListInputProps = {
     fieldName: string
     fieldValue: string
+    label?: ReactNode
 }
 
 const TYPE_NAME = "[]Bool"
 
-export function BoolListInput({ fieldName, fieldValue }: BoolListInputProps) {
+export function BoolListInput({ fieldName, fieldValue, label }: BoolListInputProps) {
     const initialListValue = useListData(useUplcData(fieldValue))
 
     const initialBoolListValue = useMemo(() => {
@@ -71,7 +72,7 @@ export function BoolListInput({ fieldName, fieldValue }: BoolListInputProps) {
 
     return (
         <>
-            <ArgLabel name={fieldName} type={TYPE_NAME} />
+            {label || <ArgLabel name={fieldName} type={TYPE_NAME} />}
             <ValidatedInput
                 value={value}
                 onChange={handleChange}

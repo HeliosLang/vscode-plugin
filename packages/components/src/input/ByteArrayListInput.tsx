@@ -1,23 +1,25 @@
-import { ChangeEvent, useCallback, useMemo, useState } from "react"
+import { ChangeEvent, ReactNode, useCallback, useMemo, useState } from "react"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import { makeListData } from "@helios-lang/uplc"
 import { useChangeFieldValue } from "../events"
 import { ArgLabel } from "./ArgLabel"
 import { ValidatedInput } from "./ValidatedInput"
-import { isValidByteArray, parseByteArrayData } from "./ByteArrayInput"
+import { isValidByteArray, parseByteArrayData } from "./ByteArrayLikeInput"
 import { useListData } from "./useListData"
 import { useUplcData } from "./useUplcData"
 
 type ByteArrayListInputProps = {
     fieldName: string
     fieldValue: string
+    label?: ReactNode
 }
 
 const TYPE_NAME = "[]ByteArray"
 
 export function ByteArrayListInput({
     fieldName,
-    fieldValue
+    fieldValue,
+    label
 }: ByteArrayListInputProps) {
     const initialListValue = useListData(useUplcData(fieldValue))
 
@@ -75,7 +77,7 @@ export function ByteArrayListInput({
 
     return (
         <>
-            <ArgLabel name={fieldName} type={TYPE_NAME} />
+            {label || <ArgLabel name={fieldName} type={TYPE_NAME} />}
             <ValidatedInput
                 value={value}
                 onChange={handleChange}

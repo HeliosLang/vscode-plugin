@@ -1,4 +1,4 @@
-import { ChangeEvent, useCallback, useMemo, useState } from "react"
+import { ChangeEvent, ReactNode, useCallback, useMemo, useState } from "react"
 import { bytesToHex, decodeUtf8, encodeUtf8 } from "@helios-lang/codec-utils"
 import { makeSource, makeTokenizer } from "@helios-lang/compiler-utils"
 import { makeByteArrayData, makeListData } from "@helios-lang/uplc"
@@ -11,13 +11,15 @@ import { useUplcData } from "./useUplcData"
 type StringListInputProps = {
     fieldName: string
     fieldValue: string
+    label?: ReactNode
 }
 
 const TYPE_NAME = "[]String"
 
 export function StringListInput({
     fieldName,
-    fieldValue
+    fieldValue,
+    label
 }: StringListInputProps) {
     const initialListValue = useListData(useUplcData(fieldValue))
 
@@ -83,7 +85,7 @@ export function StringListInput({
 
     return (
         <>
-            <ArgLabel name={fieldName} type={TYPE_NAME} />
+            {label || <ArgLabel name={fieldName} type={TYPE_NAME} />}
             <ValidatedInput
                 value={value}
                 onChange={handleChange}

@@ -1,5 +1,6 @@
 import { useCallback } from "react"
 import {
+    CreateValueEvent,
     type ChangeEntryPointEvent,
     type ChangeFieldValueEvent,
     type ChangeValueNameEvent,
@@ -74,5 +75,26 @@ export function useChangeValueName() {
             } satisfies ChangeValueNameEvent)
         },
         [context, vscode]
+    )
+}
+
+export function useCreateValue() {
+    const vscode = useVsCodeApi()
+    const contextKey = useContextKey()
+
+    return useCallback(
+        (args: {
+            typeName: string
+            valueName: string
+            callerFieldName: string
+            linkToCaller: boolean
+        }) => {
+            vscode.postMessage({
+                kind: "CreateValue",
+                callerContextKey: contextKey,
+                ...args
+            } satisfies CreateValueEvent)
+        },
+        [vscode, contextKey]
     )
 }

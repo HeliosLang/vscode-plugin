@@ -98,14 +98,14 @@
                         ]
                     }
                 },
-                "when": "!virtualWorkspace && debugStartLanguage == helios"
+                "when": "heliosDebugActive || !virtualWorkspace && debugStartLanguage == helios"
             }
         ],
         "viewsWelcome": [
             {
                 "view": "debug",
                 "contents": "",
-                "when": "!virtualWorkspace && debugStartLanguage == helios"
+                "when": "heliosDebugActive || !virtualWorkspace && debugStartLanguage == helios"
             }
         ],
         "views": {
@@ -120,8 +120,8 @@
         },
         "commands": [
             {
-                "title": "Show Helios Entry Point & Arguments View",
-                "command": "helios.showEntryPointAndArguments"
+                "command": "helios.showEntryPointAndArguments",
+                "title": "Show Helios Entry Point & Arguments View"
             }
         ]
     },

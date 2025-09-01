@@ -1,14 +1,16 @@
+import { GenericInput } from "./GenericInput"
+
+const TYPE_NAME = "ScriptContext"
+
 type ScriptContextInputProps = {
-    initialValue?: string
+    value: string
 }
 
-const t = "ScriptContext"
-
-export function ScriptContextInput({}: ScriptContextInputProps) {
-    return (
-        <>
-            <label>{t}</label>
-            <p>TODO</p>
-        </>
-    )
+export function ScriptContextInput({value}: ScriptContextInputProps) {
+    return <GenericInput 
+        label={<label>ScriptContext</label>}
+        fieldName={TYPE_NAME}
+        fieldType={TYPE_NAME}
+        fieldValue={value}
+    />
 }

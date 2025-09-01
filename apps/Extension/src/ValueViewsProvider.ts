@@ -8,53 +8,71 @@ import {
     ValuePanelContext,
     type Store,
     type ValueStoreContext,
-    type TypeSchemasContext
+    type TypeSchemasContext,
+    DeleteValueEvent
 } from "schemas"
 import { ExtensionContext, ViewColumn, WebviewPanel, window } from "vscode"
 import { type TypeSchema } from "@helios-lang/type-utils"
 import { loadWebview } from "./webview"
 import { ValuesProvider } from "./ValuesProvider"
 import { TypeSchemasProvider } from "./TypeSchemasProvider"
+import { ValueViewPanel } from "./ValueViewPanel"
+import { ASTProvider } from "./ASTProvider"
 
 const VALUE_VIEW_REL_PATH = ["dist", "ValueView", "index.html"]
-
-type PanelWithProps = {
-    readonly panel: WebviewPanel
-    readonly typeName: string
-    valueName: string
-}
 
 export class ValueViewsProvider {
     private readonly extensionContext: ExtensionContext
     private readonly schemasProvider: TypeSchemasProvider
     private readonly valuesProvider: ValuesProvider
-    private panels: WebviewPanel[]
+    private readonly astProvider: ASTProvider
+    private panels: ValueViewPanel[]
 
     constructor(
         extensionContext: ExtensionContext,
+        astProvider: ASTProvider,
         schemasProvider: TypeSchemasProvider,
         valuesProvider: ValuesProvider
     ) {
         this.extensionContext = extensionContext
+        this.astProvider = astProvider
         this.schemasProvider = schemasProvider
         this.valuesProvider = valuesProvider
         this.panels = []
 
         schemasProvider.addListener((schemas) => {
             this.panels.forEach((panel) => {
-                sendTypeSchemasContextToPanel(panel, schemas)
+                panel.syncTypeSchemas(schemas)
             })
         })
 
         valuesProvider.addListener((store) => {
             this.panels.forEach((panel) => {
-                sendValueStoreContextToPanel(panel, store)
+                panel.syncValueStore(store)
             })
         })
     }
 
-    handleEditValue(event: EditValueEvent) {
+    handleCreateValue(event: CreateValueEvent) {
+        this.valuesProvider.handleCreateValue(event)
+
         this.addPanel(event.typeName, event.valueName)
+    }
+
+    handleEditValue(event: EditValueEvent) {
+        console.log("Received event:", JSON.stringify(event, undefined, 4))
+
+        const panel = this.panels.find(
+            (panel) =>
+                panel.typeName == event.typeName &&
+                panel.valueName == event.valueName
+        )
+
+        if (panel) {
+            panel.reveal()
+        } else {
+            this.addPanel(event.typeName, event.valueName)
+        }
     }
 
     private get store() {
@@ -66,41 +84,32 @@ export class ValueViewsProvider {
     }
 
     private async addPanel(typeName: string, valueName: string): Promise<void> {
-        const panelName = `helios-${typeName}-value`
-
-        const panelTitle = `${typeName} value`
-
-        const panel = window.createWebviewPanel(
-            panelName,
-            panelTitle,
-            ViewColumn.One,
-            {
-                enableScripts: true,
-                retainContextWhenHidden: true
-            }
-        )
-
-        const panelWithProps: PanelWithProps = {
-            panel,
+        const panel = new ValueViewPanel(
+            this.extensionContext,
+            this.astProvider,
             typeName,
             valueName
-        }
+        )
 
-        panel.webview.options = {
-            enableScripts: true
-        }
-
-        panel.onDidDispose(() => {
-            this.panels = this.panels.filter((p) => p != panel)
+        panel.panel.onDidDispose(() => {
+            this.purgePanel(panel)
         })
 
-        panel.webview.onDidReceiveMessage(async (unknownEvent: unknown) => {
-            try {
-                const event = Schema.decodeUnknownSync(PanelEvent)(unknownEvent)
+        panel.panel.webview.onDidReceiveMessage(
+            async (unknownEvent: unknown) => {
+                let event: PanelEvent
+                try {
+                    event = Schema.decodeUnknownSync(PanelEvent)(unknownEvent)
+                } catch (_) {
+                    console.error(
+                        `Unhandled event in ValueViewsProvider: ${JSON.stringify(unknownEvent, undefined, 4)}`
+                    )
+                    return
+                }
 
                 switch (event.kind) {
                     case "PanelIsReady":
-                        this.handlePanelIsReady(panelWithProps, event)
+                        this.handlePanelIsReady(panel, event)
                         break
                     case "EditValue":
                         this.handleEditValue(event)
@@ -109,59 +118,44 @@ export class ValueViewsProvider {
                         this.valuesProvider.handleChangeFieldValue(event)
                         break
                     case "ChangeValueName":
-                        this.handleChangeValueName(panelWithProps, event)
+                        this.handleChangeValueName(panel, event)
                         break
                     case "CreateValue": {
                         this.handleCreateValue(event)
                         break
                     }
+                    case "DeleteValue":
+                        this.handleDeleteValue(panel, event)
+                        break
                     default:
                         console.error(
-                            `Unhandled event "${event.kind}" in ValueViewCollection`
+                            `Unhandled event in ValueViewsProvider: ${event.kind}`
                         )
                 }
-            } catch (e) {
-                console.error(
-                    `Unhandled event in ValueViewCollection (${(e as Error).message})`
-                )
             }
-        })
+        )
 
         this.panels.push(panel)
 
         await loadWebview(
             this.extensionContext,
             VALUE_VIEW_REL_PATH,
-            panel.webview
+            panel.panel.webview
         )
     }
 
     private handlePanelIsReady(
-        panel: PanelWithProps,
+        panel: ValueViewPanel,
         _event: PanelIsReadyEvent
     ) {
-        // configure the panel
-        sendValueStoreContextToPanel(panel.panel, this.store)
-        sendTypeSchemasContextToPanel(panel.panel, this.schemas)
-        sendValuePanelContextToPanel(
-            panel.panel,
-            panel.typeName,
-            panel.valueName
-        )
+        panel.init(this.schemas, this.store)
     }
 
     private handleChangeValueName(
-        panel: PanelWithProps,
+        panel: ValueViewPanel,
         event: ChangeValueNameEvent
     ) {
-        if (event.newName != panel.valueName) {
-            panel.valueName = event.newName
-            sendValuePanelContextToPanel(
-                panel.panel,
-                panel.typeName,
-                event.newName
-            )
-        }
+        panel.changeName(event.newName)
 
         if (event.newName != event.oldName) {
             this.valuesProvider.changeValueName(
@@ -172,44 +166,13 @@ export class ValueViewsProvider {
         }
     }
 
-    private handleCreateValue(event: CreateValueEvent) {
-        this.valuesProvider.handleCreateValue(event)
-
-        this.addPanel(event.typeName, event.valueName)
-    }
-}
-
-export function sendTypeSchemasContextToPanel(
-    panel: WebviewPanel,
-    schemas: Record<string, TypeSchema>
-) {
-    const event: TypeSchemasContext = {
-        kind: "TypeSchemas",
-        schemas
+    private handleDeleteValue(panel: ValueViewPanel, event: DeleteValueEvent) {
+        panel.dispose()
+        this.purgePanel(panel)
+        this.valuesProvider.deleteValue(event.typeName, event.valueName)
     }
 
-    panel.webview.postMessage(event)
-}
-
-export function sendValueStoreContextToPanel(panel: WebviewPanel, s: Store) {
-    const event: ValueStoreContext = {
-        kind: "ValueStore",
-        store: s
+    private purgePanel(panel: ValueViewPanel) {
+        this.panels = this.panels.filter((p) => p != panel)
     }
-
-    panel.webview.postMessage(event)
-}
-
-function sendValuePanelContextToPanel(
-    panel: WebviewPanel,
-    typeName: string,
-    valueName: string
-) {
-    const event: ValuePanelContext = {
-        kind: "ValuePanel",
-        typeName: typeName,
-        valueName: valueName
-    }
-
-    panel.webview.postMessage(event)
 }
