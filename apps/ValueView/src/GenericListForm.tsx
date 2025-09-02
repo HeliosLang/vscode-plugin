@@ -1,4 +1,4 @@
-import { TypeSchema, type ListTypeSchema } from "@helios-lang/type-utils"
+import { TypeSchema } from "@helios-lang/type-utils"
 import {
     ArgInput,
     IconButton,
@@ -55,7 +55,7 @@ export function GenericListForm({ prefix, itemSchema, sectionTitle, fields }: Ge
         <>
             <h3>{sectionTitle} ({n})</h3>
             {collectListItems(fields, prefix).map((fieldValue, i) => {
-                const key = `item-${i}`
+                const key = `${prefix}-${i}`
                 return (
                     <ArgInput
                         key={key}
@@ -83,7 +83,7 @@ export function GenericListForm({ prefix, itemSchema, sectionTitle, fields }: Ge
     )
 }
 
-function countListItems(fields: Record<string, string>, prefix: string = "item"): number {
+export function countListItems(fields: Record<string, string>, prefix: string = "item"): number {
     let n = 0
 
     while (true) {
@@ -97,7 +97,7 @@ function countListItems(fields: Record<string, string>, prefix: string = "item")
     return n
 }
 
-function collectListItems(fields: Record<string, string>, prefix: string = "item"): string[] {
+export function collectListItems(fields: Record<string, string>, prefix: string = "item"): string[] {
     let i = 0
 
     const items: string[] = []

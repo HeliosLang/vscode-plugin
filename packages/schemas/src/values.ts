@@ -109,9 +109,11 @@ const BUILTIN_TYPES = [
     "Ratio",
     "Real",
     "ScriptContext",
+    "ScriptPurpose",
     "SpendingCredential",
     "StakingCredential",
     "StakingHash",
+    "StakingPurpose",
     "StakingValidatorHash",
     "Time",
     "TimeRange",
@@ -119,6 +121,7 @@ const BUILTIN_TYPES = [
     "TxId",
     "TxInput",
     "TxOutput",
+    "TxOutputDatum",
     "TxOutputId",
     "ValidatorHash",
     "Value"
@@ -271,6 +274,8 @@ export function makeDefaultFieldValues(
                     return { value: encodeByteArray("DEADBEEF") }
                 case "Int":
                     return { value: encodeInt(42) }
+                case "MintingPolicyHash":
+                    return { value: encodeByteArray([]) }
                 case "Ratio":
                     return { value: encodeRatio(2, 3) }
                 case "Real":
@@ -281,6 +286,24 @@ export function makeDefaultFieldValues(
                     return { 
                         _tag: "1", 
                         output_id: bytesToHex(makeDummyTxOutputId().toUplcData().toCbor())
+                    }
+                case "TimeRange": {
+                    const tr = makeTimeRange(Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY)
+
+                    return {
+                        start_tag: tr.start == Number.NEGATIVE_INFINITY ? "0" : tr.start == Number.POSITIVE_INFINITY ? "2" : "1",
+                        start_value: encodeInt(tr.finiteStart ?? Math.round(Date.now()/1000 * 1000)),
+                        include_start: encodeBool(tr.includeStart),
+                        end_tag: tr.end == Number.NEGATIVE_INFINITY ? "0" : tr.end == Number.POSITIVE_INFINITY ? "2" : "1",
+                        end_value: encodeInt(tr.finiteEnd ?? Math.round(Date.now()/1000 * 1000)),
+                        include_end: encodeBool(tr.includeEnd)
+                    }
+                }
+                case "Value":
+                    return {
+                        "policy-0": encodeByteArray([]),
+                        "token-name-0-0": encodeByteArray([]),
+                        "quantity-0-0": encodeInt(0)
                     }
                 default:
                     return makeNilFieldValues(schema)
@@ -383,6 +406,8 @@ export function makeNilFieldValues(schema: TypeSchema): Record<string, string> {
                     return { value: encodeInt(0) }
                 case "Int":
                     return { value: encodeInt(0) }
+                case "MintingPolicyHash":
+                    return { value: encodeByteArray([]) }
                 case "PubKey":
                     return { value: bytesToHex(makeDummyPubKey().toCbor()) }
                 case "PubKeyHash":
@@ -421,13 +446,22 @@ export function makeNilFieldValues(schema: TypeSchema): Record<string, string> {
                     return { value: encodeString("") }
                 case "Time":
                     return { value: encodeInt(0) }
+                case "TimeRange":
+                    return { 
+                        start_tag: "0",
+                        start_value: encodeInt(Math.round(Date.now()/1000)*1000),
+                        end_tag: "2",
+                        end_value: encodeInt(Math.round(Date.now()/1000)*1000),
+                        include_start: encodeBool(false),
+                        include_end: encodeBool(false)
+                    }                        
                 case "Tx": {
                         return {
                             inputs: bytesToHex(makeListData([]).toCbor()),
                             refInputs: bytesToHex(makeListData([]).toCbor()),
                             outputs: bytesToHex(makeListData([]).toCbor()),
                             fee: bytesToHex(makeValue(0n).toUplcData().toCbor()),
-                            value: bytesToHex(makeValue(0n).toUplcData(true).toCbor()),
+                            minted: bytesToHex(makeValue(0n).toUplcData(true).toCbor()),
                             dcerts: bytesToHex(makeListData([]).toCbor()),
                             withdrawals: bytesToHex(makeMapData([]).toCbor()),
                             time_range: bytesToHex(makeTimeRange(Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY).toUplcData().toCbor()),
@@ -475,7 +509,7 @@ export function makeNilFieldValues(schema: TypeSchema): Record<string, string> {
                 case "Value":
                     return {}
                 default:
-                    throw new Error(`Unhandled internal type ${schema.name}`)
+                    throw new Error(`Unhandled internal type ${schema.name} in makeNilFieldValues()`)
             }
         }
         case "list":
@@ -652,6 +686,11 @@ export function convertFieldsToUplcData(
                 case "Ratio":
                 case "Real":
                     return decodeUplcData(fields.value)
+                case "ScriptContext":
+                    return makeConstrData(0, [
+                        decodeUplcData(fields.tx),
+                        decodeUplcData(fields.purpose)
+                    ])
                 case "ScriptHash":
                     return decodeUplcData(fields.value)
                 case "ScriptPurpose":
@@ -676,8 +715,43 @@ export function convertFieldsToUplcData(
                     return makeConstrData(parseInt(fields._tag), [decodeUplcData(fields.hash)])
                 case "StakingValidatorHash":
                     return decodeUplcData(fields.value)
+                case "String":
+                    return decodeUplcData(fields.value)
                 case "Time":
                     return decodeUplcData(fields.value)
+                case "TimeRange":
+                    return makeConstrData(0, [
+                        makeConstrData(0, [
+                            (() => {
+                                switch (fields.start_tag) {
+                                    case "0":
+                                        return makeConstrData(0, [])
+                                    case "1":
+                                        return makeConstrData(1, [decodeUplcData(fields.start_value)])
+                                    case "2":
+                                        return makeConstrData(2, [])
+                                    default:
+                                        throw new Error(`Unhandled TimeRange bounds start tag ${fields.start_tag}`)
+                                }
+                            })(),
+                            decodeUplcData(fields.include_start)
+                        ]),
+                        makeConstrData(0, [
+                            (() => {
+                                switch (fields.end_tag) {
+                                    case "0":
+                                        return makeConstrData(0, [])
+                                    case "1":
+                                        return makeConstrData(1, [decodeUplcData(fields.end_value)])
+                                    case "2":
+                                        return makeConstrData(2, [])
+                                    default:
+                                        throw new Error(`Unhandled TimeRange bounds end tag ${fields.end_tag}`)
+                                }
+                            })(),
+                            decodeUplcData(fields.include_end)
+                        ])
+                    ])
                 case "Tx":
                     return makeConstrData(0, [
                         decodeUplcData(fields.inputs),
@@ -725,10 +799,23 @@ export function convertFieldsToUplcData(
                     ])
                 case "ValidatorHash":
                     return decodeUplcData(fields.value)
-                case "Value":
-                    console.warn("TODO: think of good fields format for Value")
-                    // think of a good format
-                    return makeMapData([])
+                case "Value": {
+                    const policies = convertFieldsToUplcDataList(fields, "policy")
+                    
+                    return makeMapData(policies.map((p, i) => {
+                        let tokenNames = convertFieldsToUplcDataList(fields, `token-name-${i}`)
+                        let quantities = convertFieldsToUplcDataList(fields, `quantity-${i}`)
+                        if (tokenNames.length != quantities.length) {
+                            const n = Math.min(tokenNames.length, quantities.length)
+                            tokenNames = tokenNames.slice(0, n)
+                            quantities = quantities.slice(0, n)                            
+                        }
+
+                        return [p, makeMapData(tokenNames.map((tn, j) => {
+                            return [tn, quantities[j]]
+                        }))]
+                    }))
+                }
                 default:
                     throw new Error(`Internal type '${schema.name}' unhandled in convertFieldsToUplcData()`)
             }
@@ -1182,12 +1269,75 @@ export function validateUplcData(schema: TypeSchema, data: UplcData): boolean {
                     return data.kind == "list" && data.items.length == 2 && data.items[0].kind == "int" && data.items[1].kind == "int"
                 case "MintingPolicyHash":
                     return data.kind == "bytes" && (data.bytes.length == 28 || data.bytes.length == 0)
-                case "ValidatorHash":
-                    return data.kind == "bytes" && data.bytes.length == 28
-                case "Time":
-                    return data.kind == "int" && data.value >= 0n
                 case "String":
                     return data.kind == "bytes" && isValidUtf8(data.bytes)
+                case "Time":
+                    return data.kind == "int" && data.value >= 0n
+                case "TimeRange": {
+                    if (!(data.kind == "constr" && data.tag == 0 && data.fields.length == 2)) {
+                        return false
+                    }
+
+                    const start = data.fields[0]
+
+                    if (!(start.kind == "constr" && start.tag == 0 && start.fields.length == 2)) {
+                        return false
+                    }
+
+                    const startValue = start.fields[0]
+
+                    if (startValue.kind != "constr") {
+                        return false
+                    }
+
+                    switch (startValue.tag) {
+                        case 0:
+                        case 2:
+                            break
+                        case 1:
+                            if (!(startValue.fields.length == 1 && startValue.fields[0].kind == "int")) {
+                                return false
+                            }
+                        default:
+                            return false
+                    }
+
+                    if (!validateUplcData({kind: "internal", name: "Bool"}, start.fields[1])) {
+                        return false
+                    }
+
+                    const end = data.fields[1]
+
+                    if (!(end.kind == "constr" && end.tag == 0 && end.fields.length == 2)) {
+                        return false
+                    }
+
+                    const endValue = end.fields[0]
+
+                    if (endValue.kind != "constr") {
+                        return false
+                    }
+
+                    switch (endValue.tag) {
+                        case 0:
+                        case 2:
+                            break
+                        case 1:
+                            if (!(endValue.fields.length == 1 && endValue.fields[0].kind == "int")) {
+                                return false
+                            }
+                        default:
+                            return false
+                    }
+
+                    if (!validateUplcData({kind: "internal", name: "Bool"}, end.fields[1])) {
+                        return false
+                    }
+
+                    return true
+                }
+                case "ValidatorHash":
+                    return data.kind == "bytes" && data.bytes.length == 28
                 case "Value": {
                     if (data.kind != "map") {
                         return false

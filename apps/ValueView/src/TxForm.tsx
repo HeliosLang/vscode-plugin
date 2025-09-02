@@ -1,6 +1,5 @@
-import { ArgInput } from "components"
-import { BuiltinStructForm } from "./BuiltinStructForm"
 import { StructTypeSchema } from "@helios-lang/type-utils"
+import { BuiltinStructForm } from "./BuiltinStructForm"
 
 type TxFormProps = {
     fields: Record<string, string>

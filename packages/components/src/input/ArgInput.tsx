@@ -13,6 +13,10 @@ import { RealListInput } from "./RealListInput"
 import { StringInput } from "./StringInput"
 import { StringListInput } from "./StringListInput"
 import { MintingPolicyHashInput } from "./MintingPolicyHashInput"
+import { TimeRangeInput } from "./TimeRangeInput"
+import { ValidatorHashInput } from "./ValidatorHashInput"
+import { StakingValidatorHashInput } from "./StakingValidatorHashInput"
+import { ScriptHashInput } from "./ScriptHashInput"
 
 type ArgInputProps = {
     fieldName: string
@@ -32,23 +36,13 @@ export function ArgInput({ fieldName, fieldType, fieldValue, label }: ArgInputPr
     switch (fieldType) {
         case "Bool":
             return <BoolInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
-        case "ByteArray":
-            return (
-                <ByteArrayInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
-            )
-        case "Duration":
-        case "Int":
-        case "Time":
-            return <IntLikeInput fieldName={fieldName} fieldValue={fieldValue} typeName={fieldType} label={label} />
-        case "Ratio":
-            return <RatioInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
-        case "Real":
-            return <RealInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
-        case "String":
-            return <StringInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
         case "[]Bool":
             return (
                 <BoolListInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
+            )
+        case "ByteArray":
+            return (
+                <ByteArrayInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
             )
         case "[]ByteArray":
             return (
@@ -58,18 +52,52 @@ export function ArgInput({ fieldName, fieldType, fieldValue, label }: ArgInputPr
                     fieldValue={fieldValue}
                 />
             )
+        case "Duration":
+            return <IntLikeInput fieldName={fieldName} fieldValue={fieldValue} typeName={fieldType} label={label} />
+        case "Int":
+            return <IntLikeInput fieldName={fieldName} fieldValue={fieldValue} typeName={fieldType} label={label} />
         case "[]Int":
             return (
                 <IntListInput label={label} fieldName={fieldName} fieldValue={fieldValue} />
             )
+        case "MintingPolicyHash":
+            return (
+                <MintingPolicyHashInput
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                    label={label}
+                />
+            )
+        case "Ratio":
+            return <RatioInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
         case "[]Ratio":
             return (
                 <RatioListInput label={label} fieldName={fieldName} fieldValue={fieldValue} />
             )
+        case "Real":
+            return <RealInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
         case "[]Real":
             return (
                 <RealListInput label={label} fieldName={fieldName} fieldValue={fieldValue} />
             )
+        case "ScriptHash":
+            return (
+                <ScriptHashInput
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                    label={label}
+                />
+            )
+        case "StakingValidatorHash":
+            return (
+                <StakingValidatorHashInput
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                    label={label}
+                />
+            )
+        case "String":
+            return <StringInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
         case "[]String":
             return (
                 <StringListInput
@@ -78,9 +106,19 @@ export function ArgInput({ fieldName, fieldType, fieldValue, label }: ArgInputPr
                     fieldValue={fieldValue}
                 />
             )
-        case "MintingPolicyHash":
+        case "Time":
+            return <IntLikeInput fieldName={fieldName} fieldValue={fieldValue} typeName={fieldType} label={label} />
+        case "TimeRange":
             return (
-                <MintingPolicyHashInput
+                <TimeRangeInput
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                    label={label}
+                />
+            )
+        case "ValidatorHash":
+            return (
+                <ValidatorHashInput
                     fieldName={fieldName}
                     fieldValue={fieldValue}
                     label={label}

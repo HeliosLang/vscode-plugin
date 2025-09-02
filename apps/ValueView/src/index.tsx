@@ -46,6 +46,12 @@ import { DCertForm } from "./DCertForm"
 import { TxOutputDatumForm } from "./TxOutputDatumForm"
 import { ScriptPurposeForm } from "./ScriptPurposeForm"
 import { DataForm } from "./DataForm"
+import { TimeRangeForm } from "./TimeRangeForm"
+import { AddressForm } from "./AddressForm"
+import { ScriptHashForm } from "./ScriptHashForm"
+import { ValueForm } from "./ValueForm"
+import { ScriptContextForm } from "./ScriptContextForm"
+import { TxIdForm } from "./TxIdForm"
 
 const root = document.getElementById("root") as HTMLElement
 
@@ -187,7 +193,7 @@ function MainInternal({ context, schema }: MainInternalProps) {
         case "internal":
             switch (schema.name) {
                 case "Address":
-                    return 
+                    return <AddressForm fields={valueFields} />
                 case "AssetClass":
                     return <AssetClassForm fields={valueFields} />
                 case "Data":
@@ -202,6 +208,10 @@ function MainInternal({ context, schema }: MainInternalProps) {
                     return <PubKeyForm fields={valueFields} />
                 case "PubKeyHash":
                     return <PubKeyHashForm fields={valueFields} />
+                case "ScriptContext":
+                    return <ScriptContextForm fields={valueFields} />
+                case "ScriptHash":
+                    return <ScriptHashForm fields={valueFields} />
                 case "ScriptPurpose":
                     return <ScriptPurposeForm fields={valueFields} />
                 case "SpendingCredential":
@@ -212,8 +222,12 @@ function MainInternal({ context, schema }: MainInternalProps) {
                     return <StakingHashForm fields={valueFields} />
                 case "StakingValidatorHash":
                     return <StakingValidatorHashForm fields={valueFields} />
+                case "TimeRange":
+                    return <TimeRangeForm fields={valueFields} />
                 case "Tx":
                     return <TxForm fields={valueFields} />
+                case "TxId":
+                    return <TxIdForm fields={valueFields} />
                 case "TxInput":
                     return <TxInputForm fields={valueFields} />
                 case "TxOutput":
@@ -224,8 +238,10 @@ function MainInternal({ context, schema }: MainInternalProps) {
                     return <TxOutputIdForm fields={valueFields} />
                 case "ValidatorHash":
                     return <ValidatorHashForm fields={valueFields} />
+                case "Value":
+                    return <ValueForm fields={valueFields} />
                 default:
-                    return <p>Unhandled internal type '{schema.name}'</p>
+                    return <p>Unhandled internal type '{schema.name}' in MainInternal componentY</p>
             }
         case "enum":
             return <EnumForm schema={schema} fields={valueFields} />

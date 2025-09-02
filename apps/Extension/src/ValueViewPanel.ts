@@ -52,8 +52,8 @@ export class ValueViewPanel {
         this.typeName = typeName
         this.valueName_ = valueName
 
-        this.compileListener_ = (program: Program | undefined) => {
-            this.syncPanelContext(program)
+        this.compileListener_ = (_program: Program | undefined) => {
+            this.syncPanelContext()
         }
 
         this.astProvider.addCompileActiveDocumentListener(this.compileListener_)
@@ -103,14 +103,14 @@ export class ValueViewPanel {
         } satisfies ValueStoreContext)
     }
 
-    private syncPanelContext(program: Program | undefined = undefined) {
-        program = program ?? this.astProvider.activeDocumentProgram
+    private syncPanelContext() {
+        const allValidators = this.astProvider.allValidators
 
         this.panel.webview.postMessage({
             kind: "ValuePanel",
             typeName: this.typeName,
             valueName: this.valueName_,
-            allValidators: collectValidators(program)
+            allValidators
         } satisfies ValuePanelContext)
     }
 }

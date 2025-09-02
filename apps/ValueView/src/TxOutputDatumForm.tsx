@@ -6,5 +6,5 @@ type TxOutputDatumFormProps = {
 }
 
 export function TxOutputDatumForm({ fields }: TxOutputDatumFormProps) {
-    return <BuiltinEnumForm variants={TX_OUTPUT_DATUM_VARIANTS} defaultVariant="PubKey" fields={fields} />
+    return <BuiltinEnumForm variants={TX_OUTPUT_DATUM_VARIANTS} defaultVariant="None" fields={fields} />
 }

@@ -185,6 +185,9 @@ importers:
       '@helios-lang/compiler-utils':
         specifier: ^0.5.17
         version: 0.5.17
+      '@helios-lang/ledger':
+        specifier: ^0.7.19
+        version: 0.7.19
       '@helios-lang/type-utils':
         specifier: ^0.3.0
         version: 0.3.0

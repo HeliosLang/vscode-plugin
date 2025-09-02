@@ -26,3 +26,9 @@
     align-items: center;
     height: 32px !important;
 }
+
+.valueTokens {
+    padding-left: 30px;
+    display: flex;
+    flex-direction: column;
+}

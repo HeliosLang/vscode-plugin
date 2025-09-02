@@ -1,8 +1,6 @@
 import { genDummyHash, type ArgsPanelEntryPoint } from "schemas"
-import { bytesToHex, encodeUtf8 } from "@helios-lang/codec-utils"
 import { Program } from "@helios-lang/compiler"
 import { type ErrorCollector } from "@helios-lang/compiler-utils"
-import { blake2b } from "@helios-lang/crypto"
 import { type UplcProgramV2 } from "@helios-lang/uplc"
 
 export function collectEntryPointInfo(
@@ -90,22 +88,54 @@ export function collectErrorUris(errors: ErrorCollector | undefined): string[] {
     return Array.from(s).map((f) => f)
 }
 
-export function collectValidators(ast: Program | undefined): {name: string, purpose: string}[] {
+function collectSortedValidators(ast: Program | undefined): string[] {
     if (!ast) {
         return []
     }
+
+    const names = Object.keys(ast.props.validatorTypes ?? {}).slice()
+
+    names.sort()
+
+    return names
+}
+
+export function collectValidators(ast: Program | undefined): {name: string, purpose: string}[] {
+    const names = collectSortedValidators(ast)
+    if (!ast) {
+        return []
+    }
+
+    const validatorTypes: Record<string, any> = ast.props.validatorTypes ?? {}
     
-    return Object.entries(ast.props.validatorTypes ?? {}).map(([key, value]) => {
-        return {
-            name: key,
-            purpose: {
-                "ScriptHash": "mixed",
-                "ValidatorHash": "spending",
-                "StakingValidatorHash": "staking",
-                "MintingPolicyHash": "minting"
-            }[value.name] ?? "mixed"
-        }
+    const entries = names.map(name => {
+        const purpose = (() => {
+            switch (validatorTypes[name].value) {
+                case "ScriptHash":
+                    return "mixed"
+                case "ValidatorHash":
+                    return "spending"
+                case "StakingValidatorHash":
+                    return "staking"
+                case "MintingPolicyHash":
+                    return "minting"
+                default:
+                    return "mixed"
+            }
+        })()
+
+        return {name, purpose}
     })
+
+    console.log("After compare: ", entries.map(e => e.name).join(", "))
+
+    return entries
+}
+
+export function sortedValidatorIndices(ast: Program | undefined): Record<string, number> {
+    const names = collectSortedValidators(ast)
+
+    return Object.fromEntries(names.map((name, i) => [name, i]))  
 }
 
 // TODO: compile with source map
@@ -113,7 +143,8 @@ export function compileEntryPoint(
     ast: Program | undefined,
     entryPoint: string | undefined
 ): UplcProgramV2 | undefined {
-    if (!ast || !entryPoint) {
+    const entryPointInfo = collectEntryPointInfo(ast, entryPoint)
+    if (!ast || !entryPoint || !entryPointInfo) {
         return undefined
     }
 
@@ -124,12 +155,14 @@ export function compileEntryPoint(
     }
 
     const hashDependencies = genDummyHashes(Object.keys(validatorTypes))
+    const validatorIndices = sortedValidatorIndices(ast)
 
     if (entryPoint == "main") {
         return ast.compile({
             optimize: false,
             onCompileUserFunc: undefined,
-            hashDependencies: hashDependencies
+            hashDependencies: hashDependencies,
+            validatorIndices
         })
     }
 
@@ -143,7 +176,8 @@ export function compileEntryPoint(
     return fn.compile({
         optimize: false,
         hashDependencies,
-        validatorTypes
+        validatorTypes,
+        validatorIndices
     })
 }
 

@@ -1,25 +1,27 @@
-import { ArgInput } from "components"
+import { StructTypeSchema } from "@helios-lang/type-utils"
+import { BuiltinStructForm } from "./BuiltinStructForm"
 
-type ScriptContextInputProps = {
+type ScriptContextFormProps = {
     fields: Record<string, string>
 }
 
-export function ScriptContextInput({ fields }: ScriptContextInputProps) {    
-    return (
-        <>
-            <h3>Tx</h3>
-            <ArgInput
-                fieldName="tx"
-                fieldType="Tx"
-                fieldValue={fields["tx"]}
-            />
+const SCHEMA: StructTypeSchema = {
+    kind: "struct",
+    name: "ScriptContext",
+    id: "ScriptContext",
+    format: "list",
+    fieldTypes: [
+        {
+            name: "tx",
+            type: {kind: "internal", name: "Tx"}
+        },
+        {
+            name: "purpose",
+            type: {kind: "internal", name: "ScriptPurpose"}
+        }
+    ]
+}
 
-            <h3>Purpose</h3>
-            <ArgInput
-                fieldName="purpose"
-                fieldType="ScriptPurpose"
-                fieldValue={fields["purpose"]}
-            />
-        </>
-    )
+export function ScriptContextForm({ fields }: ScriptContextFormProps) {    
+    return <BuiltinStructForm schema={SCHEMA} fields={fields} />
 }

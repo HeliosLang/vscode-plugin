@@ -6,6 +6,7 @@ import {
 } from "@helios-lang/compiler-utils"
 import { getScriptHashType, Program, ProgramProps } from "@helios-lang/compiler"
 import { isHeliosExt } from "./repository"
+import { collectValidators } from "./ast"
 
 type CompileListener = (programs: Record<string, Program>) => void
 export type CompileActiveDocumentListener = (program: Program | undefined) => void
@@ -39,6 +40,25 @@ export class ASTProvider {
         } else {
             return undefined
         }
+    }
+
+    get allValidators(): {name: string, purpose: string}[] {
+        const result: Map<string, {name: string, purpose: string}> = new Map()
+        for (let program of Object.values(this.programs)) {
+            const vs = collectValidators(program)
+
+            for (let v of vs) {
+                result.set(v.name, v)
+            }
+        }
+
+        const arr = Array.from(result.values())
+
+        arr.sort(({name: a}, {name: b}) => {
+            return a.localeCompare(b)
+        })
+
+        return arr
     }
 
     addCompileListener(listener: CompileListener) {

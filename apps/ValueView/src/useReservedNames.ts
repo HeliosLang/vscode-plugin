@@ -19,9 +19,9 @@ export function useReservedNames(context: ValuePanelContext): Set<string> {
                     }
                 })
                 break
-            case "ValidatorHash":
+            case "ScriptHash":
                 context.allValidators.forEach(v => {
-                    if (["mixed", "spending"].includes(v.purpose)) {
+                    if (["mixed", "minting", "spending", "staking"].includes(v.purpose)) {
                         reserved.add(v.name)
                     }
                 })
@@ -33,9 +33,13 @@ export function useReservedNames(context: ValuePanelContext): Set<string> {
                     }
                 })
                 break
-            case "ScriptHash":
+            case "TimeRange":
+                reserved.add("ALWAYS")
+                reserved.add("NEVER")
+                break
+            case "ValidatorHash":
                 context.allValidators.forEach(v => {
-                    if (["mixed", "minting", "spending", "staking"].includes(v.purpose)) {
+                    if (["mixed", "spending"].includes(v.purpose)) {
                         reserved.add(v.name)
                     }
                 })

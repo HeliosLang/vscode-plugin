@@ -6,16 +6,20 @@ import {
     useChangeEntryPoint,
     useContextKey,
     useStoreHelper,
-    useTypeSchemas
+    useTypeSchemas,
+    useVsCodeApi
 } from "components"
 import { ReactNode, StrictMode, useCallback, useId, useMemo } from "react"
 import { createRoot } from "react-dom/client"
 import { ErrorBoundary } from "react-error-boundary"
 import {
     ArgsPanelEntryPoint,
+    ChangeFieldValueEvent,
     makeDefaultValue,
     tryResolveSchema
 } from "schemas"
+import { bytesToHex } from "@helios-lang/codec-utils"
+import { decodeUplcData, makeConstrData } from "@helios-lang/uplc"
 import { expectDefined } from "@helios-lang/type-utils"
 import { useArgsPanelContext } from "./useArgsPanelContext"
 
@@ -73,7 +77,7 @@ function Main() {
 
             <EntryPointForm
                 entryPointInfo={context.entryPoint}
-                allValidatorNames={context.allValidatorNames}
+                allValidators={context.allValidators}
             />
         </Form>
     )
@@ -187,24 +191,21 @@ function basename(path: string): string {
 }
 
 type EntryPointFormProps = {
-    allValidatorNames: readonly string[] // TODO: as hook
+    allValidators: readonly {name: string, purpose: string}[] // TODO: as hook
     entryPointInfo: ArgsPanelEntryPoint
 }
 
 function EntryPointForm({
-    allValidatorNames,
+    allValidators,
     entryPointInfo
 }: EntryPointFormProps) {
     const contextKey = useContextKey()
-    const handleSelectCurrentValidator = useCallback((value: string) => {
-        console.log(value)
-    }, [])
 
     // use the store as a kind of cache
     const store = useStoreHelper()
     const schemas = useTypeSchemas()
 
-    const [argValues, scriptContextValue, currentValidatorValue] =
+    const [argValues, scriptContextValue] =
         useMemo(() => {
             const argValues: Record<string, string> = {}
 
@@ -221,11 +222,9 @@ function EntryPointForm({
                 }
             }
 
-            const scriptContextValue = "" //store.get(key, "ScriptContext")
+            const scriptContextValue = store.getFieldValue(contextKey, "ScriptContext")            
 
-            const currentValidatorValue = "" //store.get(key, "::CurrentValidator")
-
-            return [argValues, scriptContextValue, currentValidatorValue]
+            return [argValues, scriptContextValue]
         }, [entryPointInfo, store, contextKey, schemas])
 
     if (
@@ -259,16 +258,67 @@ function EntryPointForm({
                 </FormRow>
             )}
 
-            {entryPointInfo.needsCurrentValidator && (
-                <FormRow>
-                    <label>Current validator</label>
-                    <Select
-                        options={allValidatorNames}
-                        value={currentValidatorValue}
-                        onChange={handleSelectCurrentValidator}
-                    />
-                </FormRow>
-            )}
+            {entryPointInfo.needsCurrentValidator && <SelectCurrentValidator allValidators={allValidators} />}
         </FormSection>
+    )
+}
+
+type SelectCurrentValidatorProps = {
+    allValidators: readonly {name: string, purpose: string}[]
+}
+
+function SelectCurrentValidator({allValidators}: SelectCurrentValidatorProps) {
+    const contextKey = useContextKey()
+    const vscode = useVsCodeApi()
+    const store = useStoreHelper()
+
+    const currentValidatorName = useMemo(() => {
+        const currentValidatorValue = store.getFieldValue(contextKey, "::CurrentValidator") // cbor hex of validator
+
+        if (!currentValidatorValue) {
+            return allValidators[0].name
+        }
+
+        const constrData = decodeUplcData(currentValidatorValue)
+
+        if (constrData.kind != "constr") {
+            return allValidators[0].name
+        }
+
+        const tag = constrData.tag
+
+        const name = allValidators[tag]?.name
+
+        if (!name) {
+            return allValidators[0].name
+        }
+
+        return name
+    }, [store, contextKey, allValidators])
+
+    const handleSelectCurrentValidator = useCallback((value: string) => { 
+        const i = allValidators.findIndex((v) => v.name == value)
+        if (i == -1) {
+            return 
+        }
+
+        vscode.postMessage({
+            kind: "ChangeFieldValue",
+            contextKey,
+            fieldName: "::CurrentValidator",
+            fieldType: "",
+            fieldValue: bytesToHex(makeConstrData(i, []).toCbor()),
+        } satisfies ChangeFieldValueEvent)
+    }, [vscode, contextKey, allValidators])
+
+    return (
+        <FormRow>
+            <label>Current validator</label>
+            <Select
+                options={allValidators.map(v => v.name)}
+                value={currentValidatorName}
+                onChange={handleSelectCurrentValidator}
+            />
+        </FormRow>
     )
 }

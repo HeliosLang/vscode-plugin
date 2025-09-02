@@ -1,17 +1,8 @@
-import { ReactNode, useCallback, useMemo } from "react"
-import { useContextKey, usePanelContext, useStoreHelper } from "../context"
-import { DEFAULT_VALUE_NAME, makeCreateMessage, useCurrentGenericInputValue, useSelectGenericValue } from "./GenericInput"
-import { bytesToHex } from "@helios-lang/codec-utils"
-import { EditValueEvent, genDummyHash } from "schemas"
-import { makeByteArrayData } from "@helios-lang/uplc"
-import { useVsCodeApi } from "../vscode"
-import { ArgLabel } from "./ArgLabel"
-
-import styles from "./styles.module.css"
-import { Select } from "./Select"
-import { IconButton } from "./IconButton"
-import { PencilIcon } from "../icons/PencilIcon"
+import { ReactNode, useCallback } from "react"
+import { ScriptHashLikeInput, useValidatorOptions } from "./ScriptHashLikeInput"
 import { useChangeFieldValue } from "../events"
+import { bytesToHex } from "@helios-lang/codec-utils"
+import { makeByteArrayData } from "@helios-lang/uplc"
 
 type MintingPolicyHashInputProps = {
     fieldName: string
@@ -22,104 +13,34 @@ type MintingPolicyHashInputProps = {
 const TYPE_NAME = "MintingPolicyHash"
 const PURPOSES = ["mixed", "minting"]
 
-// similar to generic select, but includes known validators
 export function MintingPolicyHashInput({fieldName, fieldValue, label}: MintingPolicyHashInputProps) {
-    const vscode = useVsCodeApi()
-    const store = useStoreHelper()
-    const contextKey = useContextKey()
-    const validatorOptions = useMintingPolicyHashOptions()
-    const selectGenericValue = useSelectGenericValue(fieldName, TYPE_NAME)
+    const options = useMintingPolicyHashOptions()
     const changeValue = useChangeFieldValue()
-    
-    const options = useMemo(() => {
-        const userOptions = store.getTypeOptions(TYPE_NAME)
-        
-        return userOptions.concat(validatorOptions).concat(["NIL", makeCreateMessage(TYPE_NAME)])
-    }, [store, validatorOptions])
 
-    const valueName = useCurrentMintingPolicyHash(
-        fieldName, fieldValue, validatorOptions
-    )
-
-    const handleSelect = useCallback((newValueName: string) => {
-        if (validatorOptions.includes(newValueName)) {
+    const handleSelectADA = useCallback((newName: string) => {
+        if (newName == "ADA") {
             changeValue({
                 fieldName, 
                 fieldType: TYPE_NAME, 
-                fieldValue: bytesToHex(makeByteArrayData(genDummyHash(newValueName)).toCbor())
+                fieldValue: bytesToHex(makeByteArrayData([]).toCbor())
             })
+            return true
         } else {
-            selectGenericValue(newValueName)
+            return false
         }
-    }, [vscode, validatorOptions, selectGenericValue])
+    }, [changeValue, fieldName])
 
-    const handleEdit = useCallback(() => {
-        if (valueName) {
-            vscode.postMessage({
-                kind: "EditValue",
-                typeName: TYPE_NAME,
-                valueName,
-                callerContextKey: contextKey,
-                callerFieldName: fieldName
-            } satisfies EditValueEvent)
-        }
-    }, [vscode, valueName, contextKey, fieldName])
-
-    return (
-        <>
-            {label || <ArgLabel name={fieldName} type={TYPE_NAME} />}
-            <div className={styles.genericInputRow}>
-                <Select
-                    value={valueName}
-                    className={styles.notFullWidth}
-                    options={options}
-                    onChange={handleSelect}
-                />
-
-                <IconButton
-                    onClick={handleEdit}
-                    disabled={valueName == DEFAULT_VALUE_NAME || validatorOptions.includes(valueName)}
-                    tooltip={valueName == DEFAULT_VALUE_NAME ? `Can't edit ${DEFAULT_VALUE_NAME}` : validatorOptions.includes(valueName) ? `Can't edit validator hash` : undefined}
-                >
-                    <PencilIcon />
-                </IconButton>
-            </div>
-        </>
-    )
-}
-
-function useValidatorOptions(purposes: string[]): string[] {
-    const context = usePanelContext()
-
-    return useMemo(() => {
-        return context.kind == "PanelLoading" ? [] : context.allValidators.filter(v => purposes.includes(v.purpose)).map(v => v.name)
-    }, [context, purposes])
+    return <ScriptHashLikeInput 
+        validatorOptions={options} 
+        fieldName={fieldName} 
+        fieldValue={fieldValue} 
+        typeName={TYPE_NAME} 
+        defaultName="ADA"
+        onSelect={handleSelectADA}
+        label={label}
+    />
 }
 
 function useMintingPolicyHashOptions(): string[] {
     return useValidatorOptions(PURPOSES)
-}
-
-function useCurrentMintingPolicyHash(
-    fieldName: string,
-    fieldValue: string,
-    validatorOptions: string[]
-): string {
-    const context = usePanelContext()
-    const valueName = useCurrentGenericInputValue(fieldName, TYPE_NAME, fieldValue)
-
-    return useMemo(() => {
-        if (valueName != DEFAULT_VALUE_NAME) {
-            return valueName
-        }
-
-        for (let validatorName of validatorOptions) {
-            if (bytesToHex(makeByteArrayData(genDummyHash(validatorName)).toCbor()) == fieldValue) {
-                return validatorName
-            }
-        }
-
-        return valueName
-    }, [context, valueName, fieldValue, validatorOptions])
-
 }

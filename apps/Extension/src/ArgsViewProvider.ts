@@ -197,7 +197,7 @@ export class ArgsViewProvider implements WebviewViewProvider {
 
     private compileArgs(): UplcData[] | undefined {
         const ast = this.ast
-        const entryPointInfo = collectEntryPointInfo(this.ast, this.entryPoint)
+        const entryPointInfo = collectEntryPointInfo(ast, this.entryPoint)
         if (!ast || !entryPointInfo) {
             return undefined
         }
@@ -252,7 +252,17 @@ export class ArgsViewProvider implements WebviewViewProvider {
         }
 
         if (entryPointInfo.needsCurrentValidator) {
-            throw new Error("not yet implemented")
+            let argValue = this.valuesProvider.store.values[contextKey]?.["::CurrentValidator"]
+
+            if (!argValue) {
+                argValue = bytesToHex(makeConstrData(0, []).toCbor())
+            }
+
+            try {
+                args.push(decodeUplcData(argValue))
+            } catch(e) {
+                return undefined
+            }
         }
 
         return args
@@ -338,165 +348,6 @@ export class ArgsViewProvider implements WebviewViewProvider {
             entryPoint: collectEntryPointInfo(ast, this.entryPoint)
         } satisfies ArgsPanelContext)
     }
-
-    // TODO: compile with source map
-    //compileEntryPoint(): UplcProgramV2 | undefined {
-    //    if (!this.entryPoint) {
-    //        return undefined
-    //    }
-    //
-    //    if (!this.ast) {
-    //        return undefined
-    //    }
-    //
-    //    const validatorTypes = this.ast.props.validatorTypes
-    //
-    //    if (!validatorTypes) {
-    //        return undefined
-    //    }
-    //
-    //    const hashDependencies = genDummyHashes(Object.keys(validatorTypes))
-    //
-    //    if (this.entryPoint == "main") {
-    //        return this.ast.compile({
-    //            optimize: false,
-    //            onCompileUserFunc: undefined,
-    //            hashDependencies: hashDependencies
-    //        })
-    //    }
-    //
-    //    const key = this.ast.entryPoint.mainModule.name.value
-    //
-    //    if (!(key in this.ast.userFunctions)) {
-    //        return undefined
-    //    }
-    //
-    //    const userFn = this.ast.userFunctions[key][this.entryPoint]
-    //
-    //    return userFn.compile({
-    //        optimize: false,
-    //        hashDependencies,
-    //        validatorTypes
-    //    })
-    //}
-
-    genUplcDataArgs(): UplcData[] | undefined {
-        return undefined
-        //const args = this.getArgs()
-        //
-        //if (!args) {
-        //    return undefined
-        //}
-        //
-        //const result: UplcData[] = []
-        //
-        //for (let arg of args.args) {
-        //    const argName = arg.name
-        //
-        //    if (argName == "_") {
-        //        result.push(makeIntData(0))
-        //    } else {
-        //        const rawValue = this.#argValues[argName]
-        //
-        //        if (rawValue == "" || rawValue == undefined) {
-        //            // TODO: display error in view
-        //            return undefined
-        //        }
-        //
-        //        if (rawValue.startsWith("{")) {
-        //            try {
-        //                const value = jsonToData(JSON.parse(rawValue))
-        //
-        //                result.push(value)
-        //            } catch (e) {
-        //                // TODO: dispaly error in view
-        //                return undefined
-        //            }
-        //        } else {
-        //            try {
-        //                const value = decodeUplcData(rawValue)
-        //
-        //                result.push(value)
-        //            } catch (e) {
-        //                // TODO: display error in view
-        //                return undefined
-        //            }
-        //        }
-        //    }
-        //}
-        //
-        //if (args.requiresScriptContext) {
-        //    const rawValue = this.#scriptContext
-        //
-        //    if (!rawValue || rawValue == "") {
-        //        // TODO: display error in view
-        //        return undefined
-        //    }
-        //
-        //    if (rawValue.startsWith("{")) {
-        //        try {
-        //            const value = jsonToData(JSON.parse(rawValue))
-        //
-        //            result.push(value)
-        //        } catch (e) {
-        //            // TODO: dispaly error in view
-        //            return undefined
-        //        }
-        //    } else {
-        //        try {
-        //            const value = decodeUplcData(rawValue)
-        //
-        //            result.push(value)
-        //        } catch (e) {
-        //            // TODO: display error in view
-        //            return undefined
-        //        }
-        //    }
-        //}
-        //
-        //return result
-    }
-}
-
-function jsonToData(obj: any): UplcData {
-    if (obj === null) {
-        throw new Error("null not supported")
-    }
-    if (typeof obj === "number") {
-        return makeIntData(BigInt(Math.trunc(obj)))
-    }
-    if (typeof obj === "string") {
-        return makeByteArrayData(encodeUtf8(obj))
-    }
-    if (typeof obj === "boolean") {
-        return boolToUplcData(obj)
-    }
-    if (Array.isArray(obj)) {
-        return makeListData(obj.map((x) => jsonToData(x)))
-    }
-    if (typeof obj === "object") {
-        if ("int" in obj) {
-            return makeIntData(BigInt(obj.int))
-        }
-        if ("bytes" in obj) {
-            return makeByteArrayData({ bytes: hexToBytes(obj.bytes) })
-        }
-        if ("list" in obj) {
-            return makeListData(obj.list.map((x: any) => jsonToData(x)))
-        }
-        if ("map" in obj) {
-            return makeMapData(
-                obj.map.map((p: any) => [jsonToData(p.k), jsonToData(p.v)])
-            )
-        }
-        if ("constructor" in obj && "fields" in obj) {
-            return makeConstrData(
-                obj.constructor,
-                obj.fields.map((x: any) => jsonToData(x))
-            )
-        }
-    }
-    throw new Error("invalid JSON")
 }
 
 type FocusOrOpenTextEditorOptions = {
