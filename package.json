@@ -71,7 +71,7 @@
         ],
         "debuggers": [
             {
-                "type": "helios",
+                "type": "heliosdebugger",
                 "label": "Helios Debugger",
                 "languages": [
                     "helios"
@@ -97,15 +97,14 @@
                             "uplcProgram"
                         ]
                     }
-                },
-                "when": "heliosDebugActive || !virtualWorkspace && debugStartLanguage == helios"
+                }
             }
         ],
         "viewsWelcome": [
             {
                 "view": "debug",
-                "contents": "",
-                "when": "heliosDebugActive || !virtualWorkspace && debugStartLanguage == helios"
+                "contents": "Helios debugger available",
+                "when": "heliosDebugActive"
             }
         ],
         "views": {
@@ -118,12 +117,7 @@
                 }
             ]
         },
-        "commands": [
-            {
-                "command": "helios.showEntryPointAndArguments",
-                "title": "Show Helios Entry Point & Arguments View"
-            }
-        ]
+        "commands": []
     },
     "main": "./dist/extension.js",
     "activationEvents": [

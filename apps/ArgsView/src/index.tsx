@@ -41,8 +41,7 @@ function Main() {
     const changeEntryPoint = useChangeEntryPoint()
     const entryPointsSelectId = useId()
 
-    if (!context || !context.entryPoint) {
-        // TODO: spinner
+    if (!context) {
         return <Loading />
     }
 
@@ -59,6 +58,10 @@ function Main() {
                 </p>
             </div>
         )
+    }
+
+    if (!context.entryPoint) {
+        return <Loading />
     }
 
     return (

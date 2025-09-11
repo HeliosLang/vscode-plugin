@@ -4,10 +4,9 @@ import {
     window,
     commands,
     workspace,
-    type TextDocument
+    DebugConfigurationProviderTriggerKind
 } from "vscode"
-import { Program } from "@helios-lang/compiler"
-import { type TypeSchema } from "@helios-lang/type-utils"
+import { encodeFullUplcProgram } from "@helios-lang/uplc"
 //import { registerHoverProvider } from "./hover"
 import { ArgsViewProvider } from "./ArgsViewProvider"
 import { isHeliosExt } from "./repository"
@@ -15,7 +14,6 @@ import { bytesToHex } from "@helios-lang/codec-utils"
 import { DiagnosticsProvider } from "./diagnostics"
 import { ValueViewsProvider } from "./ValueViewsProvider"
 import { ValuesProvider as ValuesProvider } from "./ValuesProvider"
-import { type Store } from "schemas"
 import { ASTProvider } from "./ASTProvider"
 import { TypeSchemasProvider } from "./TypeSchemasProvider"
 
@@ -94,13 +92,11 @@ export function activate(extensionContext: ExtensionContext) {
 
                 const { uplcProgram, args } = uplcProgramAndArgs
 
-                // TODO: also send UPLC cborHex, source code mapping, arguments (CBOR hex), and ScriptContext (CBOR hex) to debug process
-                // entryPoint isn't used during the run, but still provides useful information during debugging
                 return {
                     name: config.name ?? "Launch Helios Debugger",
-                    type: config.type ?? "helios",
+                    type: config.type ?? "heliosdebugger",
                     request: config.request ?? "launch",
-                    uplcProgram: bytesToHex(uplcProgram.toCbor()),
+                    uplcProgram: bytesToHex(encodeFullUplcProgram(uplcProgram)),
                     ...(args !== undefined
                         ? { args: args.map((a) => bytesToHex(a.toCbor())) }
                         : {})
@@ -117,12 +113,6 @@ export function activate(extensionContext: ExtensionContext) {
     //    })
     //)
 
-    //context.subscriptions.push(
-    //    commands.registerCommand("helios.showEntryPointAndArguments", () =>
-    //        entryPointAndArgumentsViewProvider.reveal()
-    //    )
-    //)
-
     // is this automatically triggered?
     //if (
     //    window.activeTextEditor &&
@@ -133,8 +123,13 @@ export function activate(extensionContext: ExtensionContext) {
 
     extensionContext.subscriptions.push(
         window.onDidChangeActiveTextEditor((editor) => {
-            if (editor && isHeliosExt(editor.document.fileName)) {
-                astProvider.recompileOpenASTs()
+            if (editor) {
+                if (isHeliosExt(editor.document.fileName)) {
+                    astProvider.recompileOpenASTs()
+                    commands.executeCommand("setContext", "heliosDebugActive", true)
+                } else {
+                    commands.executeCommand("setContext", "heliosDebugActive", false)
+                }
             }
         })
     )
@@ -164,7 +159,12 @@ export function activate(extensionContext: ExtensionContext) {
     //    })
     //)
 
-    commands.executeCommand("setContext", "heliosDebugActive", true)
+    if (isHeliosExt(window.activeTextEditor?.document.uri.toString() ?? "")) {
+        commands.executeCommand("setContext", "heliosDebugActive", true)
+    } else {
+        commands.executeCommand("setContext", "heliosDebugActive", false)
+    }
+
     astProvider.init()
 }
 

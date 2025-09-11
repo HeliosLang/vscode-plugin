@@ -6,10 +6,12 @@
         "test:types": "tsc --noEmit"
     },
     "devDependencies": {
+        "@helios-lang/codec-utils": "^0.3.4",
+        "@helios-lang/compiler-utils": "^0.5.17",
+        "@helios-lang/uplc": "^0.7.20",
+        "@types/node": "^18.15.11",
         "@vscode/debugadapter": "^1.68.0",
         "@vscode/debugprotocol": "^1.68.0",
-        "@helios-lang/uplc": "^0.7.18",
-        "@types/node": "^18.15.11",
         "esbuild": "^0.25.9",
         "typescript": "^5.0.4"
     }

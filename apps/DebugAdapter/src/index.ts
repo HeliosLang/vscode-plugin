@@ -1,7 +1,10 @@
+import { type Site } from "@helios-lang/compiler-utils"
 import {
     decodeUplcData,
     decodeUplcProgramV2FromCbor,
     makeUplcDataValue,
+    UplcLogger,
+    UplcRuntimeError,
     type UplcData
 } from "@helios-lang/uplc"
 import {
@@ -27,10 +30,9 @@ class HeliosDebugSession extends DebugSession {
         response: DebugProtocol.LaunchResponse,
         argsObj: any
     ): void {
-        // Just say hello
         const { uplcProgram: rawUplcProgram, args: rawArgs } = argsObj
-
         const uplcProgram = decodeUplcProgramV2FromCbor(rawUplcProgram)
+
         const args: UplcData[] | undefined = rawArgs
             ? rawArgs.map((ra: string) => decodeUplcData(ra))
             : []
@@ -38,12 +40,22 @@ class HeliosDebugSession extends DebugSession {
         const result = uplcProgram.eval(
             args ? args.map((a) => makeUplcDataValue(a)) : undefined,
             {
-                logOptions: new DebugLogger(this)
+                logOptions: new DebugLogger(this),
+                
             }
         )
 
         if ("left" in result.result) {
-            this.sendEvent(new OutputEvent(result.result.left.error))
+            const error = new UplcRuntimeError(
+                result.result.left.error,
+                result.result.left.callSites
+            )
+
+            if (error.stack) {
+                this.sendEvent(new OutputEvent(error.stack))
+            }
+
+            this.sendEvent(new OutputEvent(error.toString()))
         } else {
             this.sendEvent(new OutputEvent(result.result.right.toString()))
         }
@@ -55,7 +67,7 @@ class HeliosDebugSession extends DebugSession {
     }
 }
 
-class DebugLogger {
+class DebugLogger implements UplcLogger {
     adapter: HeliosDebugSession
     lastMessage_: string
 
@@ -64,8 +76,12 @@ class DebugLogger {
         this.lastMessage_ = ""
     }
 
-    logPrint(msg: string) {
-        this.adapter.sendEvent(new OutputEvent(msg + "\n"))
+    logError(msg: string, site: Site | undefined = undefined) {
+        this.adapter.sendEvent(new OutputEvent((site ? site.toString() + ": " : ": ") + msg + "\n"))
+    }
+
+    logPrint(msg: string, site: Site | undefined = undefined) {
+        this.adapter.sendEvent(new OutputEvent((site ? site.toString() + ": " : "") + msg + "\n"))
     }
 
     get lastMessage() {

@@ -5,14 +5,9 @@ import {
     EditValueEvent,
     PanelEvent,
     PanelIsReadyEvent,
-    ValuePanelContext,
-    type Store,
-    type ValueStoreContext,
-    type TypeSchemasContext,
     DeleteValueEvent
 } from "schemas"
-import { ExtensionContext, ViewColumn, WebviewPanel, window } from "vscode"
-import { type TypeSchema } from "@helios-lang/type-utils"
+import { ExtensionContext } from "vscode"
 import { loadWebview } from "./webview"
 import { ValuesProvider } from "./ValuesProvider"
 import { TypeSchemasProvider } from "./TypeSchemasProvider"

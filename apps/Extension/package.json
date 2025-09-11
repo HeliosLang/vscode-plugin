@@ -11,7 +11,7 @@
         "@helios-lang/compiler-utils": "^0.5.16",
         "@helios-lang/crypto": "^0.2.3",
         "@helios-lang/type-utils": "^0.3.0",
-        "@helios-lang/uplc": "^0.7.18",
+        "@helios-lang/uplc": "^0.7.20",
         "@types/node": "^18.15.11",
         "@types/vscode": "^1.77.0",
         "effect": "^3.17.8",
