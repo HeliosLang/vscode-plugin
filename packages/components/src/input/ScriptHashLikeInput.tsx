@@ -1,6 +1,11 @@
 import { ReactNode, useCallback, useMemo } from "react"
 import { useContextKey, usePanelContext, useStoreHelper } from "../context"
-import { DEFAULT_VALUE_NAME, makeCreateMessage, useCurrentGenericInputValue, useSelectGenericValue } from "./GenericInput"
+import {
+    DEFAULT_VALUE_NAME,
+    makeCreateMessage,
+    useCurrentGenericInputValue,
+    useSelectGenericValue
+} from "./GenericInput"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import { EditValueEvent, genDummyHash } from "schemas"
 import { makeByteArrayData } from "@helios-lang/uplc"
@@ -25,35 +30,61 @@ type ScriptHashLikeInputProps = {
 
 // similar to generic select, but includes known validators
 // TODO: reuse this for ValidatorHashInput, StakingValidatorHashInput and ScriptHashInput
-export function ScriptHashLikeInput({ fieldName, fieldValue, typeName, defaultName = DEFAULT_VALUE_NAME, onSelect, validatorOptions, label}: ScriptHashLikeInputProps) {
+export function ScriptHashLikeInput({
+    fieldName,
+    fieldValue,
+    typeName,
+    defaultName = DEFAULT_VALUE_NAME,
+    onSelect,
+    validatorOptions,
+    label
+}: ScriptHashLikeInputProps) {
     const vscode = useVsCodeApi()
     const store = useStoreHelper()
     const contextKey = useContextKey()
     const selectGenericValue = useSelectGenericValue(fieldName, typeName)
     const changeValue = useChangeFieldValue()
-    
+
     const options = useMemo(() => {
         const userOptions = store.getTypeOptions(typeName)
-        return userOptions.concat(validatorOptions).concat([defaultName, makeCreateMessage(typeName)])
+        return userOptions
+            .concat(validatorOptions)
+            .concat([defaultName, makeCreateMessage(typeName)])
     }, [store, validatorOptions, typeName, defaultName])
 
     const valueName = useCurrentValidatorOption(
-        fieldName, fieldValue, typeName, defaultName, validatorOptions
+        fieldName,
+        fieldValue,
+        typeName,
+        defaultName,
+        validatorOptions
     )
 
-    const handleSelect = useCallback((newValueName: string) => {
-        if (onSelect && onSelect(newValueName)) {
-            return
-        } else if (validatorOptions.includes(newValueName)) {
-            changeValue({
-                fieldName, 
-                fieldType: typeName, 
-                fieldValue: bytesToHex(makeByteArrayData(genDummyHash(newValueName)).toCbor())
-            })
-        } else {
-            selectGenericValue(newValueName)
-        }
-    }, [vscode, fieldName, validatorOptions, selectGenericValue, typeName, onSelect])
+    const handleSelect = useCallback(
+        (newValueName: string) => {
+            if (onSelect && onSelect(newValueName)) {
+                return
+            } else if (validatorOptions.includes(newValueName)) {
+                changeValue({
+                    fieldName,
+                    fieldType: typeName,
+                    fieldValue: bytesToHex(
+                        makeByteArrayData(genDummyHash(newValueName)).toCbor()
+                    )
+                })
+            } else {
+                selectGenericValue(newValueName)
+            }
+        },
+        [
+            vscode,
+            fieldName,
+            validatorOptions,
+            selectGenericValue,
+            typeName,
+            onSelect
+        ]
+    )
 
     const handleEdit = useCallback(() => {
         if (valueName) {
@@ -80,8 +111,17 @@ export function ScriptHashLikeInput({ fieldName, fieldValue, typeName, defaultNa
 
                 <IconButton
                     onClick={handleEdit}
-                    disabled={(valueName == defaultName) || validatorOptions.includes(valueName)}
-                    tooltip={valueName == defaultName ? `Can't edit ${defaultName}` : validatorOptions.includes(valueName) ? `Can't edit validator hash` : undefined}
+                    disabled={
+                        valueName == defaultName ||
+                        validatorOptions.includes(valueName)
+                    }
+                    tooltip={
+                        valueName == defaultName
+                            ? `Can't edit ${defaultName}`
+                            : validatorOptions.includes(valueName)
+                              ? `Can't edit validator hash`
+                              : undefined
+                    }
                 >
                     <PencilIcon />
                 </IconButton>
@@ -94,7 +134,11 @@ export function useValidatorOptions(purposes: string[]): string[] {
     const context = usePanelContext()
 
     return useMemo(() => {
-        return context.kind == "PanelLoading" ? [] : context.allValidators.filter(v => purposes.includes(v.purpose)).map(v => v.name)
+        return context.kind == "PanelLoading"
+            ? []
+            : context.allValidators
+                  .filter((v) => purposes.includes(v.purpose))
+                  .map((v) => v.name)
     }, [context, purposes])
 }
 
@@ -106,7 +150,11 @@ function useCurrentValidatorOption(
     validatorOptions: string[]
 ): string {
     const context = usePanelContext()
-    const valueName = useCurrentGenericInputValue(fieldName, typeName, fieldValue)
+    const valueName = useCurrentGenericInputValue(
+        fieldName,
+        typeName,
+        fieldValue
+    )
 
     return useMemo(() => {
         if (valueName != defaultName && valueName != DEFAULT_VALUE_NAME) {
@@ -118,12 +166,15 @@ function useCurrentValidatorOption(
         }
 
         for (let validatorName of validatorOptions) {
-            if (bytesToHex(makeByteArrayData(genDummyHash(validatorName)).toCbor()) == fieldValue) {
+            if (
+                bytesToHex(
+                    makeByteArrayData(genDummyHash(validatorName)).toCbor()
+                ) == fieldValue
+            ) {
                 return validatorName
             }
         }
 
         return defaultName
     }, [context, valueName, fieldValue, validatorOptions])
-
 }

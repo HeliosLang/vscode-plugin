@@ -16,7 +16,11 @@ type RatioListInputProps = {
 
 const TYPE_NAME = "[]Ratio"
 
-export function RatioListInput({ fieldName, fieldValue, label }: RatioListInputProps) {
+export function RatioListInput({
+    fieldName,
+    fieldValue,
+    label
+}: RatioListInputProps) {
     const initialListValue = useListData(useUplcData(fieldValue))
 
     const initialRatioListValue = useMemo(() => {

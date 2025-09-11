@@ -21,10 +21,12 @@ export const ArgsPanelContext = Schema.Struct({
     moduleUri: Schema.String,
     modulePurpose: Schema.String,
     moduleName: Schema.String,
-    allValidators: Schema.Array(Schema.Struct({
-        name: Schema.String, 
-        purpose: Schema.String
-    })),
+    allValidators: Schema.Array(
+        Schema.Struct({
+            name: Schema.String,
+            purpose: Schema.String
+        })
+    ),
     errorUris: Schema.Array(Schema.String),
     allEntryPoints: Schema.Array(Schema.String),
     entryPoint: Schema.optional(ArgsPanelEntryPoint)
@@ -42,10 +44,12 @@ export const ValuePanelContext = Schema.Struct({
     kind: Schema.Literal("ValuePanel"),
     typeName: Schema.String,
     valueName: Schema.String,
-    allValidators: Schema.Array(Schema.Struct({
-        name: Schema.String,
-        purpose: Schema.String
-    }))
+    allValidators: Schema.Array(
+        Schema.Struct({
+            name: Schema.String,
+            purpose: Schema.String
+        })
+    )
 })
 
 export type ValuePanelContext = Schema.Schema.Type<typeof ValuePanelContext>

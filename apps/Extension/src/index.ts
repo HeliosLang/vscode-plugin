@@ -1,21 +1,16 @@
-import {
-    type ExtensionContext,
-    debug,
-    window,
-    commands,
-    workspace,
-    DebugConfigurationProviderTriggerKind
-} from "vscode"
-import { encodeFullUplcProgram } from "@helios-lang/uplc"
-//import { registerHoverProvider } from "./hover"
+import { type ExtensionContext, window, commands, workspace } from "vscode"
 import { ArgsViewProvider } from "./ArgsViewProvider"
 import { isHeliosExt } from "./repository"
-import { bytesToHex } from "@helios-lang/codec-utils"
 import { DiagnosticsProvider } from "./diagnostics"
 import { ValueViewsProvider } from "./ValueViewsProvider"
 import { ValuesProvider as ValuesProvider } from "./ValuesProvider"
 import { ASTProvider } from "./ASTProvider"
 import { TypeSchemasProvider } from "./TypeSchemasProvider"
+import {
+    appendMinimalLaunchConfig,
+    HeliosDebugConfigurationProvider,
+    removeMinimalLaunchConfig
+} from "./HeliosDebugConfigurationProvider"
 
 // called when plugin is loaded
 // TODO: how to properly handle different compiler versions?
@@ -72,38 +67,7 @@ export function activate(extensionContext: ExtensionContext) {
 
     //registerHoverProvider(cache)
 
-    extensionContext.subscriptions.push(
-        window.registerWebviewViewProvider(
-            "helios.entryPointAndArguments",
-            argsViewProvider
-        )
-    )
-
-    extensionContext.subscriptions.push(
-        debug.registerDebugConfigurationProvider("helios", {
-            resolveDebugConfiguration: (_folder, config, _token) => {
-                // This is called when the user hits Run and Debug for type "mylang"
-                const uplcProgramAndArgs =
-                    argsViewProvider.compileProgramAndArgs()
-
-                if (!uplcProgramAndArgs) {
-                    return undefined
-                }
-
-                const { uplcProgram, args } = uplcProgramAndArgs
-
-                return {
-                    name: config.name ?? "Launch Helios Debugger",
-                    type: config.type ?? "heliosdebugger",
-                    request: config.request ?? "launch",
-                    uplcProgram: bytesToHex(encodeFullUplcProgram(uplcProgram)),
-                    ...(args !== undefined
-                        ? { args: args.map((a) => bytesToHex(a.toCbor())) }
-                        : {})
-                }
-            }
-        })
-    )
+    new HeliosDebugConfigurationProvider(extensionContext, argsViewProvider)
 
     //context.subscriptions.push(
     //    debug.onDidStartDebugSession((session) => {
@@ -126,23 +90,16 @@ export function activate(extensionContext: ExtensionContext) {
             if (editor) {
                 if (isHeliosExt(editor.document.fileName)) {
                     astProvider.recompileOpenASTs()
-                    commands.executeCommand("setContext", "heliosDebugActive", true)
-                } else {
-                    commands.executeCommand("setContext", "heliosDebugActive", false)
                 }
-            }
-        })
-    )
 
-    extensionContext.subscriptions.push(
+                syncHeliosDebuggerVisibility()
+            }
+        }),
         workspace.onDidOpenTextDocument((doc) => {
             if (isHeliosExt(doc.uri.toString())) {
                 astProvider.updateSource(doc)
             }
-        })
-    )
-
-    extensionContext.subscriptions.push(
+        }),
         workspace.onDidChangeTextDocument((event) => {
             if (isHeliosExt(event.document.uri.toString())) {
                 astProvider.updateSource(event.document)
@@ -159,13 +116,21 @@ export function activate(extensionContext: ExtensionContext) {
     //    })
     //)
 
+    syncHeliosDebuggerVisibility()
+    astProvider.init()
+}
+
+async function syncHeliosDebuggerVisibility() {
     if (isHeliosExt(window.activeTextEditor?.document.uri.toString() ?? "")) {
+        // adding a minimal heliosdebugger launch config hides the default "Run and Debug" button
+        // we have no control over the "Run and Debug" button, which leads to an inconsistent user experience between when a helios file is open, and a when a helios value is being edited via a form
+        await appendMinimalLaunchConfig()
+
         commands.executeCommand("setContext", "heliosDebugActive", true)
     } else {
+        await removeMinimalLaunchConfig()
         commands.executeCommand("setContext", "heliosDebugActive", false)
     }
-
-    astProvider.init()
 }
 
 export function deactivate() {

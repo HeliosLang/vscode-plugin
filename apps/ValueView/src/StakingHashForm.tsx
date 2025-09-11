@@ -6,5 +6,11 @@ type StakingHashFormProps = {
 }
 
 export function StakingHashForm({ fields }: StakingHashFormProps) {
-    return <BuiltinEnumForm variants={STAKING_HASH_VARIANTS} defaultVariant="StakeKey" fields={fields} />
+    return (
+        <BuiltinEnumForm
+            variants={STAKING_HASH_VARIANTS}
+            defaultVariant="StakeKey"
+            fields={fields}
+        />
+    )
 }

@@ -5,6 +5,14 @@ type SpendingCredentialFormProps = {
     fields: Record<string, string>
 }
 
-export function SpendingCredentialForm({ fields }: SpendingCredentialFormProps) {
-    return <BuiltinEnumForm variants={SPENDING_CREDENTIAL_VARIANTS} defaultVariant="PubKey" fields={fields} />
+export function SpendingCredentialForm({
+    fields
+}: SpendingCredentialFormProps) {
+    return (
+        <BuiltinEnumForm
+            variants={SPENDING_CREDENTIAL_VARIANTS}
+            defaultVariant="PubKey"
+            fields={fields}
+        />
+    )
 }

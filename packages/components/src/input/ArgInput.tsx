@@ -32,17 +32,36 @@ type ArgInputProps = {
     // custom label
 }
 
-export function ArgInput({ fieldName, fieldType, fieldValue, label }: ArgInputProps) {
+export function ArgInput({
+    fieldName,
+    fieldType,
+    fieldValue,
+    label
+}: ArgInputProps) {
     switch (fieldType) {
         case "Bool":
-            return <BoolInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
+            return (
+                <BoolInput
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                    label={label}
+                />
+            )
         case "[]Bool":
             return (
-                <BoolListInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
+                <BoolListInput
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                    label={label}
+                />
             )
         case "ByteArray":
             return (
-                <ByteArrayInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
+                <ByteArrayInput
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                    label={label}
+                />
             )
         case "[]ByteArray":
             return (
@@ -53,12 +72,30 @@ export function ArgInput({ fieldName, fieldType, fieldValue, label }: ArgInputPr
                 />
             )
         case "Duration":
-            return <IntLikeInput fieldName={fieldName} fieldValue={fieldValue} typeName={fieldType} label={label} />
+            return (
+                <IntLikeInput
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                    typeName={fieldType}
+                    label={label}
+                />
+            )
         case "Int":
-            return <IntLikeInput fieldName={fieldName} fieldValue={fieldValue} typeName={fieldType} label={label} />
+            return (
+                <IntLikeInput
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                    typeName={fieldType}
+                    label={label}
+                />
+            )
         case "[]Int":
             return (
-                <IntListInput label={label} fieldName={fieldName} fieldValue={fieldValue} />
+                <IntListInput
+                    label={label}
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                />
             )
         case "MintingPolicyHash":
             return (
@@ -69,16 +106,36 @@ export function ArgInput({ fieldName, fieldType, fieldValue, label }: ArgInputPr
                 />
             )
         case "Ratio":
-            return <RatioInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
+            return (
+                <RatioInput
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                    label={label}
+                />
+            )
         case "[]Ratio":
             return (
-                <RatioListInput label={label} fieldName={fieldName} fieldValue={fieldValue} />
+                <RatioListInput
+                    label={label}
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                />
             )
         case "Real":
-            return <RealInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
+            return (
+                <RealInput
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                    label={label}
+                />
+            )
         case "[]Real":
             return (
-                <RealListInput label={label} fieldName={fieldName} fieldValue={fieldValue} />
+                <RealListInput
+                    label={label}
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                />
             )
         case "ScriptHash":
             return (
@@ -97,7 +154,13 @@ export function ArgInput({ fieldName, fieldType, fieldValue, label }: ArgInputPr
                 />
             )
         case "String":
-            return <StringInput fieldName={fieldName} fieldValue={fieldValue} label={label} />
+            return (
+                <StringInput
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                    label={label}
+                />
+            )
         case "[]String":
             return (
                 <StringListInput
@@ -107,7 +170,14 @@ export function ArgInput({ fieldName, fieldType, fieldValue, label }: ArgInputPr
                 />
             )
         case "Time":
-            return <IntLikeInput fieldName={fieldName} fieldValue={fieldValue} typeName={fieldType} label={label} />
+            return (
+                <IntLikeInput
+                    fieldName={fieldName}
+                    fieldValue={fieldValue}
+                    typeName={fieldType}
+                    label={label}
+                />
+            )
         case "TimeRange":
             return (
                 <TimeRangeInput

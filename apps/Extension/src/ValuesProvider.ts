@@ -216,7 +216,7 @@ export class ValuesProvider {
                 const typeName = keyParts
                     .slice(0, keyParts.length - 1)
                     .join("::")
-    
+
                 schema_ = resolveSchema(this.schemasProvider.schemas, typeName)
                 console.log(`Resolved schema ${contextKey}`)
             }
@@ -233,7 +233,10 @@ export class ValuesProvider {
         const fullValue = (): string => {
             if (!fullValue_) {
                 fullValue_ = bytesToHex(
-                    convertFieldsToUplcData(schema(), values[contextKey]).toCbor()
+                    convertFieldsToUplcData(
+                        schema(),
+                        values[contextKey]
+                    ).toCbor()
                 )
             }
 

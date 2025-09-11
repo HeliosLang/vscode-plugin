@@ -9,17 +9,22 @@ type BuiltinEnumFormProps = {
     fields: Record<string, string>
 }
 
-export function BuiltinEnumForm({ variants, defaultVariant, fields }: BuiltinEnumFormProps) {
+export function BuiltinEnumForm({
+    variants,
+    defaultVariant,
+    fields
+}: BuiltinEnumFormProps) {
     const vscode = useVsCodeApi()
     const contextKey = useContextKey()
 
     const def = defaultVariant ?? variants[0].name
-    const options = variants.map(v => v.name)
-    const variantName = ("_tag" in fields) ? (variants[parseInt(fields._tag)]?.name ?? def) : def
+    const options = variants.map((v) => v.name)
+    const variantName =
+        "_tag" in fields ? (variants[parseInt(fields._tag)]?.name ?? def) : def
 
     const handleChangeVariant = useCallback(
         (newVariantName: string) => {
-            const newVariant = variants.find(v => v.name == newVariantName)
+            const newVariant = variants.find((v) => v.name == newVariantName)
 
             if (newVariant) {
                 vscode.postMessage({
@@ -34,7 +39,7 @@ export function BuiltinEnumForm({ variants, defaultVariant, fields }: BuiltinEnu
         [vscode, contextKey, variants]
     )
 
-    const variant = variants.find(v => v.name == variantName)
+    const variant = variants.find((v) => v.name == variantName)
 
     return (
         <>
@@ -45,24 +50,24 @@ export function BuiltinEnumForm({ variants, defaultVariant, fields }: BuiltinEnu
                 onChange={handleChangeVariant}
             />
 
-            {
-                variant && variant.fieldTypes.length > 0 && <>
+            {variant && variant.fieldTypes.length > 0 && (
+                <>
                     <h3>Fields</h3>
                     <>
-                        {
-                            variant.fieldTypes.map(ft => {
-                                const key = ft.name
-                                return <ArgInput
+                        {variant.fieldTypes.map((ft) => {
+                            const key = ft.name
+                            return (
+                                <ArgInput
                                     key={key}
                                     fieldName={key}
                                     fieldType={deriveTypeName(ft.type)}
                                     fieldValue={fields[key]}
-                                />   
-                            })
-                        }
-                    </>   
+                                />
+                            )
+                        })}
+                    </>
                 </>
-            }
+            )}
         </>
     )
 }

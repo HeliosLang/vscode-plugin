@@ -13,7 +13,7 @@ const SCHEMA: StructTypeSchema = {
     fieldTypes: [
         {
             name: "hash",
-            type: {kind: "internal", name: "StakingHash"}
+            type: { kind: "internal", name: "StakingHash" }
         }
     ]
 }

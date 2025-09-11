@@ -11,7 +11,7 @@ export function collectEntryPointInfo(
         return undefined
     }
 
-    let args: { name: string; type: string, optional: boolean }[] = []
+    let args: { name: string; type: string; optional: boolean }[] = []
     let needsScriptContext = false
     let needsCurrentValidator = false
 
@@ -100,15 +100,17 @@ function collectSortedValidators(ast: Program | undefined): string[] {
     return names
 }
 
-export function collectValidators(ast: Program | undefined): {name: string, purpose: string}[] {
+export function collectValidators(
+    ast: Program | undefined
+): { name: string; purpose: string }[] {
     const names = collectSortedValidators(ast)
     if (!ast) {
         return []
     }
 
     const validatorTypes: Record<string, any> = ast.props.validatorTypes ?? {}
-    
-    const entries = names.map(name => {
+
+    const entries = names.map((name) => {
         const purpose = (() => {
             switch (validatorTypes[name].value) {
                 case "ScriptHash":
@@ -124,18 +126,18 @@ export function collectValidators(ast: Program | undefined): {name: string, purp
             }
         })()
 
-        return {name, purpose}
+        return { name, purpose }
     })
-
-    console.log("After compare: ", entries.map(e => e.name).join(", "))
 
     return entries
 }
 
-export function sortedValidatorIndices(ast: Program | undefined): Record<string, number> {
+export function sortedValidatorIndices(
+    ast: Program | undefined
+): Record<string, number> {
     const names = collectSortedValidators(ast)
 
-    return Object.fromEntries(names.map((name, i) => [name, i]))  
+    return Object.fromEntries(names.map((name, i) => [name, i]))
 }
 
 // TODO: compile with source map

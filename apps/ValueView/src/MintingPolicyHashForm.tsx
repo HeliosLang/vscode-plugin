@@ -4,7 +4,7 @@ type MintingPolicyHashFormProps = {
     fields: Record<string, string>
 }
 
-export function MintingPolicyHashForm({ fields }: MintingPolicyHashFormProps) {    
+export function MintingPolicyHashForm({ fields }: MintingPolicyHashFormProps) {
     const extraValidation = (value: string) => {
         if (value.length != 0 && value.length != 56) {
             return "Not 0 or 28 bytes" // TODO: separate MPH dropdown entry for ADA?

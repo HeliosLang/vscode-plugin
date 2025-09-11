@@ -13,28 +13,29 @@ const SCHEMA: StructTypeSchema = {
     fieldTypes: [
         {
             name: "address",
-            type: {kind: "internal", name: "Address"}
+            type: { kind: "internal", name: "Address" }
         },
         {
             name: "value",
-            type: {kind: "internal", name: "Value"}
+            type: { kind: "internal", name: "Value" }
         },
         {
             name: "datum",
-            type: {kind: "internal", name: "TxOutputDatum"}
+            type: { kind: "internal", name: "TxOutputDatum" }
         },
         {
             name: "ref_script",
             type: {
                 kind: "option",
                 someType: {
-                    kind: "internal", name: "ScriptHash"
+                    kind: "internal",
+                    name: "ScriptHash"
                 }
             }
         }
     ]
 }
 
-export function TxOutputForm({ fields }: TxOutputFormProps) {    
+export function TxOutputForm({ fields }: TxOutputFormProps) {
     return <BuiltinStructForm schema={SCHEMA} fields={fields} />
 }

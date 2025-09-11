@@ -97,14 +97,18 @@
                             "uplcProgram"
                         ]
                     }
-                }
-            }
-        ],
-        "viewsWelcome": [
-            {
-                "view": "debug",
-                "contents": "Helios debugger available",
-                "when": "heliosDebugActive"
+                },
+                "configurationSnippets": [
+                    {
+                        "label": "Helios: Run Current",
+                        "description": "Minimal config; extension fills details at runtime.",
+                        "body": {
+                            "type": "helios",
+                            "request": "launch",
+                            "name": "Helios: Run Current"
+                        }
+                    }
+                ]
             }
         ],
         "views": {

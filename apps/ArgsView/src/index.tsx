@@ -194,7 +194,7 @@ function basename(path: string): string {
 }
 
 type EntryPointFormProps = {
-    allValidators: readonly {name: string, purpose: string}[] // TODO: as hook
+    allValidators: readonly { name: string; purpose: string }[] // TODO: as hook
     entryPointInfo: ArgsPanelEntryPoint
 }
 
@@ -208,27 +208,29 @@ function EntryPointForm({
     const store = useStoreHelper()
     const schemas = useTypeSchemas()
 
-    const [argValues, scriptContextValue] =
-        useMemo(() => {
-            const argValues: Record<string, string> = {}
+    const [argValues, scriptContextValue] = useMemo(() => {
+        const argValues: Record<string, string> = {}
 
-            for (let a of entryPointInfo.args) {
-                const value = store.getFieldValue(contextKey, a.name)
+        for (let a of entryPointInfo.args) {
+            const value = store.getFieldValue(contextKey, a.name)
 
-                if (value) {
-                    argValues[a.name] = value
-                } else {
-                    const schema = tryResolveSchema(schemas, a.type)
-                    if (schema) {
-                        argValues[a.name] = makeDefaultValue(schema)
-                    }
+            if (value) {
+                argValues[a.name] = value
+            } else {
+                const schema = tryResolveSchema(schemas, a.type)
+                if (schema) {
+                    argValues[a.name] = makeDefaultValue(schema)
                 }
             }
+        }
 
-            const scriptContextValue = store.getFieldValue(contextKey, "ScriptContext")            
+        const scriptContextValue = store.getFieldValue(
+            contextKey,
+            "ScriptContext"
+        )
 
-            return [argValues, scriptContextValue]
-        }, [entryPointInfo, store, contextKey, schemas])
+        return [argValues, scriptContextValue]
+    }, [entryPointInfo, store, contextKey, schemas])
 
     if (
         Object.keys(argValues).length < Object.keys(entryPointInfo.args).length
@@ -261,22 +263,29 @@ function EntryPointForm({
                 </FormRow>
             )}
 
-            {entryPointInfo.needsCurrentValidator && <SelectCurrentValidator allValidators={allValidators} />}
+            {entryPointInfo.needsCurrentValidator && (
+                <SelectCurrentValidator allValidators={allValidators} />
+            )}
         </FormSection>
     )
 }
 
 type SelectCurrentValidatorProps = {
-    allValidators: readonly {name: string, purpose: string}[]
+    allValidators: readonly { name: string; purpose: string }[]
 }
 
-function SelectCurrentValidator({allValidators}: SelectCurrentValidatorProps) {
+function SelectCurrentValidator({
+    allValidators
+}: SelectCurrentValidatorProps) {
     const contextKey = useContextKey()
     const vscode = useVsCodeApi()
     const store = useStoreHelper()
 
     const currentValidatorName = useMemo(() => {
-        const currentValidatorValue = store.getFieldValue(contextKey, "::CurrentValidator") // cbor hex of validator
+        const currentValidatorValue = store.getFieldValue(
+            contextKey,
+            "::CurrentValidator"
+        ) // cbor hex of validator
 
         if (!currentValidatorValue) {
             return allValidators[0].name
@@ -299,26 +308,29 @@ function SelectCurrentValidator({allValidators}: SelectCurrentValidatorProps) {
         return name
     }, [store, contextKey, allValidators])
 
-    const handleSelectCurrentValidator = useCallback((value: string) => { 
-        const i = allValidators.findIndex((v) => v.name == value)
-        if (i == -1) {
-            return 
-        }
+    const handleSelectCurrentValidator = useCallback(
+        (value: string) => {
+            const i = allValidators.findIndex((v) => v.name == value)
+            if (i == -1) {
+                return
+            }
 
-        vscode.postMessage({
-            kind: "ChangeFieldValue",
-            contextKey,
-            fieldName: "::CurrentValidator",
-            fieldType: "",
-            fieldValue: bytesToHex(makeConstrData(i, []).toCbor()),
-        } satisfies ChangeFieldValueEvent)
-    }, [vscode, contextKey, allValidators])
+            vscode.postMessage({
+                kind: "ChangeFieldValue",
+                contextKey,
+                fieldName: "::CurrentValidator",
+                fieldType: "",
+                fieldValue: bytesToHex(makeConstrData(i, []).toCbor())
+            } satisfies ChangeFieldValueEvent)
+        },
+        [vscode, contextKey, allValidators]
+    )
 
     return (
         <FormRow>
             <label>Current validator</label>
             <Select
-                options={allValidators.map(v => v.name)}
+                options={allValidators.map((v) => v.name)}
                 value={currentValidatorName}
                 onChange={handleSelectCurrentValidator}
             />

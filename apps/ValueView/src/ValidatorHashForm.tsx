@@ -4,7 +4,7 @@ type ValidatorHashFormProps = {
     fields: Record<string, string>
 }
 
-export function ValidatorHashForm({ fields }: ValidatorHashFormProps) {    
+export function ValidatorHashForm({ fields }: ValidatorHashFormProps) {
     const extraValidation = (value: string) => {
         if (value.length != 56) {
             return "Not 28 bytes"

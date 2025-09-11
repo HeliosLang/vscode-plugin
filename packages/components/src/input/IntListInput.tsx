@@ -16,7 +16,11 @@ type IntListInputProps = {
 
 const TYPE_NAME = "[]Int"
 
-export function IntListInput({ fieldName, fieldValue, label }: IntListInputProps) {
+export function IntListInput({
+    fieldName,
+    fieldValue,
+    label
+}: IntListInputProps) {
     const initialListValue = useListData(useUplcData(fieldValue))
 
     const initialIntListValue = useMemo(() => {

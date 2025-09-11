@@ -14,15 +14,15 @@ const ASSETCLASS_SCHEMA: StructTypeSchema = {
     fieldTypes: [
         {
             name: "mph",
-            type: {kind: "internal", name: "MintingPolicyHash"}
+            type: { kind: "internal", name: "MintingPolicyHash" }
         },
         {
             name: "token_name",
-            type: {kind: "internal", name: "ByteArray"}
+            type: { kind: "internal", name: "ByteArray" }
         }
     ]
 }
 
-export function AssetClassForm({ fields }: AssetClassFormProps) {    
+export function AssetClassForm({ fields }: AssetClassFormProps) {
     return <BuiltinStructForm schema={ASSETCLASS_SCHEMA} fields={fields} />
 }

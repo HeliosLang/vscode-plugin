@@ -16,7 +16,7 @@ const VARIANT_NAMES = [
     "ByteArrayData"
 ]
 
-export function DataForm({fields}: DataFormProps) {
+export function DataForm({ fields }: DataFormProps) {
     const vscode = useVsCodeApi()
     const contextKey = useContextKey()
     const tag = parseInt(fields._tag)
@@ -37,7 +37,8 @@ export function DataForm({fields}: DataFormProps) {
                 fieldType: "",
                 fieldValue: tag.toString()
             })
-        }, [vscode, contextKey]
+        },
+        [vscode, contextKey]
     )
     return (
         <>
@@ -48,69 +49,62 @@ export function DataForm({fields}: DataFormProps) {
                 onChange={handleChangeVariant}
             />
 
-            {
-                variantName == "ConstrData" && (
-                    <>
-                        <h3>Tag</h3>
-                        <ArgInput
-                            label={<></>}
-                            fieldName="tag"
-                            fieldType="Int"
-                            fieldValue={fields.tag}
-                        />
+            {variantName == "ConstrData" && (
+                <>
+                    <h3>Tag</h3>
+                    <ArgInput
+                        label={<></>}
+                        fieldName="tag"
+                        fieldType="Int"
+                        fieldValue={fields.tag}
+                    />
 
-                        <GenericListForm
-                            itemSchema={{kind: "internal", name: "Data"}}
-                            sectionTitle="Entries"
-                            fields={fields}
-                            prefix="field"
-                        />
-                    </>
-                )
-            }
+                    <GenericListForm
+                        itemSchema={{ kind: "internal", name: "Data" }}
+                        sectionTitle="Entries"
+                        fields={fields}
+                        prefix="field"
+                    />
+                </>
+            )}
 
-            {
-                variantName == "MapData" && (
-                    <>  
-                        <MapForm schema={
-                            {
-                                kind: "map",
-                                keyType: {kind: "internal", name: "Data"},
-                                valueType: {kind: "internal", name: "Data"}
-                            }
-                        } fields={fields} />
-                    </>
-                )
-            }
+            {variantName == "MapData" && (
+                <>
+                    <MapForm
+                        schema={{
+                            kind: "map",
+                            keyType: { kind: "internal", name: "Data" },
+                            valueType: { kind: "internal", name: "Data" }
+                        }}
+                        fields={fields}
+                    />
+                </>
+            )}
 
-            {
-                variantName == "ListData" && (
-                    <>
-                        <ListForm 
-                            schema={{
-                                kind: "list",
-                                itemType: {kind: "internal", name: "Data"}
-                            }}
-                            fields={fields}
-                        />
-                    </>
-                )
-            }
+            {variantName == "ListData" && (
+                <>
+                    <ListForm
+                        schema={{
+                            kind: "list",
+                            itemType: { kind: "internal", name: "Data" }
+                        }}
+                        fields={fields}
+                    />
+                </>
+            )}
 
-            {
-                variantName == "IntData" &&
+            {variantName == "IntData" && (
                 <>
                     <h3>Value</h3>
-                    <ArgInput 
+                    <ArgInput
                         fieldName="value"
                         fieldType="Int"
                         fieldValue={fields["value"]}
                     />
                 </>
-            }
+            )}
 
-            {
-                variantName == "ByteArrayData" && 
+            {variantName == "ByteArrayData" && (
                 <>
                     <h3>Value</h3>
                     <ArgInput
@@ -119,7 +113,7 @@ export function DataForm({fields}: DataFormProps) {
                         fieldValue={fields["bytes"]}
                     />
                 </>
-            }
+            )}
         </>
     )
 }

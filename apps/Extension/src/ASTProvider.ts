@@ -9,7 +9,9 @@ import { isHeliosExt } from "./repository"
 import { collectValidators } from "./ast"
 
 type CompileListener = (programs: Record<string, Program>) => void
-export type CompileActiveDocumentListener = (program: Program | undefined) => void
+export type CompileActiveDocumentListener = (
+    program: Program | undefined
+) => void
 
 export class ASTProvider {
     private initialized: boolean
@@ -42,8 +44,8 @@ export class ASTProvider {
         }
     }
 
-    get allValidators(): {name: string, purpose: string}[] {
-        const result: Map<string, {name: string, purpose: string}> = new Map()
+    get allValidators(): { name: string; purpose: string }[] {
+        const result: Map<string, { name: string; purpose: string }> = new Map()
         for (let program of Object.values(this.programs)) {
             const vs = collectValidators(program)
 
@@ -54,7 +56,7 @@ export class ASTProvider {
 
         const arr = Array.from(result.values())
 
-        arr.sort(({name: a}, {name: b}) => {
+        arr.sort(({ name: a }, { name: b }) => {
             return a.localeCompare(b)
         })
 
@@ -69,10 +71,13 @@ export class ASTProvider {
         this.compileActiveTextEditorListeners.push(listener)
     }
 
-    removeCompileActiveDocumentListener(listener: CompileActiveDocumentListener) {
-        this.compileActiveTextEditorListeners = this.compileActiveTextEditorListeners.filter(l => l != listener)
+    removeCompileActiveDocumentListener(
+        listener: CompileActiveDocumentListener
+    ) {
+        this.compileActiveTextEditorListeners =
+            this.compileActiveTextEditorListeners.filter((l) => l != listener)
     }
-    
+
     updateSource(doc: TextDocument) {
         this.setSource(doc)
         this.recompileOpenASTs()
@@ -156,7 +161,7 @@ export class ASTProvider {
     }
 
     private handleCompile() {
-        this.compileListeners.forEach(l => l(this.programs))
+        this.compileListeners.forEach((l) => l(this.programs))
 
         if (!window.activeTextEditor) {
             return
@@ -166,7 +171,7 @@ export class ASTProvider {
 
         if (isHeliosExt(key)) {
             const p = this.programs[key]
-            this.compileActiveTextEditorListeners.forEach(l => l(p))
+            this.compileActiveTextEditorListeners.forEach((l) => l(p))
         }
     }
 

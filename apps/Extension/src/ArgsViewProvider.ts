@@ -96,9 +96,11 @@ export class ArgsViewProvider implements WebviewViewProvider {
         this.entryPoint = undefined
         this.entryPointHistory = {}
 
-        this.astProvider.addCompileActiveDocumentListener((ast: Program | undefined) => {
-            this.setAST(ast)
-        })
+        this.astProvider.addCompileActiveDocumentListener(
+            (ast: Program | undefined) => {
+                this.setAST(ast)
+            }
+        )
 
         this.schemasProvider.addListener((schemas) => {
             this.view?.webview?.postMessage({
@@ -113,17 +115,17 @@ export class ArgsViewProvider implements WebviewViewProvider {
                 store
             } satisfies ValueStoreContext)
         })
+
+        extensionContext.subscriptions.push(
+            window.registerWebviewViewProvider(
+                "helios.entryPointAndArguments",
+                this
+            )
+        )
     }
 
     setAST(ast: Program | undefined) {
-        if (ast) {
-            console.log("Switching AST to", ast.name)
-        } else {
-            console.log("Resetting AST")
-        }
-
         this.ast = ast
-
         this.syncAST()
     }
 
@@ -252,7 +254,10 @@ export class ArgsViewProvider implements WebviewViewProvider {
         }
 
         if (entryPointInfo.needsCurrentValidator) {
-            let argValue = this.valuesProvider.store.values[contextKey]?.["::CurrentValidator"]
+            let argValue =
+                this.valuesProvider.store.values[contextKey]?.[
+                    "::CurrentValidator"
+                ]
 
             if (!argValue) {
                 argValue = bytesToHex(makeConstrData(0, []).toCbor())
@@ -260,7 +265,7 @@ export class ArgsViewProvider implements WebviewViewProvider {
 
             try {
                 args.push(decodeUplcData(argValue))
-            } catch(e) {
+            } catch (e) {
                 return undefined
             }
         }
@@ -320,7 +325,8 @@ export class ArgsViewProvider implements WebviewViewProvider {
         const moduleUri: string = ast.entryPoint.mainModule.name.site.file
         const modulePurpose: string = ast.purpose
         const errorUris: string[] = collectErrorUris(ast.errors)
-        const allValidators: {name: string, purpose: string}[] = collectValidators(ast)
+        const allValidators: { name: string; purpose: string }[] =
+            collectValidators(ast)
 
         // send the list of entrypoints
         const allEntryPoints: string[] =

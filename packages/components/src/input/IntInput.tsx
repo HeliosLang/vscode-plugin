@@ -6,5 +6,11 @@ type IntInputProps = {
 }
 
 export function IntInput({ fieldName, fieldValue }: IntInputProps) {
-    return <IntLikeInput typeName="Int" fieldName={fieldName} fieldValue={fieldValue} />
+    return (
+        <IntLikeInput
+            typeName="Int"
+            fieldName={fieldName}
+            fieldValue={fieldValue}
+        />
+    )
 }

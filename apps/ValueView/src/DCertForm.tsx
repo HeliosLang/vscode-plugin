@@ -6,5 +6,11 @@ type DCertFormProps = {
 }
 
 export function DCertForm({ fields }: DCertFormProps) {
-    return <BuiltinEnumForm variants={DCERT_VARIANTS} defaultVariant="PubKey" fields={fields} />
+    return (
+        <BuiltinEnumForm
+            variants={DCERT_VARIANTS}
+            defaultVariant="PubKey"
+            fields={fields}
+        />
+    )
 }

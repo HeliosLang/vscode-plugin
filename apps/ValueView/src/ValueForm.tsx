@@ -2,7 +2,14 @@ import { useCallback } from "react"
 import { collectListItems, countListItems } from "./GenericListForm"
 import { ChangeFieldValueEvent, makeDefaultValue } from "schemas"
 import { MapTypeSchema } from "@helios-lang/type-utils"
-import { ArgInput, IconButton, ThickMinusIcon, ThickPlusIcon, useContextKey, useVsCodeApi } from "components"
+import {
+    ArgInput,
+    IconButton,
+    ThickMinusIcon,
+    ThickPlusIcon,
+    useContextKey,
+    useVsCodeApi
+} from "components"
 import styles from "./styles.module.css"
 import { GenericMapForm } from "./GenericMapForm"
 
@@ -12,8 +19,8 @@ type ValueFormProps = {
 
 const INNER_SCHEMA: MapTypeSchema = {
     kind: "map",
-    keyType: {kind: "internal", name: "ByteArray"},
-    valueType: {kind: "internal", name: "Int"}
+    keyType: { kind: "internal", name: "ByteArray" },
+    valueType: { kind: "internal", name: "Int" }
 }
 
 // a list of a map?
@@ -23,7 +30,10 @@ export function ValueForm({ fields }: ValueFormProps) {
     const n = countListItems(fields, "policy")
 
     const handleAddPolicy = useCallback(() => {
-        const fieldValue = makeDefaultValue({kind: "internal", name: "MintingPolicyHashk"})
+        const fieldValue = makeDefaultValue({
+            kind: "internal",
+            name: "MintingPolicyHashk"
+        })
 
         vscode.postMessage({
             kind: "ChangeFieldValue",
@@ -39,7 +49,7 @@ export function ValueForm({ fields }: ValueFormProps) {
             kind: "ChangeFieldValue",
             contextKey,
             fieldType: "MintingPolicyHash",
-            fieldName: `policy-${n-1}`,
+            fieldName: `policy-${n - 1}`,
             fieldValue: ""
         } satisfies ChangeFieldValueEvent)
     }, [vscode, contextKey, n])
@@ -48,31 +58,29 @@ export function ValueForm({ fields }: ValueFormProps) {
         <>
             <h3>Policies</h3>
 
-            {
-                collectListItems(fields, "policy").map((fieldValue, i) => {
-                    const key = `policy-${i}`
+            {collectListItems(fields, "policy").map((fieldValue, i) => {
+                const key = `policy-${i}`
 
-                    return (
-                        <div key={key} className={styles.valueTokens} >
-                            <h4>Policy {i}</h4>
+                return (
+                    <div key={key} className={styles.valueTokens}>
+                        <h4>Policy {i}</h4>
 
-                            <ArgInput
-                                fieldName={key}
-                                fieldType="MintingPolicyHash"
-                                fieldValue={fieldValue}
-                            />
+                        <ArgInput
+                            fieldName={key}
+                            fieldType="MintingPolicyHash"
+                            fieldValue={fieldValue}
+                        />
 
-                            <GenericMapForm 
-                                sectionTitle={<h4>Tokens {i}</h4>}
-                                schema={INNER_SCHEMA}
-                                fields={fields}
-                                keyPrefix={`token-name-${i}`}
-                                valuePrefix={`quantity-${i}`}
-                            />
-                        </div>
-                    )
-                })
-            }
+                        <GenericMapForm
+                            sectionTitle={<h4>Tokens {i}</h4>}
+                            schema={INNER_SCHEMA}
+                            fields={fields}
+                            keyPrefix={`token-name-${i}`}
+                            valuePrefix={`quantity-${i}`}
+                        />
+                    </div>
+                )
+            })}
 
             <div className={styles.actions}>
                 <IconButton onClick={handleAddPolicy}>

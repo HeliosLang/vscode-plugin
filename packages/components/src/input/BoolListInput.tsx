@@ -16,7 +16,11 @@ type BoolListInputProps = {
 
 const TYPE_NAME = "[]Bool"
 
-export function BoolListInput({ fieldName, fieldValue, label }: BoolListInputProps) {
+export function BoolListInput({
+    fieldName,
+    fieldValue,
+    label
+}: BoolListInputProps) {
     const initialListValue = useListData(useUplcData(fieldValue))
 
     const initialBoolListValue = useMemo(() => {

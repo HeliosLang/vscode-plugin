@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
-import { ByteArrayLikeInput } from "./ByteArrayLikeInput";
+import { ReactNode } from "react"
+import { ByteArrayLikeInput } from "./ByteArrayLikeInput"
 
 type ByteArrayInputProps = {
     fieldName: string
@@ -9,6 +9,17 @@ type ByteArrayInputProps = {
 
 const TYPE_NAME = "ByteArray"
 
-export function ByteArrayInput({fieldName, fieldValue, label}: ByteArrayInputProps) {
-    return <ByteArrayLikeInput fieldType={TYPE_NAME} fieldName={fieldName} fieldValue={fieldValue} label={label} />
+export function ByteArrayInput({
+    fieldName,
+    fieldValue,
+    label
+}: ByteArrayInputProps) {
+    return (
+        <ByteArrayLikeInput
+            fieldType={TYPE_NAME}
+            fieldName={fieldName}
+            fieldValue={fieldValue}
+            label={label}
+        />
+    )
 }

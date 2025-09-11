@@ -13,32 +13,41 @@ type MintingPolicyHashInputProps = {
 const TYPE_NAME = "MintingPolicyHash"
 const PURPOSES = ["mixed", "minting"]
 
-export function MintingPolicyHashInput({fieldName, fieldValue, label}: MintingPolicyHashInputProps) {
+export function MintingPolicyHashInput({
+    fieldName,
+    fieldValue,
+    label
+}: MintingPolicyHashInputProps) {
     const options = useMintingPolicyHashOptions()
     const changeValue = useChangeFieldValue()
 
-    const handleSelectADA = useCallback((newName: string) => {
-        if (newName == "ADA") {
-            changeValue({
-                fieldName, 
-                fieldType: TYPE_NAME, 
-                fieldValue: bytesToHex(makeByteArrayData([]).toCbor())
-            })
-            return true
-        } else {
-            return false
-        }
-    }, [changeValue, fieldName])
+    const handleSelectADA = useCallback(
+        (newName: string) => {
+            if (newName == "ADA") {
+                changeValue({
+                    fieldName,
+                    fieldType: TYPE_NAME,
+                    fieldValue: bytesToHex(makeByteArrayData([]).toCbor())
+                })
+                return true
+            } else {
+                return false
+            }
+        },
+        [changeValue, fieldName]
+    )
 
-    return <ScriptHashLikeInput 
-        validatorOptions={options} 
-        fieldName={fieldName} 
-        fieldValue={fieldValue} 
-        typeName={TYPE_NAME} 
-        defaultName="ADA"
-        onSelect={handleSelectADA}
-        label={label}
-    />
+    return (
+        <ScriptHashLikeInput
+            validatorOptions={options}
+            fieldName={fieldName}
+            fieldValue={fieldValue}
+            typeName={TYPE_NAME}
+            defaultName="ADA"
+            onSelect={handleSelectADA}
+            label={label}
+        />
+    )
 }
 
 function useMintingPolicyHashOptions(): string[] {

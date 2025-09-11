@@ -4,7 +4,7 @@ type ScriptHashFormProps = {
     fields: Record<string, string>
 }
 
-export function ScriptHashForm({ fields }: ScriptHashFormProps) {    
+export function ScriptHashForm({ fields }: ScriptHashFormProps) {
     const extraValidation = (value: string) => {
         if (value.length != 56) {
             return "Not 28 bytes"

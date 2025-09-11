@@ -131,7 +131,7 @@ function NameInput({ context }: NameInputProps) {
         (event: ChangeEvent<HTMLInputElement>) => {
             const newName = event.target.value.trim()
             setName(newName)
-            
+
             if (reservedNames.has(newName)) {
                 setError(`'${newName}' is reserved`)
             } else if (newName == "") {
@@ -241,7 +241,12 @@ function MainInternal({ context, schema }: MainInternalProps) {
                 case "Value":
                     return <ValueForm fields={valueFields} />
                 default:
-                    return <p>Unhandled internal type '{schema.name}' in MainInternal componentY</p>
+                    return (
+                        <p>
+                            Unhandled internal type '{schema.name}' in
+                            MainInternal componentY
+                        </p>
+                    )
             }
         case "enum":
             return <EnumForm schema={schema} fields={valueFields} />

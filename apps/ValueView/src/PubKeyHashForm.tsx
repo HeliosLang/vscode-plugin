@@ -4,7 +4,7 @@ type PubKeyHashFormProps = {
     fields: Record<string, string>
 }
 
-export function PubKeyHashForm({ fields }: PubKeyHashFormProps) {    
+export function PubKeyHashForm({ fields }: PubKeyHashFormProps) {
     const extraValidation = (value: string) => {
         if (value.length != 56) {
             return "Not 28 bytes"

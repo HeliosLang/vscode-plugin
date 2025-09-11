@@ -1,14 +1,22 @@
 import { IntLikeInput, Select, useContextKey, useVsCodeApi } from "components"
 import { ChangeEvent, useCallback, useMemo } from "react"
 import { ChangeFieldValueEvent } from "schemas"
-import { decodeUplcData, expectConstrData, makeConstrData } from "@helios-lang/uplc"
+import {
+    decodeUplcData,
+    expectConstrData,
+    makeConstrData
+} from "@helios-lang/uplc"
 import { bytesToHex } from "@helios-lang/codec-utils"
 
 type TimeRangeFormProps = {
     fields: Record<string, string>
 }
 
-const BOUND_OPTIONS: string[] = ["Negative infinity", "Finite", "Positive infinity"]
+const BOUND_OPTIONS: string[] = [
+    "Negative infinity",
+    "Finite",
+    "Positive infinity"
+]
 
 export function TimeRangeForm({ fields }: TimeRangeFormProps) {
     const vscode = useVsCodeApi()
@@ -30,61 +38,73 @@ export function TimeRangeForm({ fields }: TimeRangeFormProps) {
         return expectConstrData(decodeUplcData(fields.include_end)).tag == 1
     }, [fields])
 
-    const handleChangeStartTag = useCallback((newStartKind: string) => {
-        const startTag = BOUND_OPTIONS.indexOf(newStartKind)
+    const handleChangeStartTag = useCallback(
+        (newStartKind: string) => {
+            const startTag = BOUND_OPTIONS.indexOf(newStartKind)
 
-        if (startTag == -1) {
-            return
-        }
+            if (startTag == -1) {
+                return
+            }
 
-        vscode.postMessage({
-            kind: "ChangeFieldValue",
-            contextKey,
-            fieldName: "start_tag",
-            fieldType: "",
-            fieldValue: startTag.toString()
-        } satisfies ChangeFieldValueEvent)
-    }, [vscode, contextKey])
+            vscode.postMessage({
+                kind: "ChangeFieldValue",
+                contextKey,
+                fieldName: "start_tag",
+                fieldType: "",
+                fieldValue: startTag.toString()
+            } satisfies ChangeFieldValueEvent)
+        },
+        [vscode, contextKey]
+    )
 
-    const handleChangeIncludeStart = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-        const b = event.target.checked
+    const handleChangeIncludeStart = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => {
+            const b = event.target.checked
 
-        vscode.postMessage({
-            kind: "ChangeFieldValue",
-            contextKey,
-            fieldName: "include_start",
-            fieldType: "Bool",
-            fieldValue: bytesToHex(makeConstrData(b ? 1 : 0, []) .toCbor())
-        } satisfies ChangeFieldValueEvent)
-    }, [vscode, contextKey])
+            vscode.postMessage({
+                kind: "ChangeFieldValue",
+                contextKey,
+                fieldName: "include_start",
+                fieldType: "Bool",
+                fieldValue: bytesToHex(makeConstrData(b ? 1 : 0, []).toCbor())
+            } satisfies ChangeFieldValueEvent)
+        },
+        [vscode, contextKey]
+    )
 
-    const handleChangeEndTag = useCallback((newEndKind: string) => {
-        const endTag = BOUND_OPTIONS.indexOf(newEndKind)
+    const handleChangeEndTag = useCallback(
+        (newEndKind: string) => {
+            const endTag = BOUND_OPTIONS.indexOf(newEndKind)
 
-        if (endTag == -1) {
-            return
-        }
+            if (endTag == -1) {
+                return
+            }
 
-        vscode.postMessage({
-            kind: "ChangeFieldValue",
-            contextKey,
-            fieldName: "end_tag",
-            fieldType: "",
-            fieldValue: endTag.toString()
-        } satisfies ChangeFieldValueEvent)
-    }, [vscode, contextKey])
+            vscode.postMessage({
+                kind: "ChangeFieldValue",
+                contextKey,
+                fieldName: "end_tag",
+                fieldType: "",
+                fieldValue: endTag.toString()
+            } satisfies ChangeFieldValueEvent)
+        },
+        [vscode, contextKey]
+    )
 
-    const handleChangeIncludeEnd = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-        const b = event.target.checked
+    const handleChangeIncludeEnd = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => {
+            const b = event.target.checked
 
-        vscode.postMessage({
-            kind: "ChangeFieldValue",
-            contextKey,
-            fieldName: "include_end",
-            fieldType: "Bool",
-            fieldValue: bytesToHex(makeConstrData(b ? 1 : 0, []) .toCbor())
-        } satisfies ChangeFieldValueEvent)
-    }, [vscode, contextKey])
+            vscode.postMessage({
+                kind: "ChangeFieldValue",
+                contextKey,
+                fieldName: "include_end",
+                fieldType: "Bool",
+                fieldValue: bytesToHex(makeConstrData(b ? 1 : 0, []).toCbor())
+            } satisfies ChangeFieldValueEvent)
+        },
+        [vscode, contextKey]
+    )
 
     return (
         <>
@@ -96,14 +116,20 @@ export function TimeRangeForm({ fields }: TimeRangeFormProps) {
                 onChange={handleChangeStartTag}
             />
 
-            {startKind == "Finite" && <IntLikeInput
-                fieldValue={fields.start_value}
-                fieldName="start_value"
-                typeName="Time"
-            />}
+            {startKind == "Finite" && (
+                <IntLikeInput
+                    fieldValue={fields.start_value}
+                    fieldName="start_value"
+                    typeName="Time"
+                />
+            )}
 
             <label>Include bound?</label>
-            <input type="checkbox" checked={includeStart} onChange={handleChangeIncludeStart} />
+            <input
+                type="checkbox"
+                checked={includeStart}
+                onChange={handleChangeIncludeStart}
+            />
 
             <h3>End</h3>
 
@@ -113,14 +139,20 @@ export function TimeRangeForm({ fields }: TimeRangeFormProps) {
                 onChange={handleChangeEndTag}
             />
 
-            {endKind == "Finite" && <IntLikeInput
-                fieldValue={fields.end_value}
-                fieldName="end_value"
-                typeName="Time"
-            />}
+            {endKind == "Finite" && (
+                <IntLikeInput
+                    fieldValue={fields.end_value}
+                    fieldName="end_value"
+                    typeName="Time"
+                />
+            )}
 
             <label>Include bound?</label>
-            <input type="checkbox" checked={includeEnd} onChange={handleChangeIncludeEnd}/>
+            <input
+                type="checkbox"
+                checked={includeEnd}
+                onChange={handleChangeIncludeEnd}
+            />
         </>
     )
 }

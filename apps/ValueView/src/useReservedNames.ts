@@ -13,21 +13,25 @@ export function useReservedNames(context: ValuePanelContext): Set<string> {
                 break
             case "MintingPolicyHash":
                 reserved.add("ADA")
-                context.allValidators.forEach(v => {
+                context.allValidators.forEach((v) => {
                     if (["mixed", "minting"].includes(v.purpose)) {
                         reserved.add(v.name)
                     }
                 })
                 break
             case "ScriptHash":
-                context.allValidators.forEach(v => {
-                    if (["mixed", "minting", "spending", "staking"].includes(v.purpose)) {
+                context.allValidators.forEach((v) => {
+                    if (
+                        ["mixed", "minting", "spending", "staking"].includes(
+                            v.purpose
+                        )
+                    ) {
                         reserved.add(v.name)
                     }
                 })
                 break
             case "StakingValidatorHash":
-                context.allValidators.forEach(v => {
+                context.allValidators.forEach((v) => {
                     if (["mixed", "staking"].includes(v.purpose)) {
                         reserved.add(v.name)
                     }
@@ -38,7 +42,7 @@ export function useReservedNames(context: ValuePanelContext): Set<string> {
                 reserved.add("NEVER")
                 break
             case "ValidatorHash":
-                context.allValidators.forEach(v => {
+                context.allValidators.forEach((v) => {
                     if (["mixed", "spending"].includes(v.purpose)) {
                         reserved.add(v.name)
                     }

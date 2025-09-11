@@ -15,76 +15,76 @@ const TX_SCHEMA: StructTypeSchema = {
             name: "inputs",
             type: {
                 kind: "list",
-                itemType: {kind: "internal", name: "TxInput"}
+                itemType: { kind: "internal", name: "TxInput" }
             }
         },
         {
             name: "ref_inputs",
             type: {
                 kind: "list",
-                itemType: {kind: "internal", name: "TxInput"}
+                itemType: { kind: "internal", name: "TxInput" }
             }
         },
         {
             name: "outputs",
             type: {
                 kind: "list",
-                itemType: {kind: "internal", name: "TxOutput"}
+                itemType: { kind: "internal", name: "TxOutput" }
             }
         },
         {
             name: "fee",
-            type: {kind: "internal", name: "Value"}
+            type: { kind: "internal", name: "Value" }
         },
         {
             name: "minted",
-            type: {kind: "internal", name: "Value"}
+            type: { kind: "internal", name: "Value" }
         },
         {
             name: "dcerts",
             type: {
                 kind: "list",
-                itemType: {kind: "internal", name: "DCert"}
+                itemType: { kind: "internal", name: "DCert" }
             }
         },
         {
             name: "withdrawals",
             type: {
                 kind: "map",
-                keyType: {kind: "internal", name: "StakingCredential"},
-                valueType: {kind: "internal", name: "Int"}
+                keyType: { kind: "internal", name: "StakingCredential" },
+                valueType: { kind: "internal", name: "Int" }
             }
         },
         {
             name: "time_range",
-            type: {kind: "internal", name: "TimeRange"}
+            type: { kind: "internal", name: "TimeRange" }
         },
         {
             name: "signatories",
             type: {
                 kind: "list",
-                itemType: {kind: "internal", name: "PubKeyHash"}
+                itemType: { kind: "internal", name: "PubKeyHash" }
             }
         },
         {
             name: "redeemers",
             type: {
                 kind: "map",
-                keyType: {kind: "internal", name: "ScriptPurpose"},
-                valueType: {kind: "internal", name: "Data"}
+                keyType: { kind: "internal", name: "ScriptPurpose" },
+                valueType: { kind: "internal", name: "Data" }
             }
         },
         {
             name: "datums",
             type: {
                 kind: "map",
-                keyType: {kind: "internal", name: "DatumHash"},
-                valueType: {kind: "internal", name: "Data"}
+                keyType: { kind: "internal", name: "DatumHash" },
+                valueType: { kind: "internal", name: "Data" }
             }
         },
         {
             name: "id",
-            type: {kind: "internal", name: "TxId"}
+            type: { kind: "internal", name: "TxId" }
         }
     ]
 }

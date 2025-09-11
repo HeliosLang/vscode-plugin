@@ -4,7 +4,7 @@ type TxIdFormProps = {
     fields: Record<string, string>
 }
 
-export function TxIdForm({ fields }: TxIdFormProps) {    
+export function TxIdForm({ fields }: TxIdFormProps) {
     const extraValidation = (value: string) => {
         if (value.length != 32) {
             return "Not 32 bytes"

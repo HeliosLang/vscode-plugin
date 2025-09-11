@@ -13,15 +13,15 @@ const SCHEMA: StructTypeSchema = {
     fieldTypes: [
         {
             name: "output_id",
-            type: {kind: "internal", name: "TxOutputId"}
+            type: { kind: "internal", name: "TxOutputId" }
         },
         {
             name: "output",
-            type: {kind: "internal", name: "TxOutput"}
+            type: { kind: "internal", name: "TxOutput" }
         }
     ]
 }
 
-export function TxInputForm({ fields }: TxInputFormProps) {    
+export function TxInputForm({ fields }: TxInputFormProps) {
     return <BuiltinStructForm schema={SCHEMA} fields={fields} />
 }

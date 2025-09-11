@@ -1,5 +1,8 @@
 import { useMemo } from "react"
-import { VariantTypeSchema, type OptionTypeSchema } from "@helios-lang/type-utils"
+import {
+    VariantTypeSchema,
+    type OptionTypeSchema
+} from "@helios-lang/type-utils"
 import { BuiltinEnumForm } from "./BuiltinEnumForm"
 
 type OptionFormProps = {
@@ -32,5 +35,11 @@ export function OptionForm({ schema, fields }: OptionFormProps) {
         ] satisfies VariantTypeSchema[]
     }, [schema])
 
-    return <BuiltinEnumForm variants={variants} defaultVariant="None" fields={fields} />
+    return (
+        <BuiltinEnumForm
+            variants={variants}
+            defaultVariant="None"
+            fields={fields}
+        />
+    )
 }

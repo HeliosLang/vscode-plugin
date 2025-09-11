@@ -10,18 +10,23 @@ type ValidatorHashInputProps = {
 const TYPE_NAME = "ValidatorHash"
 const PURPOSES = ["mixed", "spending"]
 
-export function ValidatorHashInput({fieldName, fieldValue, label}: ValidatorHashInputProps) {
+export function ValidatorHashInput({
+    fieldName,
+    fieldValue,
+    label
+}: ValidatorHashInputProps) {
     const options = useValidatorHashOptions()
 
-    return (<>
-        <ScriptHashLikeInput 
-            validatorOptions={options} 
-            fieldName={fieldName} 
-            fieldValue={fieldValue} 
-            typeName={TYPE_NAME} 
-            label={label}
-        />
-    </>
+    return (
+        <>
+            <ScriptHashLikeInput
+                validatorOptions={options}
+                fieldName={fieldName}
+                fieldValue={fieldValue}
+                typeName={TYPE_NAME}
+                label={label}
+            />
+        </>
     )
 }
 

@@ -13,7 +13,12 @@ type IntLikeInputProps = {
     label?: ReactNode
 }
 
-export function IntLikeInput({ fieldName, fieldValue, typeName, label }: IntLikeInputProps) {
+export function IntLikeInput({
+    fieldName,
+    fieldValue,
+    typeName,
+    label
+}: IntLikeInputProps) {
     const data = useUplcData(fieldValue)
 
     const initialIntValue: bigint = useMemo(() => {

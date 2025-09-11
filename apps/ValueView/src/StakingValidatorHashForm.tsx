@@ -4,7 +4,9 @@ type StakingValidatorHashFormProps = {
     fields: Record<string, string>
 }
 
-export function StakingValidatorHashForm({ fields }: StakingValidatorHashFormProps) {    
+export function StakingValidatorHashForm({
+    fields
+}: StakingValidatorHashFormProps) {
     const extraValidation = (value: string) => {
         if (value.length != 56) {
             return "Not 28 bytes"

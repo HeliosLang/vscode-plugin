@@ -6,5 +6,11 @@ type ScriptPurposeFormProps = {
 }
 
 export function ScriptPurposeForm({ fields }: ScriptPurposeFormProps) {
-    return <BuiltinEnumForm variants={SCRIPT_PURPOSE_VARIANTS} defaultVariant="Minting" fields={fields} />
+    return (
+        <BuiltinEnumForm
+            variants={SCRIPT_PURPOSE_VARIANTS}
+            defaultVariant="Minting"
+            fields={fields}
+        />
+    )
 }

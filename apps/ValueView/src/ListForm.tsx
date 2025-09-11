@@ -7,5 +7,12 @@ type ListFormProps = {
 }
 
 export function ListForm({ schema, fields }: ListFormProps) {
-    return <GenericListForm prefix="item" sectionTitle="Items" itemSchema={schema.itemType} fields={fields} />
+    return (
+        <GenericListForm
+            prefix="item"
+            sectionTitle="Items"
+            itemSchema={schema.itemType}
+            fields={fields}
+        />
+    )
 }

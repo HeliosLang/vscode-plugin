@@ -7,5 +7,12 @@ type MapFormProps = {
 }
 
 export function MapForm({ schema, fields }: MapFormProps) {
-    return <GenericMapForm schema={schema} fields={fields} keyPrefix="key" valuePrefix="value" />
+    return (
+        <GenericMapForm
+            schema={schema}
+            fields={fields}
+            keyPrefix="key"
+            valuePrefix="value"
+        />
+    )
 }

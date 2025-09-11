@@ -12,6 +12,7 @@ async function main() {
         bundle: true,
         splitting: false,
         format: "cjs",
+        mainFields: ["module", "main"], // prefer esm module (to avoid umd issues due to jsonc-parser)
         platform: "node",
         external: ["vscode", "node:*"],
         minify: true,

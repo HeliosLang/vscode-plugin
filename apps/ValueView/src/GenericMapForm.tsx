@@ -24,7 +24,13 @@ type GenericMapFormProps = {
     fields: Record<string, string>
 }
 
-export function GenericMapForm({ schema, fields, sectionTitle, keyPrefix, valuePrefix }: GenericMapFormProps) {
+export function GenericMapForm({
+    schema,
+    fields,
+    sectionTitle,
+    keyPrefix,
+    valuePrefix
+}: GenericMapFormProps) {
     const vscode = useVsCodeApi()
     const contextKey = useContextKey()
 
@@ -69,24 +75,26 @@ export function GenericMapForm({ schema, fields, sectionTitle, keyPrefix, valueP
     return (
         <>
             {sectionTitle || <h3>Entries ({n})</h3>}
-            {collectMapEntries(fields, keyPrefix, valuePrefix).map(([key, value], i) => {
-                const entryKey = `${keyPrefix}-${i}`
+            {collectMapEntries(fields, keyPrefix, valuePrefix).map(
+                ([key, value], i) => {
+                    const entryKey = `${keyPrefix}-${i}`
 
-                return (
-                    <div key={entryKey}>
-                        <ArgInput
-                            fieldName={entryKey}
-                            fieldType={deriveTypeName(schema.keyType)}
-                            fieldValue={key}
-                        />
-                        <ArgInput
-                            fieldName={`${valuePrefix}-${i}`}
-                            fieldType={deriveTypeName(schema.valueType)}
-                            fieldValue={value}
-                        />
-                    </div>
-                )
-            })}
+                    return (
+                        <div key={entryKey}>
+                            <ArgInput
+                                fieldName={entryKey}
+                                fieldType={deriveTypeName(schema.keyType)}
+                                fieldValue={key}
+                            />
+                            <ArgInput
+                                fieldName={`${valuePrefix}-${i}`}
+                                fieldType={deriveTypeName(schema.valueType)}
+                                fieldValue={value}
+                            />
+                        </div>
+                    )
+                }
+            )}
 
             <div className={styles.actions}>
                 <IconButton onClick={handleAddEntry}>
@@ -105,7 +113,11 @@ export function GenericMapForm({ schema, fields, sectionTitle, keyPrefix, valueP
     )
 }
 
-function countMapEntries(fields: Record<string, string>, keyPrefix: string = "key", valuePrefix: string = "value"): number {
+function countMapEntries(
+    fields: Record<string, string>,
+    keyPrefix: string = "key",
+    valuePrefix: string = "value"
+): number {
     let n = 0
 
     while (true) {
@@ -119,7 +131,11 @@ function countMapEntries(fields: Record<string, string>, keyPrefix: string = "ke
     return n
 }
 
-function collectMapEntries(fields: Record<string, string>, keyPrefix: string = "key", valuePrefix: string = "value"): [string, string][] {
+function collectMapEntries(
+    fields: Record<string, string>,
+    keyPrefix: string = "key",
+    valuePrefix: string = "value"
+): [string, string][] {
     let i = 0
 
     const entries: [string, string][] = []

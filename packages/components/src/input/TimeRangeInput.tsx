@@ -1,6 +1,11 @@
 import { ReactNode, useCallback, useMemo } from "react"
 import { useContextKey, usePanelContext, useStoreHelper } from "../context"
-import { DEFAULT_VALUE_NAME, makeCreateMessage, useCurrentGenericInputValue, useSelectGenericValue } from "./GenericInput"
+import {
+    DEFAULT_VALUE_NAME,
+    makeCreateMessage,
+    useCurrentGenericInputValue,
+    useSelectGenericValue
+} from "./GenericInput"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import { makeTimeRange } from "@helios-lang/ledger"
 import { EditValueEvent } from "schemas"
@@ -21,42 +26,59 @@ type TimeRangeInputProps = {
 
 const TYPE_NAME = "TimeRange"
 
-const ALWAYS_VALUE = bytesToHex(makeTimeRange(Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY).toUplcData().toCbor())
-const NEVER_VALUE = bytesToHex(makeTimeRange(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY).toUplcData().toCbor())
+const ALWAYS_VALUE = bytesToHex(
+    makeTimeRange(Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY)
+        .toUplcData()
+        .toCbor()
+)
+const NEVER_VALUE = bytesToHex(
+    makeTimeRange(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY)
+        .toUplcData()
+        .toCbor()
+)
 
-export function TimeRangeInput({fieldName, fieldValue, label}: TimeRangeInputProps) {
+export function TimeRangeInput({
+    fieldName,
+    fieldValue,
+    label
+}: TimeRangeInputProps) {
     const vscode = useVsCodeApi()
     const store = useStoreHelper()
     const contextKey = useContextKey()
     const selectGenericValue = useSelectGenericValue(fieldName, TYPE_NAME)
     const changeValue = useChangeFieldValue()
-    
+
     const options = useMemo(() => {
         const userOptions = store.getTypeOptions(TYPE_NAME)
-        return userOptions.concat(["ALWAYS", "NEVER", makeCreateMessage(TYPE_NAME)])
+        return userOptions.concat([
+            "ALWAYS",
+            "NEVER",
+            makeCreateMessage(TYPE_NAME)
+        ])
     }, [store])
 
-    const valueName = useCurrentTimeRange(
-        fieldName, fieldValue
-    )
+    const valueName = useCurrentTimeRange(fieldName, fieldValue)
 
-    const handleSelect = useCallback((newValueName: string) => {
-        if (newValueName == "ALWAYS") {
-            changeValue({
-                fieldName,
-                fieldType: TYPE_NAME,
-                fieldValue: ALWAYS_VALUE
-            })
-        } else if (newValueName == "NEVER") {
-            changeValue({
-                fieldName,
-                fieldType: TYPE_NAME,
-                fieldValue: NEVER_VALUE
-            })
-        } else {
-            selectGenericValue(newValueName)
-        }
-    }, [vscode, fieldName, selectGenericValue])
+    const handleSelect = useCallback(
+        (newValueName: string) => {
+            if (newValueName == "ALWAYS") {
+                changeValue({
+                    fieldName,
+                    fieldType: TYPE_NAME,
+                    fieldValue: ALWAYS_VALUE
+                })
+            } else if (newValueName == "NEVER") {
+                changeValue({
+                    fieldName,
+                    fieldType: TYPE_NAME,
+                    fieldValue: NEVER_VALUE
+                })
+            } else {
+                selectGenericValue(newValueName)
+            }
+        },
+        [vscode, fieldName, selectGenericValue]
+    )
 
     const handleEdit = useCallback(() => {
         if (valueName) {
@@ -84,7 +106,11 @@ export function TimeRangeInput({fieldName, fieldValue, label}: TimeRangeInputPro
                 <IconButton
                     onClick={handleEdit}
                     disabled={valueName == "ALWAYS" || valueName == "NEVER"}
-                    tooltip={(valueName == "ALWAYS" || valueName == "NEVER") ? `Can't edit ${valueName}` : undefined}
+                    tooltip={
+                        valueName == "ALWAYS" || valueName == "NEVER"
+                            ? `Can't edit ${valueName}`
+                            : undefined
+                    }
                 >
                     <PencilIcon />
                 </IconButton>
@@ -93,12 +119,13 @@ export function TimeRangeInput({fieldName, fieldValue, label}: TimeRangeInputPro
     )
 }
 
-function useCurrentTimeRange(
-    fieldName: string,
-    fieldValue: string
-): string {
+function useCurrentTimeRange(fieldName: string, fieldValue: string): string {
     const context = usePanelContext()
-    const valueName = useCurrentGenericInputValue(fieldName, TYPE_NAME, fieldValue)
+    const valueName = useCurrentGenericInputValue(
+        fieldName,
+        TYPE_NAME,
+        fieldValue
+    )
 
     return useMemo(() => {
         if (valueName != DEFAULT_VALUE_NAME) {
@@ -111,5 +138,4 @@ function useCurrentTimeRange(
             return "ALWAYS"
         }
     }, [context, valueName, fieldValue])
-
 }

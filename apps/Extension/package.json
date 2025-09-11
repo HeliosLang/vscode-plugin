@@ -12,10 +12,11 @@
         "@helios-lang/crypto": "^0.2.3",
         "@helios-lang/type-utils": "^0.3.0",
         "@helios-lang/uplc": "^0.7.20",
-        "@types/node": "^18.15.11",
+        "@types/node": "^18.19.48",
         "@types/vscode": "^1.77.0",
         "effect": "^3.17.8",
         "esbuild": "^0.25.9",
+        "jsonc-parser": "^3.3.1",
         "schemas": "workspace:*",
         "typescript": "^5.0.4"
     }

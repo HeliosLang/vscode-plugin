@@ -23,7 +23,12 @@ type GenericListFormProps = {
     fields: Record<string, string>
 }
 
-export function GenericListForm({ prefix, itemSchema, sectionTitle, fields }: GenericListFormProps) {
+export function GenericListForm({
+    prefix,
+    itemSchema,
+    sectionTitle,
+    fields
+}: GenericListFormProps) {
     const vscode = useVsCodeApi()
     const contextKey = useContextKey()
 
@@ -53,7 +58,9 @@ export function GenericListForm({ prefix, itemSchema, sectionTitle, fields }: Ge
 
     return (
         <>
-            <h3>{sectionTitle} ({n})</h3>
+            <h3>
+                {sectionTitle} ({n})
+            </h3>
             {collectListItems(fields, prefix).map((fieldValue, i) => {
                 const key = `${prefix}-${i}`
                 return (
@@ -83,7 +90,10 @@ export function GenericListForm({ prefix, itemSchema, sectionTitle, fields }: Ge
     )
 }
 
-export function countListItems(fields: Record<string, string>, prefix: string = "item"): number {
+export function countListItems(
+    fields: Record<string, string>,
+    prefix: string = "item"
+): number {
     let n = 0
 
     while (true) {
@@ -97,7 +107,10 @@ export function countListItems(fields: Record<string, string>, prefix: string = 
     return n
 }
 
-export function collectListItems(fields: Record<string, string>, prefix: string = "item"): string[] {
+export function collectListItems(
+    fields: Record<string, string>,
+    prefix: string = "item"
+): string[] {
     let i = 0
 
     const items: string[] = []

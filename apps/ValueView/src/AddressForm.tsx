@@ -13,7 +13,7 @@ const ADDRESS_SCHEMA: StructTypeSchema = {
     fieldTypes: [
         {
             name: "credential",
-            type: {kind: "internal", name: "SpendingCredential"}
+            type: { kind: "internal", name: "SpendingCredential" }
         },
         {
             name: "staking_credential",

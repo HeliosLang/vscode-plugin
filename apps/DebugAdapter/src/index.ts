@@ -40,8 +40,7 @@ class HeliosDebugSession extends DebugSession {
         const result = uplcProgram.eval(
             args ? args.map((a) => makeUplcDataValue(a)) : undefined,
             {
-                logOptions: new DebugLogger(this),
-                
+                logOptions: new DebugLogger(this)
             }
         )
 
@@ -77,11 +76,15 @@ class DebugLogger implements UplcLogger {
     }
 
     logError(msg: string, site: Site | undefined = undefined) {
-        this.adapter.sendEvent(new OutputEvent((site ? site.toString() + ": " : ": ") + msg + "\n"))
+        this.adapter.sendEvent(
+            new OutputEvent((site ? site.toString() + ": " : ": ") + msg + "\n")
+        )
     }
 
     logPrint(msg: string, site: Site | undefined = undefined) {
-        this.adapter.sendEvent(new OutputEvent((site ? site.toString() + ": " : "") + msg + "\n"))
+        this.adapter.sendEvent(
+            new OutputEvent((site ? site.toString() + ": " : "") + msg + "\n")
+        )
     }
 
     get lastMessage() {

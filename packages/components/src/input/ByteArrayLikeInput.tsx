@@ -14,7 +14,13 @@ type ByteArrayLikeInputProps = {
     label?: ReactNode
 }
 
-export function ByteArrayLikeInput({ fieldName, fieldType, fieldValue, extraValidation, label }: ByteArrayLikeInputProps) {
+export function ByteArrayLikeInput({
+    fieldName,
+    fieldType,
+    fieldValue,
+    extraValidation,
+    label
+}: ByteArrayLikeInputProps) {
     const data = useUplcData(fieldValue)
 
     const initialBytesValue = useMemo(() => {
@@ -36,10 +42,11 @@ export function ByteArrayLikeInput({ fieldName, fieldType, fieldValue, extraVali
 
             setValue(newValue)
 
-            if (isValidByteArray(newValue) && (!extraValidation || extraValidation(newValue) == "")) {
-                const dataHex = bytesToHex(
-                    makeByteArrayData(newValue).toCbor()
-                )
+            if (
+                isValidByteArray(newValue) &&
+                (!extraValidation || extraValidation(newValue) == "")
+            ) {
+                const dataHex = bytesToHex(makeByteArrayData(newValue).toCbor())
 
                 changeValue({
                     fieldName,
@@ -51,7 +58,9 @@ export function ByteArrayLikeInput({ fieldName, fieldType, fieldValue, extraVali
         [fieldName, fieldType, setValue, extraValidation, changeValue]
     )
 
-    const error = extraValidation ? extraValidation(value) : validateByteArray(value)
+    const error = extraValidation
+        ? extraValidation(value)
+        : validateByteArray(value)
 
     return (
         <>

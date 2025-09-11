@@ -16,7 +16,11 @@ type RealListInputProps = {
 
 const TYPE_NAME = "[]Real"
 
-export function RealListInput({ fieldName, fieldValue, label }: RealListInputProps) {
+export function RealListInput({
+    fieldName,
+    fieldValue,
+    label
+}: RealListInputProps) {
     const initialListValue = useListData(useUplcData(fieldValue))
 
     const initialRealListValue = useMemo(() => {

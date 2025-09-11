@@ -7,22 +7,22 @@ type BuiltinStructFormProps = {
     fields: Record<string, string>
 }
 
-export function BuiltinStructForm({ schema, fields }: BuiltinStructFormProps) {    
+export function BuiltinStructForm({ schema, fields }: BuiltinStructFormProps) {
     return (
         <>
             <h3>Fields</h3>
-            {
-                schema.fieldTypes.map(ft => {
-                    const key = ft.name
+            {schema.fieldTypes.map((ft) => {
+                const key = ft.name
 
-                    return <ArgInput
+                return (
+                    <ArgInput
                         key={key}
                         fieldName={key}
                         fieldType={deriveTypeName(ft.type)}
                         fieldValue={fields[key]}
                     />
-                })
-            }
+                )
+            })}
         </>
     )
 }

@@ -14,7 +14,11 @@ type StringInputProps = {
 
 const TYPE_NAME = "String"
 
-export function StringInput({ fieldName, fieldValue, label }: StringInputProps) {
+export function StringInput({
+    fieldName,
+    fieldValue,
+    label
+}: StringInputProps) {
     const data = useUplcData(fieldValue)
 
     const initialStringValue = useMemo(() => {

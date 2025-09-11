@@ -13,15 +13,15 @@ const SCHEMA: StructTypeSchema = {
     fieldTypes: [
         {
             name: "tx",
-            type: {kind: "internal", name: "Tx"}
+            type: { kind: "internal", name: "Tx" }
         },
         {
             name: "purpose",
-            type: {kind: "internal", name: "ScriptPurpose"}
+            type: { kind: "internal", name: "ScriptPurpose" }
         }
     ]
 }
 
-export function ScriptContextForm({ fields }: ScriptContextFormProps) {    
+export function ScriptContextForm({ fields }: ScriptContextFormProps) {
     return <BuiltinStructForm schema={SCHEMA} fields={fields} />
 }

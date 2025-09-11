@@ -4,7 +4,7 @@ type PubKeyFormProps = {
     fields: Record<string, string>
 }
 
-export function PubKeyForm({ fields }: PubKeyFormProps) {    
+export function PubKeyForm({ fields }: PubKeyFormProps) {
     const extraValidation = (value: string) => {
         if (value.length != 32) {
             return "Not 32 bytes"

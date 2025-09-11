@@ -75,7 +75,9 @@ export class ValueViewPanel {
     }
 
     dispose() {
-        this.astProvider.removeCompileActiveDocumentListener(this.compileListener_)
+        this.astProvider.removeCompileActiveDocumentListener(
+            this.compileListener_
+        )
         this.panel.dispose()
     }
 

@@ -78,7 +78,11 @@ export function GenericInput({
                 <IconButton
                     onClick={handleEdit}
                     disabled={valueName == DEFAULT_VALUE_NAME}
-                    tooltip={valueName == DEFAULT_VALUE_NAME ? `Can't edit ${DEFAULT_VALUE_NAME}` : undefined}
+                    tooltip={
+                        valueName == DEFAULT_VALUE_NAME
+                            ? `Can't edit ${DEFAULT_VALUE_NAME}`
+                            : undefined
+                    }
                 >
                     <PencilIcon />
                 </IconButton>
@@ -132,14 +136,7 @@ export function useSelectGenericValue(fieldName: string, fieldType: string) {
                 }
             }
         },
-        [
-            schemas,
-            store,
-            fieldName,
-            fieldType,
-            changeValue,
-            createValue
-        ]
+        [schemas, store, fieldName, fieldType, changeValue, createValue]
     )
 }
 

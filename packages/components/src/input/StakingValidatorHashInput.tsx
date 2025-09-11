@@ -10,16 +10,22 @@ type StakingValidatorHashInputProps = {
 const TYPE_NAME = "StakingValidatorHash"
 const PURPOSES = ["mixed", "staking"]
 
-export function StakingValidatorHashInput({fieldName, fieldValue, label}: StakingValidatorHashInputProps) {
+export function StakingValidatorHashInput({
+    fieldName,
+    fieldValue,
+    label
+}: StakingValidatorHashInputProps) {
     const options = useStakingValidatorHashOptions()
 
-    return <ScriptHashLikeInput 
-        validatorOptions={options} 
-        fieldName={fieldName} 
-        fieldValue={fieldValue} 
-        typeName={TYPE_NAME} 
-        label={label}
-    />
+    return (
+        <ScriptHashLikeInput
+            validatorOptions={options}
+            fieldName={fieldName}
+            fieldValue={fieldValue}
+            typeName={TYPE_NAME}
+            label={label}
+        />
+    )
 }
 
 function useStakingValidatorHashOptions(): string[] {
