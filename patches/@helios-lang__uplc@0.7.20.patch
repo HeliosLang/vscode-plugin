@@ -1,0 +1,410 @@
+diff --git a/src/cek/CekMachine.js b/src/cek/CekMachine.js
+index 0d3d0011155b52fa1959bf60fef589ac8188c709..fa3072a0d3171f0f826b49a70dc2ff5125569664 100644
+--- a/src/cek/CekMachine.js
++++ b/src/cek/CekMachine.js
+@@ -10,6 +10,8 @@ import { stringifyNonUplcValue } from "./CekValue.js"
+  *   CekResult,
+  *   CekStack,
+  *   CekState,
++ *   CekMachineSnapshot,
++ *   CekMachineStepResult,
+  *   CekTerm,
+  *   Cost,
+  *   CostModel,
+@@ -59,6 +61,12 @@ export class CekMachine {
+      */
+     diagnostics
+ 
++    /**
++     * @private
++     * @type {boolean}
++     */
++    _started
++
+     /**
+      * Initializes in computing state
+      * @param {CekTerm} term
+@@ -73,6 +81,7 @@ export class CekMachine {
+         this._logs = []
+ 
+         this.diagnostics = diagnostics
++        this._started = false
+ 
+         this._state = {
+             computing: {
+@@ -101,17 +110,35 @@ export class CekMachine {
+     }
+ 
+     /**
+-     * @returns {CekResult}
++     * @returns {CekMachineStepResult}
+      */
+-    eval() {
+-        this.cost.incrStartupCost()
++    step() {
++        if (!this._started) {
++            this.cost.incrStartupCost()
++            this._started = true
++        }
+ 
+-        while (true) {
+-            if ("computing" in this._state) {
+-                const { term, stack } = this._state.computing
++        if ("computing" in this._state) {
++            const { term, stack } = this._state.computing
++
++            const { state: newState, frame: newFrame } = term.compute(
++                stack,
++                this
++            )
++
++            this._state = newState
+ 
+-                const { state: newState, frame: newFrame } = term.compute(
+-                    stack,
++            if (newFrame) {
++                this._frames.push(newFrame)
++            }
++
++            return { kind: "running" }
++        } else if ("reducing" in this._state) {
++            const f = this._frames.pop()
++
++            if (f) {
++                const { state: newState, frame: newFrame } = f.reduce(
++                    this._state.reducing,
+                     this
+                 )
+ 
+@@ -120,31 +147,68 @@ export class CekMachine {
+                 if (newFrame) {
+                     this._frames.push(newFrame)
+                 }
+-            } else if ("reducing" in this._state) {
+-                const f = this._frames.pop()
+-
+-                if (f) {
+-                    const { state: newState, frame: newFrame } = f.reduce(
+-                        this._state.reducing,
+-                        this
+-                    )
+-
+-                    this._state = newState
+-
+-                    if (newFrame) {
+-                        this._frames.push(newFrame)
+-                    }
+-                } else {
+-                    return this.returnValue(
+-                        stringifyNonUplcValue(this._state.reducing)
+-                    )
+-                }
+-            } else if ("error" in this._state) {
+-                return this.returnError(this._state.error)
++
++                return { kind: "running" }
++            }
++
++            return {
++                kind: "completed",
++                result: this.returnValue(
++                    stringifyNonUplcValue(this._state.reducing)
++                )
++            }
++        } else if ("error" in this._state) {
++            return {
++                kind: "error",
++                result: this.returnError(this._state.error)
++            }
++        }
++
++        throw new Error("unexpected CEK machine state")
++    }
++
++    /**
++     * @returns {CekResult}
++     */
++    eval() {
++        while (true) {
++            const stepResult = this.step()
++
++            if (stepResult.kind == "completed" || stepResult.kind == "error") {
++                return stepResult.result
+             }
+         }
+     }
+ 
++    /**
++     * @returns {CekMachineSnapshot}
++     */
++    snapshot() {
++        return {
++            state: this._state,
++            frames: this._frames.slice(),
++            stack:
++                "computing" in this._state
++                    ? this._state.computing.stack
++                    : "error" in this._state
++                      ? this._state.error.stack
++                      : undefined,
++            currentTerm:
++                "computing" in this._state
++                    ? this._state.computing.term
++                    : undefined,
++            activeSite: this.activeSite(),
++            cost: {
++                mem: this.cost.mem,
++                cpu: this.cost.cpu
++            },
++            logs: this._logs.slice(),
++            status:
++                "computing" in this._state || "reducing" in this._state
++                    ? "running"
++                    : "error"
++        }
++    }
++
++    /**
++     * @private
++     * @returns {Site | undefined}
++     */
++    activeSite() {
++        if ("computing" in this._state) {
++            return this._state.computing.term.site ?? this.topFrameCallSite()
++        } else if ("reducing" in this._state) {
++            return this.topFrameCallSite()
++        } else {
++            return undefined
++        }
++    }
++
++    /**
++     * @private
++     * @returns {Site | undefined}
++     */
++    topFrameCallSite() {
++        const frame = this._frames[this._frames.length - 1]
++
++        return frame && "_callSite" in frame ? frame._callSite : undefined
++    }
++
+     /**
+      * @private
+      * @param {{message: string, stack: CekStack}} err
+diff --git a/src/program/UplcProgram.js b/src/program/UplcProgram.js
+index 33e3a7a001e3d8b3610dd7c4ae232ef68eea6ddb..fe0c1b0e307990f828d78c4a59232dd55f1132de 100644
+--- a/src/program/UplcProgram.js
++++ b/src/program/UplcProgram.js
+@@ -251,9 +251,14 @@ export function decodeFullUplcProgram(bytes, decodeRoot) {
+  * @param {object} options
+  * @param {CostModel} options.costModel
+  * @param {UplcLogger} [options.logOptions]
+- * @returns {CekResult}
++ * @returns {CekMachine}
+  */
+-export function evalProgram(builtins, expr, args, { costModel, logOptions }) {
++export function createCekMachine(
++    builtins,
++    expr,
++    args,
++    { costModel, logOptions }
++) {
+     if (args) {
+         if (args.length == 0) {
+             expr = makeUplcForce({ arg: expr })
+@@ -267,9 +272,23 @@ export function evalProgram(builtins, expr, args, { costModel, logOptions }) {
+         }
+     }
+ 
+-    const machine = new CekMachine(expr, builtins, costModel, logOptions)
++    return new CekMachine(expr, builtins, costModel, logOptions)
++}
+ 
+-    return machine.eval()
++/**
++ * @param {Builtin[]} builtins
++ * @param {UplcTerm} expr
++ * @param {UplcValue[] | undefined} args
++ * @param {object} options
++ * @param {CostModel} options.costModel
++ * @param {UplcLogger} [options.logOptions]
++ * @returns {CekResult}
++ */
++export function evalProgram(builtins, expr, args, { costModel, logOptions }) {
++    return createCekMachine(builtins, expr, args, {
++        costModel,
++        logOptions
++    }).eval()
+ }
+ 
+ /**
+diff --git a/src/program/UplcProgramV2.js b/src/program/UplcProgramV2.js
+index 3498cf6f3d758a187f9313a24c4de46f51884657..1e90f5e5f3374a8286d9847929913410f538712e 100644
+--- a/src/program/UplcProgramV2.js
++++ b/src/program/UplcProgramV2.js
+@@ -12,7 +12,7 @@ import {
+     decodeFullUplcProgram,
+     encodeCborProgram,
+     encodeFlatProgram,
+-    evalProgram,
++    createCekMachine,
+     hashProgram
+ } from "./UplcProgram.js"
+ import { deserializeUplcSourceMap } from "./UplcSourceMap.js"
+@@ -223,13 +223,24 @@ class UplcProgramV2Impl {
+      * @returns {CekResult}
+      */
+     eval(args, options = {}) {
++        return this.createCekMachine(args, options).eval()
++    }
++
++    /**
++     * @param {UplcValue[] | undefined} args - if None, eval the root term without any applications, if empy: apply a force to the root term
++     * @param {object} [options]
++     * @param {UplcLogger} [options.logOptions]
++     * @param {number[]} [options.costModelParams]
++     * @returns {import("../index.js").CekMachine}
++     */
++    createCekMachine(args, options = {}) {
+         const { logOptions, costModelParams = DEFAULT_COST_MODEL_PARAMS_V2() } =
+             options
+         const costModel = makeCostModel(
+             makeCostModelParamsProxy(costModelParams),
+             builtinsV2
+         )
+-        return evalProgram(builtinsV2, this.root, args, {
++        return createCekMachine(builtinsV2, this.root, args, {
+             costModel,
+             logOptions
+         })
+diff --git a/types/cek/CekMachine.d.ts b/types/cek/CekMachine.d.ts
+index caf97308ff3e3337eecdde56b17782f29370c9b0..cbdf58180212979b624d8925f6b7db2c5f48b32a 100644
+--- a/types/cek/CekMachine.d.ts
++++ b/types/cek/CekMachine.d.ts
+@@ -7,6 +7,8 @@
+  *   CekResult,
+  *   CekStack,
+  *   CekState,
++ *   CekMachineSnapshot,
++ *   CekMachineStepResult,
+  *   CekTerm,
+  *   Cost,
+  *   CostModel,
+@@ -57,6 +59,11 @@ export class CekMachine {
+      * @type {UplcLogger | undefined}
+      */
+     diagnostics: UplcLogger | undefined;
++    /**
++     * @private
++     * @type {boolean}
++     */
++    private _started;
+     /**
+      * @returns {string | undefined}
+      */
+@@ -66,10 +73,18 @@ export class CekMachine {
+      * @returns {Builtin | undefined}
+      */
+     getBuiltin(id: number): Builtin | undefined;
++    /**
++     * @returns {CekMachineStepResult}
++     */
++    step(): CekMachineStepResult;
+     /**
+      * @returns {CekResult}
+      */
+     eval(): CekResult;
++    /**
++     * @returns {CekMachineSnapshot}
++     */
++    snapshot(): CekMachineSnapshot;
+     /**
+      * @private
+      * @param {{message: string, stack: CekStack}} err
+@@ -95,4 +110,6 @@ import type { CekResult } from "../index.js";
+ import type { Site } from "@helios-lang/compiler-utils";
+ import type { CekTerm } from "../index.js";
+ import type { CostModel } from "../index.js";
++import type { CekMachineStepResult } from "../index.js";
++import type { CekMachineSnapshot } from "../index.js";
+ //# sourceMappingURL=CekMachine.d.ts.map
+diff --git a/types/index.d.ts b/types/index.d.ts
+index 2c879e646175c8eca8468754e6898e25a327ce34..8b89b8210f2bcb7da73b3621a584299b41bf06da 100644
+--- a/types/index.d.ts
++++ b/types/index.d.ts
+@@ -50,6 +50,24 @@ export type CekResult = {
+     }[];
+     breakdown: CostBreakdown;
+ };
++export type CekMachineStepResult = {
++    kind: "running";
++} | {
++    kind: "completed" | "error";
++    result: CekResult;
++};
++export type CekMachineSnapshot = {
++    state: CekState;
++    frames: CekFrame[];
++    stack?: CekStack;
++    currentTerm?: CekTerm;
++    activeSite?: Site;
++    cost: Cost;
++    logs: {
++        message: string;
++        site?: Site;
++    }[];
++    status: "running" | "error";
++};
+ export type CekStack = {
+     values: CekValue[];
+     callSites: CallSiteInfo[];
+@@ -274,6 +292,10 @@ export type UplcProgramV2 = CommonUplcProgramProps & {
+     uplcVersion: "1.0.0";
+     alt?: UplcProgramV2;
+     apply: (args: UplcValue[]) => UplcProgramV2;
++    createCekMachine(args: UplcValue[] | undefined, options?: {
++        logOptions?: UplcLogger;
++        costModelParams?: number[];
++    }): CekMachine;
+     withAlt: (alt: UplcProgramV2) => UplcProgramV2;
+ };
+ export type UplcProgramV3 = CommonUplcProgramProps & {
+@@ -445,6 +467,7 @@ import type { Site } from "@helios-lang/compiler-utils";
+ import type { Either } from "@helios-lang/type-utils";
+ import type { Point3 } from "@helios-lang/crypto";
+ import type { FieldElement12 } from "@helios-lang/crypto";
++import type { CekMachine } from "./cek/CekMachine.js";
+ export { builtinsV1, builtinsV1Map, builtinsV2, builtinsV2Map, builtinsV3, builtinsV3Map } from "./builtins/index.js";
+ export { decodeCost, encodeCost, DEFAULT_COST_MODEL_PARAMS_V1, DEFAULT_COST_MODEL_PARAMS_V2, DEFAULT_COST_MODEL_PARAMS_V3 } from "./costmodel/index.js";
+ export { assertByteArrayData, assertConstrData, assertIntData, assertListData, assertMapData, expectByteArrayData, expectConstrData, expectIntData, expectListData, expectMapData, makeByteArrayData, makeConstrData, makeIntData, makeListData, makeMapData, uplcDataToBool, boolToUplcData, unwrapUplcDataOption, wrapUplcDataOption, uplcDataToReal, realToUplcData, decodeUplcData } from "./data/index.js";
+diff --git a/types/program/UplcProgram.d.ts b/types/program/UplcProgram.d.ts
+index fa4e41760bf0199b6f4b93e6a72381390f1ea430..f98477e0db6913417a2064916977dcd0b8b05a95 100644
+--- a/types/program/UplcProgram.d.ts
++++ b/types/program/UplcProgram.d.ts
+@@ -51,6 +51,19 @@ export function encodeFullUplcProgram(program: UplcProgram): number[];
+  * @returns {[UplcTerm, UplcSourceMapJsonSafe | undefined, UplcTerm | undefined, UplcSourceMapJsonSafe | undefined]}
+  */
+ export function decodeFullUplcProgram(bytes: BytesLike, decodeRoot: (s: ByteStream) => UplcTerm): [UplcTerm, UplcSourceMapJsonSafe | undefined, UplcTerm | undefined, UplcSourceMapJsonSafe | undefined];
++/**
++ * @param {Builtin[]} builtins
++ * @param {UplcTerm} expr
++ * @param {UplcValue[] | undefined} args
++ * @param {object} options
++ * @param {CostModel} options.costModel
++ * @param {UplcLogger} [options.logOptions]
++ * @returns {CekMachine}
++ */
++export function createCekMachine(builtins: Builtin[], expr: UplcTerm, args: UplcValue[] | undefined, { costModel, logOptions }: {
++    costModel: CostModel;
++    logOptions?: UplcLogger | undefined;
++}): CekMachine;
+ /**
+  * @param {Builtin[]} builtins
+  * @param {UplcTerm} expr
+@@ -79,5 +92,6 @@ import type { UplcSourceMapJsonSafe } from "../index.js";
+ import type { UplcValue } from "../index.js";
+ import type { CostModel } from "../index.js";
+ import type { UplcLogger } from "../index.js";
++import type { CekMachine } from "../cek/CekMachine.js";
+ import type { CekResult } from "../index.js";
+ //# sourceMappingURL=UplcProgram.d.ts.map

@@ -16,16 +16,12 @@
         {
             "label": "install with code",
             "type": "shell",
-            "command": "code --install-extension ./helios-0.1.8.vsix",
+            "command": "code --install-extension ./helios-0.2.0.vsix",
             "problemMatcher": []
         },
         {
             "label": "prelaunch",
-            "dependsOn": [
-                "build with esbuild",
-                "package with vsce",
-                "install with code"
-            ],
+            "dependsOn": ["build with esbuild"],
             "dependsOrder": "sequence",
             "group": "build"
         }

@@ -17,14 +17,14 @@
         "build": "pnpm run build:packages && pnpm run build:views && pnpm run build:adapter && pnpm run build:extension",
         "build:adapter": "pnpm -C ./apps/DebugAdapter run build ",
         "build:extension": "pnpm -C ./apps/Extension run build",
-        "build:packages": "pnpm run build:package:components && pnpm run build:package:schemas",
+        "build:packages": "pnpm run build:package:schemas && pnpm run build:package:components",
         "build:package:components": "pnpm -C ./packages/components run build",
         "build:package:schemas": "pnpm -C ./packages/schemas run build",
         "build:views": "pnpm run build:view:args && pnpm run build:view:value",
         "build:view:args": "pnpm -C ./apps/ArgsView run build",
         "build:view:value": "pnpm -C ./apps/ValueView run build",
         "deploy": "vsce publish",
-        "package": "vsce package --no-dependencies && code --install-extension ./helios-0.1.8.vsix ; true",
+        "package": "vsce package --no-dependencies && code --install-extension ./helios-0.2.0.vsix ; true",
         "prettify": "prettier . --write",
         "test": "pnpm run test:types",
         "test:types": "pnpm run test:types:schemas && pnpm run test:types:components && pnpm run test:types:adapter && pnpm run test:types:extension",
@@ -69,6 +69,11 @@
                 "path": "./grammar.json"
             }
         ],
+        "breakpoints": [
+            {
+                "language": "helios"
+            }
+        ],
         "debuggers": [
             {
                 "type": "heliosdebugger",
@@ -103,7 +108,7 @@
                         "label": "Helios: Run Current",
                         "description": "Minimal config; extension fills details at runtime.",
                         "body": {
-                            "type": "helios",
+                            "type": "heliosdebugger",
                             "request": "launch",
                             "name": "Helios: Run Current"
                         }
@@ -125,7 +130,8 @@
     },
     "main": "./dist/extension.js",
     "activationEvents": [
-        "onDebug:helios"
+        "onDebug:helios",
+        "onDebug:heliosdebugger"
     ],
     "prettier": {
         "trailingComma": "none",

@@ -1,4 +1,4 @@
-# helios vscode extension
+# Helios VS Code Extension
 
 Features:
 
@@ -6,17 +6,55 @@ Features:
 - Syntax error diagnostics
 - Helios Runner available in the Debug view
 
+## Running the extension in debug mode
+
+Use VS Code's Extension Development Host when working on the plugin locally.
+
+1. Open this repository in VS Code.
+2. Install dependencies:
+
+    ```sh
+    pnpm install
+    ```
+
+3. Start the extension host by pressing `F5`, or by opening **Run and Debug**
+   and selecting **Run Helios Extension**.
+
+The `Run Helios Extension` launch configuration is defined in
+`.vscode/launch.json`. Before the Extension Development Host opens, VS Code runs
+the `prelaunch` task from `.vscode/tasks.json`, which builds the packages,
+builds the webviews and debug adapter, packages the extension, and installs the
+VSIX.
+
+After the Extension Development Host opens:
+
+1. Open a `.hl` or `.helios` file in that new VS Code window.
+2. Open the **Run and Debug** sidebar.
+3. Use **Helios: Run Current** to run the active Helios file.
+
+The extension contributes the Helios debug adapter as `heliosdebugger`. The
+minimal debug configuration is:
+
+```json
+{
+    "type": "heliosdebugger",
+    "request": "launch",
+    "name": "Helios: Run Current"
+}
+```
+
+The extension fills in the compiled UPLC program and arguments at runtime from
+the active Helios document and the **Helios Entry Point & Arguments** debug
+view.
+
+### Debugging tips
+
+If the extension host is already open after a code change, run **Developer:
+Reload Window** in the Extension Development Host command palette.
+
+To inspect syntax highlighting scopes, open a Helios file and run **Developer:
+Inspect Editor Tokens And Scopes** from the command palette.
+
 ## Further reading
 
 https://macromates.com/manual/en/language_grammars#naming-conventions
-
-## Debugging
-
-To see the token scope names in VSCode, open the command palette (ctrl+shift+p), and search for 'Developer: Inspect Editor Tokens And Scope'
-
-Hot reload plugins: in command palette search for 'Reload window'
-
-The Helios Runner can be found in the **Run and Debug** sidebar. Open a Helios
-file to automatically reveal the widget.
-
-Pressing F5 should also work (configuration is in .vscode/launch.json)

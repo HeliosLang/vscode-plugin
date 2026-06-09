@@ -1,7 +1,10 @@
 packages:
-    - "packages/components"
-    - "packages/schemas"
-    - "apps/ArgsView"
-    - "apps/DebugAdapter"
-    - "apps/Extension"
-    - "apps/ValueView"
+  - packages/components
+  - packages/schemas
+  - apps/ArgsView
+  - apps/DebugAdapter
+  - apps/Extension
+  - apps/ValueView
+
+patchedDependencies:
+  '@helios-lang/uplc@0.7.20': patches/@helios-lang__uplc@0.7.20.patch
