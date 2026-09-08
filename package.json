@@ -3,7 +3,7 @@
     "displayName": "Helios",
     "description": "Helios language support for VS Code",
     "publisher": "HeliosLang",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "icon": "icon.png",
     "repository": {
         "type": "git",
