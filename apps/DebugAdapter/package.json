@@ -2,11 +2,12 @@
     "description": "Helios DebugAdapter (part of Helios VSCode extension)",
     "scripts": {
         "build": "node ./esbuild.mjs",
-        "test": "pnpm run test:types",
+        "test": "pnpm run test:types && node test.mjs",
         "test:types": "tsc --noEmit"
     },
     "devDependencies": {
         "@helios-lang/codec-utils": "^0.3.4",
+        "@helios-lang/compiler": "0.17.33",
         "@helios-lang/compiler-utils": "^0.5.17",
         "@helios-lang/uplc": "^0.7.20",
         "@types/node": "^18.15.11",

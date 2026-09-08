@@ -2,12 +2,13 @@
     "description": "Helios VSCode extension entrypoint",
     "scripts": {
         "build": "node ./esbuild.mjs",
-        "test": "pnpm run test:types",
+        "test": "pnpm run test:types && pnpm run test:unit",
+        "test:unit": "node ./test.mjs",
         "test:types": "tsc --noEmit"
     },
     "devDependencies": {
         "@helios-lang/codec-utils": "^0.3.4",
-        "@helios-lang/compiler": "^0.17.30",
+        "@helios-lang/compiler": "0.17.33",
         "@helios-lang/compiler-utils": "^0.5.16",
         "@helios-lang/crypto": "^0.2.3",
         "@helios-lang/type-utils": "^0.3.0",

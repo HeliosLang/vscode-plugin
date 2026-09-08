@@ -1,5 +1,5 @@
 diff --git a/src/cek/CekMachine.js b/src/cek/CekMachine.js
-index 0d3d0011155b52fa1959bf60fef589ac8188c709..fa3072a0d3171f0f826b49a70dc2ff5125569664 100644
+index 0d3d0011155b52fa1959bf60fef589ac8188c709..15ce0b9f94cecbc949b1ad1ddd9e9767794d69fe 100644
 --- a/src/cek/CekMachine.js
 +++ b/src/cek/CekMachine.js
 @@ -10,6 +10,8 @@ import { stringifyNonUplcValue } from "./CekValue.js"
@@ -57,11 +57,11 @@ index 0d3d0011155b52fa1959bf60fef589ac8188c709..fa3072a0d3171f0f826b49a70dc2ff51
 +                stack,
 +                this
 +            )
-+
-+            this._state = newState
  
 -                const { state: newState, frame: newFrame } = term.compute(
 -                    stack,
++            this._state = newState
++
 +            if (newFrame) {
 +                this._frames.push(newFrame)
 +            }
@@ -76,7 +76,7 @@ index 0d3d0011155b52fa1959bf60fef589ac8188c709..fa3072a0d3171f0f826b49a70dc2ff51
                      this
                  )
  
-@@ -120,31 +147,68 @@ export class CekMachine {
+@@ -120,28 +147,117 @@ export class CekMachine {
                  if (newFrame) {
                      this._frames.push(newFrame)
                  }
@@ -103,7 +103,7 @@ index 0d3d0011155b52fa1959bf60fef589ac8188c709..fa3072a0d3171f0f826b49a70dc2ff51
 -                return this.returnError(this._state.error)
 +
 +                return { kind: "running" }
-+            }
+             }
 +
 +            return {
 +                kind: "completed",
@@ -130,10 +130,10 @@ index 0d3d0011155b52fa1959bf60fef589ac8188c709..fa3072a0d3171f0f826b49a70dc2ff51
 +
 +            if (stepResult.kind == "completed" || stepResult.kind == "error") {
 +                return stepResult.result
-             }
-         }
-     }
- 
++            }
++        }
++    }
++
 +    /**
 +     * @returns {CekMachineSnapshot}
 +     */
@@ -141,12 +141,7 @@ index 0d3d0011155b52fa1959bf60fef589ac8188c709..fa3072a0d3171f0f826b49a70dc2ff51
 +        return {
 +            state: this._state,
 +            frames: this._frames.slice(),
-+            stack:
-+                "computing" in this._state
-+                    ? this._state.computing.stack
-+                    : "error" in this._state
-+                      ? this._state.error.stack
-+                      : undefined,
++            stack: this.activeStack(),
 +            currentTerm:
 +                "computing" in this._state
 +                    ? this._state.computing.term
@@ -161,6 +156,22 @@ index 0d3d0011155b52fa1959bf60fef589ac8188c709..fa3072a0d3171f0f826b49a70dc2ff51
 +                "computing" in this._state || "reducing" in this._state
 +                    ? "running"
 +                    : "error"
++        }
++    }
++
++    /**
++     * @private
++     * @returns {CekStack | undefined}
++     */
++    activeStack() {
++        if ("computing" in this._state) {
++            return this._state.computing.stack
++        } else if ("reducing" in this._state) {
++            return this.topFrameStack()
++        } else if ("error" in this._state) {
++            return this._state.error.stack
++        } else {
++            return undefined
 +        }
 +    }
 +
@@ -188,9 +199,66 @@ index 0d3d0011155b52fa1959bf60fef589ac8188c709..fa3072a0d3171f0f826b49a70dc2ff51
 +        return frame && "_callSite" in frame ? frame._callSite : undefined
 +    }
 +
-     /**
-      * @private
-      * @param {{message: string, stack: CekStack}} err
++    /**
++     * @private
++     * @returns {CekStack | undefined}
++     */
++    topFrameStack() {
++        const frame = this._frames[this._frames.length - 1]
++
++        if (frame && "stack" in frame) {
++            return frame.stack
++        } else if (frame && "_stack" in frame) {
++            return frame._stack
++        } else {
++            return undefined
+         }
+     }
+ 
+diff --git a/src/cek/LambdaCallFrame.js b/src/cek/LambdaCallFrame.js
+index 58921a347161916388df1a6eab8a6419211e6d18..c1eeb74f25adee95056b6f89beff8cf4456d6508 100644
+--- a/src/cek/LambdaCallFrame.js
++++ b/src/cek/LambdaCallFrame.js
+@@ -12,6 +12,7 @@ import { getLastSelfValue, pushStackValueAndCallSite } from "./CekStack.js"
+  *   callSite?: Site
+  *   name?: string
+  *   argName?: string
++ *   callerStack?: CekStack
+  * }} LambdaCallFrameInfo
+  */
+ 
+@@ -92,6 +93,7 @@ class LambdaCallFrameImpl {
+          * @type {CallSiteInfo}
+          */
+         const callSite = {
++            stack: this._info.callerStack,
+             site: this._info.callSite ?? undefined,
+             functionName: this._info.name ?? undefined,
+             arguments: lastSelfValue ? [lastSelfValue, value] : [value]
+diff --git a/src/cek/PreCallFrame.js b/src/cek/PreCallFrame.js
+index 98353df06cf1b81aafb8d033e5fe790a941bad11..0afb6f75ce66f081ff80a7ff6ab99cb09792d993 100644
+--- a/src/cek/PreCallFrame.js
++++ b/src/cek/PreCallFrame.js
+@@ -82,6 +82,7 @@ class PreCallFrameImpl {
+                     mixStacks(value.lambda.stack, this._stack),
+                     {
+                         callSite: this._callSite,
++                        callerStack: this._stack,
+                         name: value.name,
+                         argName: value.lambda.argName
+                     }
+diff --git a/src/index.js b/src/index.js
+index fb071c2dd3b07ca97e8ec8178585ecdcb33b47bb..51f710b8bd131d6a2c60fa9c70fbb278d6fc86bd 100644
+--- a/src/index.js
++++ b/src/index.js
+@@ -141,6 +141,7 @@ export {
+  * @typedef {{
+  *   site?: Site
+  *   functionName?: string
++ *   stack?: CekStack
+  *   arguments?: CekValue[]
+  * }} CallSiteInfo
+  */
 diff --git a/src/program/UplcProgram.js b/src/program/UplcProgram.js
 index 33e3a7a001e3d8b3610dd7c4ae232ef68eea6ddb..fe0c1b0e307990f828d78c4a59232dd55f1132de 100644
 --- a/src/program/UplcProgram.js
@@ -278,7 +346,7 @@ index 3498cf6f3d758a187f9313a24c4de46f51884657..1e90f5e5f3374a8286d9847929913410
              logOptions
          })
 diff --git a/types/cek/CekMachine.d.ts b/types/cek/CekMachine.d.ts
-index caf97308ff3e3337eecdde56b17782f29370c9b0..cbdf58180212979b624d8925f6b7db2c5f48b32a 100644
+index caf97308ff3e3337eecdde56b17782f29370c9b0..91843e7ae5413c9eef711ded7b059616908e9baf 100644
 --- a/types/cek/CekMachine.d.ts
 +++ b/types/cek/CekMachine.d.ts
 @@ -7,6 +7,8 @@
@@ -328,11 +396,20 @@ index caf97308ff3e3337eecdde56b17782f29370c9b0..cbdf58180212979b624d8925f6b7db2c
 +import type { CekMachineStepResult } from "../index.js";
 +import type { CekMachineSnapshot } from "../index.js";
  //# sourceMappingURL=CekMachine.d.ts.map
+\ No newline at end of file
 diff --git a/types/index.d.ts b/types/index.d.ts
-index 2c879e646175c8eca8468754e6898e25a327ce34..8b89b8210f2bcb7da73b3621a584299b41bf06da 100644
+index 2c879e646175c8eca8468754e6898e25a327ce34..038bdc56b75d7ffedafec47330ff56732b3e3cae 100644
 --- a/types/index.d.ts
 +++ b/types/index.d.ts
-@@ -50,6 +50,24 @@ export type CekResult = {
+@@ -22,6 +22,7 @@ export type BuiltinCostModel = {
+  * So we can later add things like env function name, function values
+  */
+ export type CallSiteInfo = {
++    stack?: CekStack;
+     site?: Site;
+     functionName?: string;
+     arguments?: CekValue[];
+@@ -50,6 +51,25 @@ export type CekResult = {
      }[];
      breakdown: CostBreakdown;
  };
@@ -358,7 +435,7 @@ index 2c879e646175c8eca8468754e6898e25a327ce34..8b89b8210f2bcb7da73b3621a584299b
  export type CekStack = {
      values: CekValue[];
      callSites: CallSiteInfo[];
-@@ -274,6 +292,10 @@ export type UplcProgramV2 = CommonUplcProgramProps & {
+@@ -274,6 +294,10 @@ export type UplcProgramV2 = CommonUplcProgramProps & {
      uplcVersion: "1.0.0";
      alt?: UplcProgramV2;
      apply: (args: UplcValue[]) => UplcProgramV2;
@@ -369,7 +446,7 @@ index 2c879e646175c8eca8468754e6898e25a327ce34..8b89b8210f2bcb7da73b3621a584299b
      withAlt: (alt: UplcProgramV2) => UplcProgramV2;
  };
  export type UplcProgramV3 = CommonUplcProgramProps & {
-@@ -445,6 +467,7 @@ import type { Site } from "@helios-lang/compiler-utils";
+@@ -445,6 +469,7 @@ import type { Site } from "@helios-lang/compiler-utils";
  import type { Either } from "@helios-lang/type-utils";
  import type { Point3 } from "@helios-lang/crypto";
  import type { FieldElement12 } from "@helios-lang/crypto";
@@ -378,7 +455,7 @@ index 2c879e646175c8eca8468754e6898e25a327ce34..8b89b8210f2bcb7da73b3621a584299b
  export { decodeCost, encodeCost, DEFAULT_COST_MODEL_PARAMS_V1, DEFAULT_COST_MODEL_PARAMS_V2, DEFAULT_COST_MODEL_PARAMS_V3 } from "./costmodel/index.js";
  export { assertByteArrayData, assertConstrData, assertIntData, assertListData, assertMapData, expectByteArrayData, expectConstrData, expectIntData, expectListData, expectMapData, makeByteArrayData, makeConstrData, makeIntData, makeListData, makeMapData, uplcDataToBool, boolToUplcData, unwrapUplcDataOption, wrapUplcDataOption, uplcDataToReal, realToUplcData, decodeUplcData } from "./data/index.js";
 diff --git a/types/program/UplcProgram.d.ts b/types/program/UplcProgram.d.ts
-index fa4e41760bf0199b6f4b93e6a72381390f1ea430..f98477e0db6913417a2064916977dcd0b8b05a95 100644
+index fa4e41760bf0199b6f4b93e6a72381390f1ea430..d657bc853e3d8c17c2cc3fe6f9499101fb862e29 100644
 --- a/types/program/UplcProgram.d.ts
 +++ b/types/program/UplcProgram.d.ts
 @@ -51,6 +51,19 @@ export function encodeFullUplcProgram(program: UplcProgram): number[];

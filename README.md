@@ -5,6 +5,10 @@ Features:
 - Syntax highlighting for .hl/.helios files.
 - Syntax error diagnostics
 - Helios Runner available in the Debug view
+- Source breakpoints, expression stepping, step over/out, and selectable caller scopes
+- Helios expressions in Debug Console and Watch, including conditional breakpoints
+
+See the [reproducible time-lock debugger demonstration](docs/debugger-milestone.md) for exact cursor positions, scope values, and launch arguments. Backstepping is not supported.
 
 ## Running the extension in debug mode
 

@@ -175,13 +175,17 @@ export class ArgsViewProvider implements WebviewViewProvider {
         loadWebview(this.extensionContext, ARGS_VIEW_REL_PATH, view.webview)
     }
 
-    compileProgramAndArgs(): UPLCProgramWithArgs | undefined {
+    compileProgramAndArgs(
+        argsOverride?: string[]
+    ): UPLCProgramWithArgs | undefined {
         const uplcProgram = compileEntryPoint(this.ast, this.entryPoint)
         if (!uplcProgram) {
             return undefined
         }
 
-        const args = this.compileArgs()
+        const args =
+            argsOverride?.map((arg) => decodeUplcData(arg)) ??
+            this.compileArgs()
         if (!args) {
             return undefined
         }
@@ -194,6 +198,20 @@ export class ArgsViewProvider implements WebviewViewProvider {
                       ? undefined
                       : args, // TODO: zero args is different from undefined though for const
             uplcProgram
+        }
+    }
+
+    get debugSources() {
+        const ast = this.ast
+        if (!ast) return undefined
+        const source = ast.entryPoint.mainModule.sourceCode
+        return {
+            main: { name: source.name, content: source.content },
+            modules: ast.entryPoint.mainImportedModules.map((m) => ({
+                name: m.sourceCode.name,
+                content: m.sourceCode.content
+            })),
+            validators: collectValidators(ast)
         }
     }
 

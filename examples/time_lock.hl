@@ -1,0 +1,31 @@
+spending time_lock
+
+import { tx } from ScriptContext
+
+struct Datum {
+    lock_until: Time
+    owner: PubKeyHash
+    beneficiary: PubKeyHash
+}
+
+enum Redeemer {
+    Cancel
+    Unlock
+}
+
+func validate_unlock(datum: Datum, now: Time) -> () {
+    assert(now > datum.lock_until, "time lock not yet expired");
+    assert(tx.is_signed_by(datum.beneficiary), "not signed by beneficiary")
+}
+
+func main(datum: Datum, redeemer: Redeemer) -> () {
+    redeemer.switch {
+        Cancel => {
+            assert(tx.is_signed_by(datum.owner), "not signed by owner")
+        },
+        Unlock => {
+            now: Time = tx.time_range.start;
+            validate_unlock(datum, now)
+        }
+    }
+}

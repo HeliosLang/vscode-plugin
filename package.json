@@ -26,7 +26,7 @@
         "deploy": "vsce publish",
         "package": "vsce package --no-dependencies && code --install-extension ./helios-0.2.0.vsix ; true",
         "prettify": "prettier . --write",
-        "test": "pnpm run test:types",
+        "test": "pnpm run test:types && pnpm -C apps/DebugAdapter test && pnpm -C apps/Extension test:unit",
         "test:types": "pnpm run test:types:schemas && pnpm run test:types:components && pnpm run test:types:adapter && pnpm run test:types:extension",
         "test:types:adapter": "pnpm -C ./apps/DebugAdapter run test:types",
         "test:types:components": "pnpm -C ./packages/components run test:types",
@@ -86,6 +86,11 @@
                 "configurationAttributes": {
                     "launch": {
                         "properties": {
+                            "stopOnEntry": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Pause at the first executable Helios expression"
+                            },
                             "uplcProgram": {
                                 "type": "string",
                                 "description": "UPLCProgram cbor hex"
@@ -98,9 +103,7 @@
                                 "description": "Program arguments"
                             }
                         },
-                        "required": [
-                            "uplcProgram"
-                        ]
+                        "required": []
                     }
                 },
                 "configurationSnippets": [

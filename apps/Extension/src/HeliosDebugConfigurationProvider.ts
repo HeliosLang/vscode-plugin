@@ -12,6 +12,7 @@ import { ArgsViewProvider } from "./ArgsViewProvider"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import { encodeFullUplcProgram } from "@helios-lang/uplc"
 import { applyEdits, modify, parse } from "jsonc-parser"
+import { appendLaunchConfiguration } from "./launchConfig"
 
 export class HeliosDebugConfigurationProvider
     implements DebugConfigurationProvider
@@ -36,7 +37,9 @@ export class HeliosDebugConfigurationProvider
         _token: CancellationToken | undefined
     ) {
         // This is called when the user hits Run and Debug for type "mylang"
-        const uplcProgramAndArgs = this.argsViewProvider.compileProgramAndArgs()
+        const uplcProgramAndArgs = this.argsViewProvider.compileProgramAndArgs(
+            config.args
+        )
 
         if (!uplcProgramAndArgs) {
             return undefined
@@ -45,12 +48,18 @@ export class HeliosDebugConfigurationProvider
         const { uplcProgram, args } = uplcProgramAndArgs
 
         return {
+            ...config,
             name: config.name ?? "Launch Helios Debugger",
             type: config.type ?? "heliosdebugger",
             request: config.request ?? "launch",
             uplcProgram: bytesToHex(encodeFullUplcProgram(uplcProgram)),
-            ...(args !== undefined
-                ? { args: args.map((a) => bytesToHex(a.toCbor())) }
+            debugSources: this.argsViewProvider.debugSources,
+            ...(config.args !== undefined || args !== undefined
+                ? {
+                      args:
+                          config.args ??
+                          args?.map((a) => bytesToHex(a.toCbor()))
+                  }
                 : {})
         }
     }
@@ -100,47 +109,8 @@ export async function appendMinimalLaunchConfig() {
     }
 
     // 5) File exists → read, parse (JSONC), and append or set configs
-    const fmt = { insertSpaces: true, tabSize: 2, eol: "\n" as const }
     const raw = dec.decode(await workspace.fs.readFile(launchUri))
-    let data: any
-    try {
-        // tolerates comments and trailing comments
-        data = parse(raw)
-    } catch {
-        // launch.json is not valid JSON/JSONC
-        return
-    }
-
-    const configs = Array.isArray(data?.configurations)
-        ? data.configurations
-        : null
-
-    // If there's already an identical entry, we're done
-    if (
-        configs?.some(
-            (c: any) =>
-                c?.type === type && c?.request === request && c?.name === name
-        )
-    ) {
-        return
-    }
-
-    let updated = raw
-
-    updated = applyEdits(
-        updated,
-        modify(updated, ["configurations"], [minimalConfig], {
-            formattingOptions: fmt
-        })
-    )
-
-    // Ensure version exists (don’t overwrite if user has one)
-    if (data?.version == null) {
-        updated = applyEdits(
-            updated,
-            modify(updated, ["version"], "0.2.0", { formattingOptions: fmt })
-        )
-    }
+    const updated = appendLaunchConfiguration(raw, minimalConfig)
 
     if (updated !== raw) {
         await workspace.fs.writeFile(launchUri, enc.encode(updated))
