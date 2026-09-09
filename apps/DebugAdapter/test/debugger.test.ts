@@ -354,13 +354,6 @@ test("time_lock acceptance trace and typed struct expressions", async () => {
             (e) => e.event == "output" && e.body.output.includes("Error")
         )
     )
-    const demo = JSON.parse(
-        readFileSync("../../examples/.vscode/launch.json", "utf8")
-    )
-    assert.deepEqual(
-        demo.configurations[0].args,
-        args.map((a) => bytesToHex(a.toCbor()))
-    )
 })
 
 test("local closures run in an isolated expression machine", async () => {

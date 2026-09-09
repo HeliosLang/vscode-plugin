@@ -6,8 +6,8 @@ The fixture is [time_lock.hl](../examples/time_lock.hl), based on the time-lock 
 
 1. Build the extension with `pnpm install --frozen-lockfile` and `pnpm build`. Install a packaged VSIX, or launch the Extension Development Host as described in the repository README.
 2. In the window running this extension, open this repository's **examples** folder as the workspace.
-3. Open `time_lock.hl`. Keep it as the active Helios document and select `main` in **Helios Entry Point & Arguments**.
-4. Select **Time lock: successful Unlock** in Run and Debug. The checked-in `examples/.vscode/launch.json` supplies the exact CBOR arguments, overriding the argument panel's values.
+3. Open `time_lock.hl`. This generates a minimal **Helios: Run Current** configuration in `examples/.vscode/launch.json`; the generated file is intentionally untracked. Existing non-Helios launch configurations are preserved, while stale Helios configurations are replaced.
+4. Select `main` in **Helios Entry Point & Arguments** and set the datum, redeemer, and script-context values described below. The dropdown and Arguments menu are the sole source of the compiled entry point and its arguments.
 
 The datum has `lock_until = Time::new(1000)`, an owner hash of 28 `11` bytes, and a beneficiary hash of 28 `22` bytes. The redeemer is `Unlock`. The transaction's validity range begins at `Time::new(2000)` and its signatories contain the beneficiary. The context is a deterministic synthetic spending context, sufficient for these checks; it is not a balanced transaction for submission.
 

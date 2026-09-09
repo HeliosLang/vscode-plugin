@@ -12,7 +12,7 @@ import { ArgsViewProvider } from "./ArgsViewProvider"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import { encodeFullUplcProgram } from "@helios-lang/uplc"
 import { applyEdits, modify, parse } from "jsonc-parser"
-import { appendLaunchConfiguration } from "./launchConfig"
+import { synchronizeHeliosLaunchConfiguration } from "./launchConfig"
 
 export class HeliosDebugConfigurationProvider
     implements DebugConfigurationProvider
@@ -36,10 +36,7 @@ export class HeliosDebugConfigurationProvider
         config: DebugConfiguration,
         _token: CancellationToken | undefined
     ) {
-        // This is called when the user hits Run and Debug for type "mylang"
-        const uplcProgramAndArgs = this.argsViewProvider.compileProgramAndArgs(
-            config.args
-        )
+        const uplcProgramAndArgs = this.argsViewProvider.compileProgramAndArgs()
 
         if (!uplcProgramAndArgs) {
             return undefined
@@ -54,13 +51,9 @@ export class HeliosDebugConfigurationProvider
             request: config.request ?? "launch",
             uplcProgram: bytesToHex(encodeFullUplcProgram(uplcProgram)),
             debugSources: this.argsViewProvider.debugSources,
-            ...(config.args !== undefined || args !== undefined
-                ? {
-                      args:
-                          config.args ??
-                          args?.map((a) => bytesToHex(a.toCbor()))
-                  }
-                : {})
+            // The dropdown and Arguments menu are authoritative. Any stale
+            // launch.json args are overwritten here.
+            args: args?.map((a) => bytesToHex(a.toCbor()))
         }
     }
 }
@@ -110,7 +103,7 @@ export async function appendMinimalLaunchConfig() {
 
     // 5) File exists → read, parse (JSONC), and append or set configs
     const raw = dec.decode(await workspace.fs.readFile(launchUri))
-    const updated = appendLaunchConfiguration(raw, minimalConfig)
+    const updated = synchronizeHeliosLaunchConfiguration(raw, minimalConfig)
 
     if (updated !== raw) {
         await workspace.fs.writeFile(launchUri, enc.encode(updated))

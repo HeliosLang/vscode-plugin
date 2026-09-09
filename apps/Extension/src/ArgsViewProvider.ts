@@ -53,6 +53,7 @@ import {
     entryPointIsConst
 } from "./ast"
 import { ASTProvider } from "./ASTProvider"
+import { selectEntryPoint } from "./entryPoint"
 
 type UPLCProgramWithArgs = {
     args: UplcData[] | undefined // undefined is used for consts that don't depend on script context
@@ -175,17 +176,13 @@ export class ArgsViewProvider implements WebviewViewProvider {
         loadWebview(this.extensionContext, ARGS_VIEW_REL_PATH, view.webview)
     }
 
-    compileProgramAndArgs(
-        argsOverride?: string[]
-    ): UPLCProgramWithArgs | undefined {
+    compileProgramAndArgs(): UPLCProgramWithArgs | undefined {
         const uplcProgram = compileEntryPoint(this.ast, this.entryPoint)
         if (!uplcProgram) {
             return undefined
         }
 
-        const args =
-            argsOverride?.map((arg) => decodeUplcData(arg)) ??
-            this.compileArgs()
+        const args = this.compileArgs()
         if (!args) {
             return undefined
         }
@@ -293,7 +290,10 @@ export class ArgsViewProvider implements WebviewViewProvider {
 
     private handleChangeEntryPoint(event: ChangeEntryPointEvent) {
         this.entryPoint = event.entryPointName
-        this.entryPointHistory[this.ast?.name ?? ""] = event.entryPointName
+        const moduleName = this.ast?.entryPoint.mainModule.name.value
+        if (moduleName) {
+            this.entryPointHistory[moduleName] = event.entryPointName
+        }
 
         this.syncAST()
     }
@@ -357,8 +357,10 @@ export class ArgsViewProvider implements WebviewViewProvider {
             !allEntryPoints.includes(this.entryPoint)
         ) {
             // try historical entry point first
-            this.entryPoint =
-                this.entryPointHistory[moduleName] ?? allEntryPoints[0]
+            this.entryPoint = selectEntryPoint(
+                allEntryPoints,
+                this.entryPointHistory[moduleName]
+            )
         }
 
         this.view?.webview?.postMessage({
