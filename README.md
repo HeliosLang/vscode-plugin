@@ -10,6 +10,8 @@ Features:
 
 See the [reproducible time-lock debugger demonstration](docs/debugger-milestone.md) for exact cursor positions, scope values, and launch arguments. Backstepping is not supported.
 
+For a module-based recording example, use the [recursive asset-search walkthrough](docs/recursive-asset-search-demo.md). It covers creating transaction inputs in the forms, repeated recursive breakpoints, caller scopes, conditional breakpoints, and a missing-token failure.
+
 ## Running the extension in debug mode
 
 Use VS Code's Extension Development Host when working on the plugin locally.

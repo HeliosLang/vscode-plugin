@@ -32,7 +32,7 @@ export function ValueForm({ fields }: ValueFormProps) {
     const handleAddPolicy = useCallback(() => {
         const fieldValue = makeDefaultValue({
             kind: "internal",
-            name: "MintingPolicyHashk"
+            name: "MintingPolicyHash"
         })
 
         vscode.postMessage({

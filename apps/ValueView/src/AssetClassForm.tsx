@@ -1,5 +1,4 @@
 import { StructTypeSchema } from "@helios-lang/type-utils"
-import { ArgInput } from "components"
 import { BuiltinStructForm } from "./BuiltinStructForm"
 
 type AssetClassFormProps = {

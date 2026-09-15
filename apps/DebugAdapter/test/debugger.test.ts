@@ -447,6 +447,306 @@ func main() -> Int { loop(3) }`
     assert.equal((await h.stop()).event, "terminated")
 })
 
+type DemoToken = { policy: string; name: string; quantity: number }
+const demoPolicy = "33".repeat(28)
+const demoTokens: (DemoToken | undefined)[] = [
+    undefined,
+    { policy: demoPolicy, name: "4f54484552", quantity: 1 },
+    { policy: demoPolicy, name: "44454d4f", quantity: 1 }
+]
+
+function assetDemo(tokens = demoTokens, cancel = false) {
+    const folder = resolve("../../examples/time_lock_asset_search")
+    const main = {
+        name: resolve(folder, "time_lock.hl"),
+        content: readFileSync(resolve(folder, "time_lock.hl"), "utf8")
+    }
+    const module = {
+        name: resolve(folder, "asset_search.hl"),
+        content: readFileSync(resolve(folder, "asset_search.hl"), "utf8")
+    }
+    const program = new Program(makeSource(main.content, { name: main.name }), {
+        moduleSources: [makeSource(module.content, { name: module.name })]
+    }).compile(false)
+    const inputs = tokens.map((token, i) => {
+        const value = token
+            ? `Value::lovelace(2000000) + Value::new(AssetClass::new(MintingPolicyHash::new(#${token.policy}), #${token.name}), ${token.quantity})`
+            : "Value::lovelace(2000000)"
+        return `TxInput::new(TxOutputId::new(id, ${i}), TxOutput::new(address, ${value}, TxOutputDatum::new_none()))`
+    })
+    const context = new Program(`testing context
+import { new_spending } from ScriptContext
+func main() -> Data {
+    id = TxId::new(#${"00".repeat(32)});
+    ${inputs.length ? `address = Address::new(SpendingCredential::new_pubkey(PubKeyHash::new(#${"00".repeat(28)})), Option[StakingCredential]::None);` : ""}
+    new_spending(Tx::new(
+        []TxInput{${inputs.join(", ")}}, []TxInput{}, []TxOutput{}, Value::ZERO, Value::ZERO,
+        []DCert{}, Map[StakingCredential]Int{}, TimeRange::from(Time::new(2000)),
+        []PubKeyHash{PubKeyHash::new(#${(cancel ? "11" : "22").repeat(28)})},
+        Map[ScriptPurpose]Int{}, Map[DatumHash]Data{}, id
+    ), TxOutputId::new(id, 0))
+}`)
+        .compile(false)
+        .eval([]).result
+    assert.ok(
+        "right" in context &&
+            typeof context.right != "string" &&
+            context.right.kind == "data"
+    )
+    const args = [
+        makeListData([
+            makeIntData(1000),
+            makeByteArrayData("11".repeat(28)),
+            makeByteArrayData("22".repeat(28))
+        ]),
+        makeConstrData(cancel ? 0 : 1, []),
+        context.right.value
+    ]
+    return {
+        main,
+        module,
+        launch(h: ReturnType<typeof harness>) {
+            const response = h.request("launch", {
+                uplcProgram: bytesToHex(encodeFullUplcProgram(program)),
+                args: args.map((a) => bytesToHex(a.toCbor())),
+                debugSources: { main, modules: [module], validators: [] }
+            })
+            assert.equal(response.success, true, response.message)
+            h.request("configurationDone")
+        }
+    }
+}
+
+function evaluated(
+    h: ReturnType<typeof harness>,
+    expression: string,
+    frameId = 1
+) {
+    const response = h.request("evaluate", { expression, frameId })
+    assert.equal(response.success, true, response.message)
+    return response.body.result
+}
+
+test("asset search demo: recursive module breakpoints and caller scopes", async () => {
+    const demo = assetDemo()
+    const h = harness()
+    h.request("setBreakPoints", {
+        source: { path: demo.module.name },
+        breakpoints: [{ line: 9 }]
+    })
+    demo.launch(h)
+    for (const [remaining, quantity] of [
+        [3, 0],
+        [2, 0],
+        [1, 1]
+    ]) {
+        assert.equal((await h.stop()).body.reason, "breakpoint")
+        const frames = h.request("stackTrace").body.stackFrames
+        assert.equal(frames[0].source.path, demo.module.name)
+        assert.equal(frames[0].line, 9)
+        assert.equal(evaluated(h, "inputs.length"), String(remaining))
+        assert.equal(evaluated(h, "quantity"), String(quantity))
+        assert.equal(
+            evaluated(h, "input.output_id.index"),
+            String(3 - remaining)
+        )
+        assert.equal(
+            evaluated(h, "input.output.value.get_safe(asset)"),
+            String(quantity)
+        )
+        const caller = frames.find((f: any) => f.name == "validate_unlock")
+        assert.ok(caller)
+        assert.equal(caller.source.path, demo.main.name)
+        assert.equal(evaluated(h, "now > datum.lock_until", caller.id), "true")
+        const recursive = frames.filter((f: any) => f.name == "contains_asset")
+        assert.deepEqual(
+            recursive.map((f: any) => evaluated(h, "inputs.length", f.id)),
+            Array.from({ length: 4 - remaining }, (_, i) =>
+                String(remaining + i)
+            )
+        )
+        assert.deepEqual(
+            recursive.map((f: any) => evaluated(h, "quantity", f.id)),
+            [
+                String(quantity),
+                ...Array.from({ length: 3 - remaining }, () => "0")
+            ]
+        )
+        assert.deepEqual(
+            frames.map((f: any) => [f.name, f.line, f.column]),
+            [
+                ["contains_asset", 9, 9],
+                ...Array.from({ length: 3 - remaining }, () => [
+                    "contains_asset",
+                    12,
+                    27
+                ]),
+                ["validate_unlock", 25, 26],
+                ["main", 35, 28]
+            ]
+        )
+        if (remaining == 3) {
+            const scope = h.request("scopes", { frameId: 1 }).body.scopes[0]
+            assert.deepEqual(
+                h
+                    .request("variables", {
+                        variablesReference: scope.variablesReference
+                    })
+                    .body.variables.map((v: any) => v.name),
+                ["inputs", "asset", "input", "quantity"]
+            )
+        }
+        h.request("continue")
+    }
+    assert.equal((await h.stop()).event, "terminated")
+    assert.ok(
+        !h.events.some(
+            (e) => e.event == "output" && e.body.output.includes("Error")
+        )
+    )
+})
+
+test("asset search demo: conditional breakpoint and empty-list failure", async () => {
+    for (const match of [true, false]) {
+        const demo = assetDemo(match ? demoTokens : demoTokens.slice(0, 2))
+        const h = harness()
+        h.request("setBreakPoints", {
+            source: { path: demo.module.name },
+            breakpoints: [{ line: 9, condition: "quantity > 0" }, { line: 5 }]
+        })
+        demo.launch(h)
+        assert.equal((await h.stop()).body.reason, "breakpoint")
+        const frame = h.request("stackTrace").body.stackFrames[0]
+        assert.equal(frame.line, match ? 9 : 5)
+        assert.equal(evaluated(h, "inputs.length"), match ? "1" : "0")
+        assert.equal(frame.column, 9)
+        if (!match) {
+            const scope = h.request("scopes", { frameId: 1 }).body.scopes[0]
+            assert.deepEqual(
+                h
+                    .request("variables", {
+                        variablesReference: scope.variablesReference
+                    })
+                    .body.variables.map((v: any) => v.name),
+                ["inputs", "asset"]
+            )
+        }
+        h.request("continue")
+        assert.equal((await h.stop()).event, "terminated")
+        if (match) {
+            assert.ok(
+                !h.events.some(
+                    (e) =>
+                        e.event == "output" && e.body.output.includes("Error")
+                )
+            )
+        }
+        assert.equal(
+            h.events.some(
+                (e) =>
+                    e.event == "output" &&
+                    e.body.output.includes("required asset not found")
+            ),
+            !match
+        )
+    }
+})
+
+test("asset search demo: false condition skips all inputs", async () => {
+    const demo = assetDemo()
+    const h = harness()
+    h.request("setBreakPoints", {
+        source: { path: demo.module.name },
+        breakpoints: [{ line: 9, condition: "quantity > 1" }]
+    })
+    demo.launch(h)
+    assert.equal((await h.stop()).event, "terminated")
+    assert.ok(
+        !h.events.some(
+            (e) => e.event == "output" && e.body.output.includes("Error")
+        )
+    )
+})
+
+test("asset search demo: step from validator into imported module", async () => {
+    const demo = assetDemo()
+    const h = harness()
+    h.request("setBreakPoints", {
+        source: { path: demo.main.name },
+        breakpoints: [{ line: 25 }]
+    })
+    demo.launch(h)
+    assert.equal((await h.stop()).body.reason, "breakpoint")
+    const positions: [string, number, number][] = []
+    for (let i = 0; i < 40; i++) {
+        const frame = h.request("stackTrace").body.stackFrames[0]
+        positions.push([
+            frame.source.path == demo.main.name ? "validator" : "module",
+            frame.line,
+            frame.column
+        ])
+        if (frame.source.path == demo.module.name) break
+        h.request("stepIn")
+        assert.equal((await h.stop()).body.reason, "step")
+    }
+    assert.equal(positions.at(-1)?.[0], "module")
+    assert.deepEqual(positions, [
+        ["validator", 25, 11],
+        ["validator", 25, 5],
+        ["validator", 25, 26],
+        ["validator", 25, 12],
+        ["validator", 25, 29],
+        ["validator", 25, 30],
+        ["validator", 25, 27],
+        ["validator", 25, 38],
+        ["module", 4, 5]
+    ])
+    h.request("setBreakPoints", {
+        source: { path: demo.main.name },
+        breakpoints: []
+    })
+    h.request("continue")
+    assert.equal((await h.stop()).event, "terminated")
+})
+
+test("asset search demo: first/last match, absent policy/name, zero, empty, and Cancel", async () => {
+    const cases: [(DemoToken | undefined)[], boolean, boolean][] = [
+        [demoTokens, true, false],
+        [[demoTokens[2], ...demoTokens.slice(0, 2)], true, false],
+        [
+            [{ policy: "44".repeat(28), name: "44454d4f", quantity: 1 }],
+            false,
+            false
+        ],
+        [[demoTokens[1]], false, false],
+        [[{ policy: demoPolicy, name: "44454d4f", quantity: 0 }], false, false],
+        [[], false, false],
+        [[], true, true]
+    ]
+    for (const [tokens, success, cancel] of cases) {
+        const demo = assetDemo(tokens, cancel)
+        const h = harness()
+        demo.launch(h)
+        assert.equal((await h.stop()).event, "terminated")
+        if (success) {
+            assert.ok(
+                !h.events.some(
+                    (e) =>
+                        e.event == "output" && e.body.output.includes("Error")
+                )
+            )
+        }
+        assert.equal(
+            h.events.some(
+                (e) =>
+                    e.event == "output" &&
+                    e.body.output.includes("required asset not found")
+            ),
+            !success
+        )
+    }
+})
+
 test(
     "DAP over stdio negotiates coordinates and evaluates while suspended",
     { timeout: 10000 },

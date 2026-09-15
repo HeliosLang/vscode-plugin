@@ -1,6 +1,7 @@
 spending time_lock
 
 import { tx } from ScriptContext
+import { contains_asset } from asset_search
 
 struct Datum {
     lock_until: Time
@@ -13,9 +14,15 @@ enum Redeemer {
     Unlock
 }
 
+const REQUIRED_ASSET: AssetClass = AssetClass::new(
+    MintingPolicyHash::new(#33333333333333333333333333333333333333333333333333333333),
+    #44454d4f
+)
+
 func validate_unlock(datum: Datum, now: Time) -> () {
     assert(now > datum.lock_until, "time lock not yet expired");
-    assert(tx.is_signed_by(datum.beneficiary), "not signed by beneficiary")
+    assert(tx.is_signed_by(datum.beneficiary), "not signed by beneficiary");
+    //assert(contains_asset(tx.inputs, REQUIRED_ASSET), "required asset not found")
 }
 
 func main(datum: Datum, redeemer: Redeemer) -> () {

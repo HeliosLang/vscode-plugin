@@ -13,5 +13,5 @@
             "outFiles": ["${workspaceFolder}/dist/**/*.js"],
             "preLaunchTask": "prelaunch"
         }
-    ]
+      ]
 }

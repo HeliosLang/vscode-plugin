@@ -1,0 +1,15 @@
+module asset_search
+
+func contains_asset(inputs: []TxInput, asset: AssetClass) -> Bool {
+    if (inputs.is_empty()) {
+        false
+    } else {
+        input = inputs.head
+        quantity = input.output.value.get_safe(asset)
+        if (quantity > 0) {
+            true
+        } else {
+            contains_asset(inputs.tail, asset)
+        }
+    }
+}
