@@ -8,7 +8,7 @@ The context is synthetic and evaluated locally. No wallet, funds, or Cardano nod
 
 ## 1. Prepare VSCode
 
-1. Build and install the extension containing this change. An older installed 0.2.2 package may still have the policy-creation and TxId form bugs, even though the version number is the same.
+1. Build and install the extension containing this change.
 2. In the VSCode window running that extension, use **File → Open Folder** to open `examples/time_lock_asset_search` itself. Open both `.hl` files, then select `time_lock.hl`.
 3. Open **Run and Debug**, choose **Helios: Run Current**, and select `main` in **Helios Entry Point & Arguments**.
 4. Enable editor line numbers and keep **Call Stack**, **Variables**, and **Debug Console** visible while recording.

@@ -10,6 +10,7 @@ import {
     encodeFullUplcProgram,
     makeListData,
     makeIntData,
+    makeUplcInt,
     makeByteArrayData,
     makeConstrData
 } from "@helios-lang/uplc"
@@ -442,9 +443,110 @@ func main() -> Int { loop(3) }`
         const result = h.request("evaluate", { expression: "n" })
         assert.equal(result.success, true, result.message)
         assert.equal(result.body.result, String(n))
+        const scope = h.request("scopes", { frameId: 1 }).body.scopes[0]
+        const variables = h.request("variables", {
+            variablesReference: scope.variablesReference
+        }).body.variables
+        assert.deepEqual(
+            variables
+                .filter((v: any) => v.name == "n")
+                .map((v: any) => v.value),
+            [`integer ${n}`]
+        )
         h.request("continue")
     }
     assert.equal((await h.stop()).event, "terminated")
+})
+
+test("variable scopes hide shadowed user bindings and preserve internal entries", () => {
+    const h = harness()
+    const values = [
+        { name: "n", value: makeUplcInt(3) },
+        { name: "__internal", value: makeUplcInt(10) },
+        { name: "n", value: makeUplcInt(2) },
+        { name: "__internal", value: makeUplcInt(20) }
+    ]
+    const variables = h.session.stackVariables(values)
+    assert.deepEqual(
+        variables.user.map((v: any) => [v.name, v.value]),
+        [["n", "integer 2"]]
+    )
+    assert.equal(variables.internal.length, 2)
+    assert.equal(values.length, 4)
+})
+
+test("recursive argument scopes show only the nearest binding in each frame", async () => {
+    const h = harness()
+    h.request("setBreakPoints", {
+        source: { path: file },
+        breakpoints: [{ line: 3 }]
+    })
+    launch(
+        h,
+        `testing recursive_arguments
+func loop(n: Int, total: Int) -> Int {
+    if (n == 0) { total } else { loop(n - 1, total + n) }
+}
+func main() -> Int { loop(3, 0) }`
+    )
+    for (const n of [3, 2, 1, 0]) {
+        assert.equal((await h.stop()).body.reason, "breakpoint")
+        assert.equal(evaluated(h, "n"), String(n))
+        const frames = h.request("stackTrace").body.stackFrames
+        for (const frame of frames.filter((f: any) => f.name == "loop")) {
+            const scope = h.request("scopes", { frameId: frame.id }).body
+                .scopes[0]
+            const variables = h.request("variables", {
+                variablesReference: scope.variablesReference
+            }).body.variables
+            assert.deepEqual(
+                variables.map((v: any) => [v.name, v.value]),
+                ["n", "total"].map((name) => [
+                    name,
+                    `integer ${evaluated(h, name, frame.id)}`
+                ])
+            )
+            assert.equal(scope.namedVariables, 2)
+        }
+        h.request("continue")
+    }
+    assert.equal((await h.stop()).event, "terminated")
+})
+
+test("stepping through recursive calls does not duplicate argument names", async () => {
+    const h = harness()
+    launch(
+        h,
+        `testing recursive_steps
+func loop(items: []Int, total: Int) -> Int {
+    if (items.is_empty()) { total } else {
+        item = items.head;
+        quantity = item + total;
+        if (quantity > 100) { quantity } else { loop(items.tail, total) }
+    }
+}
+func main() -> Int { loop([]Int{3, 2, 1}, 0) }`,
+        true
+    )
+    for (let steps = 0; steps < 100; steps++) {
+        if ((await h.stop()).event == "terminated") return
+        const frames = h.request("stackTrace").body.stackFrames
+        for (const frame of frames) {
+            const scope = h.request("scopes", { frameId: frame.id }).body
+                .scopes[0]
+            const variables = h.request("variables", {
+                variablesReference: scope.variablesReference
+            }).body.variables
+            const names = variables.map((v: any) => v.name)
+            assert.equal(
+                new Set(names).size,
+                names.length,
+                JSON.stringify(variables)
+            )
+        }
+        h.request("stepIn")
+    }
+    assert.fail("Recursive stepping did not terminate")
 })
 
 type DemoToken = { policy: string; name: string; quantity: number }

@@ -12,7 +12,7 @@ The procedure below addresses the [milestone 2 acceptance criteria](https://mile
 ## Prerequisites
 
 - VSCode installed.
-- The Helios extension, published by HeliosLang, with stepping-debugger support. This walkthrough targets version **0.2.2** of the extension in this repository.
+- The Helios extension, published by HeliosLang, with stepping-debugger support. This walkthrough targets version **0.2.3** of the extension in this repository.
 - A local folder in which to save the demonstration script.
 
 The demonstration runs locally. It does not require a wallet, funds, or a connection to a Cardano node.
@@ -23,12 +23,12 @@ The demonstration runs locally. It does not require a wallet, funds, or a connec
 2. Open the Extensions view from the left sidebar, or press Ctrl+Shift+X.
 3. Search for **Helios**.
 4. Select the extension named **Helios**, published by **HeliosLang**, and install or update it.
-5. Check the installed version in the extension details. Use version 0.2.2 for the reference trace below.
+5. Check the installed version in the extension details. Use version 0.2.3 for the reference trace below.
 6. Reload VSCode if prompted.
 
 The extension's Marketplace page is [Helios — Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=HeliosLang.helios).
 
-If installing a supplied package for local verification, open the Extensions view's **…** menu, select **Install from VSIX…**, and choose `helios-0.2.2.vsix`.
+If installing a supplied package for local verification, open the Extensions view's **…** menu, select **Install from VSIX…**, and choose `helios-0.2.3.vsix`.
 
 ## 2. Create the Helios script
 

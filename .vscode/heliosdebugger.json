@@ -1,0 +1,134 @@
+{
+    "values": {
+        "Datum::Datum-value-1": {
+            "lock_until": "1903e8",
+            "owner": "581c00000000000000000000000000000000000000000000000000000000",
+            "beneficiary": "581c00000000000000000000000000000000000000000000000000000001"
+        },
+        "time_lock::main": {
+            "datum": "9f1903e8581c00000000000000000000000000000000000000000000000000000000581c00000000000000000000000000000000000000000000000000000001ff",
+            "redeemer": "d87a80",
+            "ScriptContext": "d8799fd8799f9fd8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a14000d87980d87a80ffffd8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a14000d87980d87a80ffffd8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a24000410001d87980d87a80ffffff8080a0a140a1400080a0d8799fd8799fd87a9f1907d0ffd87a80ffd8799fd87b80d87a80ffff9f581c00000000000000000000000000000000000000000000000000000001ffa0a0d8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd87a9fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffffff"
+        },
+        "PubKeyHash::owner": {
+            "value": "581c00000000000000000000000000000000000000000000000000000000"
+        },
+        "PubKeyHash::beneficiary": {
+            "value": "581c00000000000000000000000000000000000000000000000000000001"
+        },
+        "Redeemer::Redeemer-value-1": {
+            "_tag": "1"
+        },
+        "ScriptContext::ScriptContext-value-1": {
+            "tx": "d8799f9fd8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a14000d87980d87a80ffffd8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a14000d87980d87a80ffffd8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a24000410001d87980d87a80ffffff8080a0a140a1400080a0d8799fd8799fd87a9f1907d0ffd87a80ffd8799fd87b80d87a80ffff9f581c00000000000000000000000000000000000000000000000000000001ffa0a0d8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "purpose": "d87a9fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffff"
+        },
+        "Tx::Tx-value-1": {
+            "inputs": "9fd8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a14000d87980d87a80ffffd8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a14000d87980d87a80ffffd8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a24000410001d87980d87a80ffffff",
+            "refInputs": "80",
+            "outputs": "80",
+            "fee": "a0",
+            "minted": "a140a14000",
+            "dcerts": "80",
+            "withdrawals": "a0",
+            "time_range": "d8799fd8799fd87a9f1907d0ffd87a80ffd8799fd87b80d87a80ffff",
+            "signatories": "9f581c00000000000000000000000000000000000000000000000000000001ff",
+            "redeemers": "a0",
+            "datums": "a0",
+            "id": "d8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        "[]PubKeyHash::PubKeyHash_list-value-1": {
+            "item-0": "581c00000000000000000000000000000000000000000000000000000001"
+        },
+        "TimeRange::TimeRange-value-1": {
+            "start_tag": "1",
+            "start_value": "1907d0",
+            "include_start": "d87a80",
+            "end_tag": "2",
+            "end_value": "1b000001a0a76528fb",
+            "include_end": "d87a80"
+        },
+        "ScriptPurpose::ScriptPurpose-value-1": {
+            "_tag": "1",
+            "output_id": "d8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ff"
+        },
+        "TxId::TxId-value-1": {
+            "value": "5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        "asset_search::contains_asset": {
+            "inputs": "9fd8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a14000d87980d87a80ffffd8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a14000d87980d87a80ffffd8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a24000410001d87980d87a80ffffff",
+            "asset": "d8799f404100ff"
+        },
+        "TxOutputId::dummy": {
+            "tx_id": "d8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "index": "00"
+        },
+        "TxOutput::TxOutput-value-1": {
+            "address": "d8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ff",
+            "value": "a140a14000",
+            "datum": "d87980",
+            "ref_script": "d87a80"
+        },
+        "Value::Value-value-1": {
+            "policy-0": "40",
+            "token-name-0-0": "40",
+            "quantity-0-0": "00"
+        },
+        "[]TxInput::tx_inputs": {
+            "item-0": "d8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a14000d87980d87a80ffff",
+            "item-1": "d8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a14000d87980d87a80ffff",
+            "item-2": "d8799fd8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a24000410001d87980d87a80ffff"
+        },
+        "TxInput::tx_input": {
+            "output_id": "d8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ff",
+            "output": "d8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a14000d87980d87a80ff"
+        },
+        "AssetClass::asset": {
+            "mph": "40",
+            "token_name": "4100"
+        },
+        "TxInput::TxInput-value-1": {
+            "output_id": "d8799fd8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ff",
+            "output": "d8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a24000410001d87980d87a80ff"
+        },
+        "TxOutput::tx_output_with_asset": {
+            "address": "d8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ff",
+            "value": "a140a24000410001",
+            "datum": "d87980",
+            "ref_script": "d87a80"
+        },
+        "Value::Value-value-2": {
+            "policy-0": "40",
+            "token-name-0-0": "40",
+            "quantity-0-0": "00",
+            "token-name-0-1": "4100",
+            "quantity-0-1": "01"
+        }
+    },
+    "links": {
+        "time_lock::main::datum": "Datum::Datum-value-1",
+        "Datum::Datum-value-1::owner": "PubKeyHash::owner",
+        "Datum::Datum-value-1::beneficiary": "PubKeyHash::beneficiary",
+        "time_lock::main::redeemer": "Redeemer::Redeemer-value-1",
+        "time_lock::main::ScriptContext": "ScriptContext::ScriptContext-value-1",
+        "ScriptContext::ScriptContext-value-1::tx": "Tx::Tx-value-1",
+        "Tx::Tx-value-1::signatories": "[]PubKeyHash::PubKeyHash_list-value-1",
+        "[]PubKeyHash::PubKeyHash_list-value-1::item-0": "PubKeyHash::beneficiary",
+        "Tx::Tx-value-1::time_range": "TimeRange::TimeRange-value-1",
+        "ScriptContext::ScriptContext-value-1::purpose": "ScriptPurpose::ScriptPurpose-value-1",
+        "ScriptPurpose::ScriptPurpose-value-1::output_id": "TxOutputId::dummy",
+        "asset_search::contains_asset::inputs": "[]TxInput::tx_inputs",
+        "TxOutputId::dummy::tx_id": "TxId::TxId-value-1",
+        "TxOutput::TxOutput-value-1::value": "Value::Value-value-1",
+        "asset_search::contains_asset::asset": "AssetClass::asset",
+        "Tx::Tx-value-1::inputs": "[]TxInput::tx_inputs",
+        "[]TxInput::tx_inputs::item-0": "TxInput::tx_input",
+        "[]TxInput::tx_inputs::item-1": "TxInput::tx_input",
+        "[]TxInput::tx_inputs::item-2": "TxInput::TxInput-value-1",
+        "TxInput::tx_input::output_id": "TxOutputId::dummy",
+        "TxInput::tx_input::output": "TxOutput::TxOutput-value-1",
+        "TxInput::TxInput-value-1::output_id": "TxOutputId::dummy",
+        "TxInput::TxInput-value-1::output": "TxOutput::tx_output_with_asset",
+        "TxOutput::tx_output_with_asset::value": "Value::Value-value-2"
+    }
+}

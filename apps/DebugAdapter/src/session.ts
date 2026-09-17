@@ -753,8 +753,20 @@ export class HeliosDebugSession extends DebugSession {
             user: [] as DebugProtocol.Variable[],
             internal: [] as DebugProtocol.Variable[]
         }
+        // Runtime stacks can retain shadowed bindings. Match expression
+        // evaluation by displaying only the nearest (last) user binding.
+        const nearestBindings = new Map<string, number>()
+        values.forEach((value, i) => {
+            if (!isInternalStackValue(value))
+                nearestBindings.set(value.name!, i)
+        })
 
         values.forEach((value, i) => {
+            if (
+                !isInternalStackValue(value) &&
+                nearestBindings.get(value.name!) != i
+            )
+                return
             const name = value.name ?? i.toString()
             const variable = new Variable(name, formatCekValue(value))
             if ("value" in value) {
