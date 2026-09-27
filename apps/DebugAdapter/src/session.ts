@@ -67,6 +67,13 @@ export class HeliosDebugSession extends DebugSession {
     private sourceLines = new Map<string, string[]>()
     private frames: DebugFrame[] = []
     private stopOnEntry = false
+    private stopOnException = true
+    private pendingException?: Extract<
+        CekMachineStepResult,
+        { kind: "error" | "completed" }
+    >
+    private exceptionMessage = ""
+    private lastUserSnapshot?: CekMachineSnapshot
     private nextBreakpointId: number
     private nextVariablesReference: number
     private variableHandles: Map<
@@ -123,9 +130,41 @@ export class HeliosDebugSession extends DebugSession {
         response.body.supportsSteppingGranularity = false
         response.body.supportsConditionalBreakpoints = true
         response.body.supportsStepBack = false
+        response.body.supportsExceptionInfoRequest = true
+        response.body.exceptionBreakpointFilters = [
+            {
+                filter: "scriptError",
+                label: "Helios script errors",
+                default: true
+            }
+        ]
 
         this.sendResponse(response)
         this.sendEvent(new InitializedEvent())
+    }
+
+    protected setExceptionBreakPointsRequest(
+        response: DebugProtocol.SetExceptionBreakpointsResponse,
+        args: DebugProtocol.SetExceptionBreakpointsArguments
+    ): void {
+        this.stopOnException = args.filters.includes("scriptError")
+        this.sendResponse(response)
+    }
+
+    protected exceptionInfoRequest(
+        response: DebugProtocol.ExceptionInfoResponse
+    ): void {
+        if (!this.pendingException) {
+            this.sendErrorResponse(response, 1005, "No paused script error")
+            return
+        }
+        response.body = {
+            exceptionId: "HeliosScriptError",
+            description: this.exceptionMessage,
+            breakMode: "always",
+            details: { message: this.exceptionMessage }
+        }
+        this.sendResponse(response)
     }
 
     protected setBreakPointsRequest(
@@ -475,7 +514,11 @@ export class HeliosDebugSession extends DebugSession {
 
         this.sendResponse(response)
         this.sendEvent(new ContinuedEvent(THREAD_ID, true))
-        this.runIfReady()
+        if (this.pendingException) {
+            const failure = this.pendingException
+            this.pendingException = undefined
+            this.finish(failure)
+        } else this.runIfReady()
     }
 
     protected pauseRequest(
@@ -518,6 +561,7 @@ export class HeliosDebugSession extends DebugSession {
         for (let i = 0; i < RUN_CHUNK_SIZE; i++) {
             const snapshot = machine.snapshot()
             this.lastSnapshot = snapshot
+            if (executionSite(snapshot)) this.lastUserSnapshot = snapshot
 
             if (this.stopOnEntry && executionSite(snapshot)) {
                 this.stopOnEntry = false
@@ -579,7 +623,26 @@ export class HeliosDebugSession extends DebugSession {
 
             const stepResult = machine.step()
             if (stepResult.kind == "completed" || stepResult.kind == "error") {
-                this.finish(stepResult)
+                if (stepResult.kind === "error" && this.stopOnException) {
+                    this.pendingException = stepResult
+                    const failure = stepResult.result.result
+                    this.exceptionMessage =
+                        "left" in failure
+                            ? new UplcRuntimeError(
+                                  failure.left.error,
+                                  failure.left.callSites
+                              ).toString()
+                            : "Helios script failed"
+                    const failedSnapshot = executionSite(snapshot)
+                        ? snapshot
+                        : (this.lastUserSnapshot ?? snapshot)
+                    this.lastSnapshot = failedSnapshot
+                    this.stopExecution(
+                        "exception",
+                        undefined,
+                        executionSite(failedSnapshot)
+                    )
+                } else this.finish(stepResult)
                 return
             }
 
@@ -592,7 +655,7 @@ export class HeliosDebugSession extends DebugSession {
     }
 
     private stopExecution(
-        reason: "breakpoint" | "pause" | "step" | "entry",
+        reason: "breakpoint" | "pause" | "step" | "entry" | "exception",
         breakpointKey?: string,
         site?: Site
     ): void {
@@ -608,6 +671,7 @@ export class HeliosDebugSession extends DebugSession {
             THREAD_ID
         )
         event.body.allThreadsStopped = true
+        if (reason === "exception") event.body.text = this.exceptionMessage
         if (breakpointKey)
             event.body.hitBreakpointIds = [
                 Number(breakpointKey.split(":").slice(-2)[0])
@@ -733,7 +797,8 @@ export class HeliosDebugSession extends DebugSession {
     }
 
     private snapshot(): CekMachineSnapshot | undefined {
-        this.lastSnapshot = this.machine?.snapshot() ?? this.lastSnapshot
+        if (!this.pendingException)
+            this.lastSnapshot = this.machine?.snapshot() ?? this.lastSnapshot
         return this.lastSnapshot
     }
 

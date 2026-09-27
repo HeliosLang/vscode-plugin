@@ -60,7 +60,7 @@ export function deriveTypeName(schema: TypeSchema): string {
         case "enum":
             return schema.name
         case "reference":
-            throw new Error("Can't derive type name from ReferenceTypeSchema")
+            return schema.id
     }
 }
 
@@ -133,6 +133,8 @@ const BUILTIN_TYPES = [
     "Ratio",
     "Real",
     "ScriptContext",
+    "ScriptHash",
+    "String",
     "ScriptPurpose",
     "SpendingCredential",
     "StakingCredential",
@@ -160,6 +162,14 @@ export function resolveSchema(
     } else if (typeName.split("::").slice(1).join("::") in schemas) {
         // try without the module name
         return schemas[typeName.split("::").slice(1).join("::")]
+    } else if (
+        Object.values(schemas).some(
+            (s) => "id" in s && s.id === typeName && s.kind !== "reference"
+        )
+    ) {
+        return Object.values(schemas).find(
+            (s) => "id" in s && s.id === typeName && s.kind !== "reference"
+        )!
     } else if (BUILTIN_TYPES.includes(typeName)) {
         return { kind: "internal", name: typeName }
     } else if (typeName.startsWith("[]")) {
@@ -170,36 +180,49 @@ export function resolveSchema(
             itemType: resolveSchema(schemas, itemTypeName)
         }
     } else if (typeName.startsWith("Map[")) {
-        const [keyTypeName, ...valueTypeNameParts] = typeName
-            .slice(4)
-            .split("]")[0]
-        const valueTypeName = valueTypeNameParts.join("]")
-
+        const end = matchingBracket(typeName, 3)
         return {
             kind: "map",
-            keyType: resolveSchema(schemas, keyTypeName),
-            valueType: resolveSchema(schemas, valueTypeName)
+            keyType: resolveSchema(schemas, typeName.slice(4, end)),
+            valueType: resolveSchema(schemas, typeName.slice(end + 1).trim())
         }
-    } else if (typeName.startsWith("Option[")) {
-        const someTypeName = typeName.slice(7).split("]")[0]
-
+    } else if (
+        typeName.startsWith("Option[") &&
+        matchingBracket(typeName, 6) === typeName.length - 1
+    ) {
         return {
             kind: "option",
-            someType: resolveSchema(schemas, someTypeName)
+            someType: resolveSchema(schemas, typeName.slice(7, -1))
         }
     } else if (typeName.startsWith("(") && typeName.endsWith(")")) {
-        // TODO: this doesn't work for nested types!, need actual token parsing
-        const itemTypeNames = typeName.slice(1, typeName.length - 1).split(",")
-
+        const parts: string[] = []
+        let depth = 0,
+            start = 1
+        for (let i = 1; i < typeName.length - 1; i++) {
+            if ("[(".includes(typeName[i])) depth++
+            if ("])".includes(typeName[i])) depth--
+            if (typeName[i] === "," && depth === 0) {
+                parts.push(typeName.slice(start, i).trim())
+                start = i + 1
+            }
+        }
+        parts.push(typeName.slice(start, -1).trim())
         return {
             kind: "tuple",
-            itemTypes: itemTypeNames.map((itemType) =>
-                resolveSchema(schemas, itemType)
-            )
+            itemTypes: parts.map((t) => resolveSchema(schemas, t))
         }
     } else {
         throw new Error(`Unable to resolve schema of ${typeName}`)
     }
+}
+
+function matchingBracket(text: string, start: number): number {
+    let depth = 0
+    for (let i = start; i < text.length; i++) {
+        if (text[i] === "[") depth++
+        if (text[i] === "]" && --depth === 0) return i
+    }
+    throw new Error(`Invalid type ${text}`)
 }
 
 export function tryResolveSchema(
@@ -469,6 +492,8 @@ export function makeNilFieldValues(schema: TypeSchema): Record<string, string> {
                     return { value: bytesToHex(makeDummyPubKey().toCbor()) }
                 case "PubKeyHash":
                     return { value: bytesToHex(makeDummyPubKeyHash().toCbor()) }
+                case "DatumHash":
+                    return { value: encodeByteArray(new Array(32).fill(0)) }
                 case "Ratio":
                     return { value: encodeRatio(0, 0) }
                 case "Real":
@@ -546,7 +571,7 @@ export function makeNilFieldValues(schema: TypeSchema): Record<string, string> {
                 case "Tx": {
                     return {
                         inputs: bytesToHex(makeListData([]).toCbor()),
-                        refInputs: bytesToHex(makeListData([]).toCbor()),
+                        ref_inputs: bytesToHex(makeListData([]).toCbor()),
                         outputs: bytesToHex(makeListData([]).toCbor()),
                         fee: bytesToHex(makeValue(0n).toUplcData().toCbor()),
                         minted: bytesToHex(
@@ -827,6 +852,7 @@ export function convertFieldsToUplcData(
                 case "MintingPolicyHash":
                 case "PubKey":
                 case "PubKeyHash":
+                case "DatumHash":
                 case "Ratio":
                 case "Real":
                     return decodeUplcData(fields.value)
@@ -921,7 +947,7 @@ export function convertFieldsToUplcData(
                 case "Tx":
                     return makeConstrData(0, [
                         decodeUplcData(fields.inputs),
-                        decodeUplcData(fields.refInputs),
+                        decodeUplcData(fields.ref_inputs ?? fields.refInputs),
                         decodeUplcData(fields.outputs),
                         decodeUplcData(fields.fee),
                         decodeUplcData(fields.minted),
@@ -1248,7 +1274,7 @@ export const DCERT_VARIANTS: VariantTypeSchema[] = [
         tag: 1,
         fieldTypes: [
             {
-                name: "hash",
+                name: "credential",
                 type: { kind: "internal", name: "StakingCredential" }
             }
         ]

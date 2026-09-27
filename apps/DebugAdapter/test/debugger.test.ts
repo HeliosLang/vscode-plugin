@@ -220,7 +220,7 @@ test("step in and over follow source expressions", async () => {
 })
 
 test("time_lock acceptance trace and typed struct expressions", async () => {
-    const file = resolve("../../examples/time_lock.hl")
+    const file = resolve("test/fixtures/time_lock.hl")
     const content = readFileSync(file, "utf8")
     const contextSource = `testing context
     import { new_spending } from ScriptContext
@@ -558,10 +558,15 @@ const demoTokens: (DemoToken | undefined)[] = [
 ]
 
 function assetDemo(tokens = demoTokens, cancel = false) {
-    const folder = resolve("../../examples/time_lock_asset_search")
+    const folder = resolve("../../examples")
     const main = {
         name: resolve(folder, "time_lock.hl"),
         content: readFileSync(resolve(folder, "time_lock.hl"), "utf8")
+            .replace(
+                "MintingPolicyHash::new(#)",
+                `MintingPolicyHash::new(#${demoPolicy})`
+            )
+            .replace("#00\n)", "#44454d4f\n)")
     }
     const module = {
         name: resolve(folder, "asset_search.hl"),
@@ -608,6 +613,7 @@ func main() -> Data {
         main,
         module,
         launch(h: ReturnType<typeof harness>) {
+            h.request("setExceptionBreakPoints", { filters: [] })
             const response = h.request("launch", {
                 uplcProgram: bytesToHex(encodeFullUplcProgram(program)),
                 args: args.map((a) => bytesToHex(a.toCbor())),
@@ -891,7 +897,9 @@ test(
                 if (i >= 0) return messages.splice(i, 1)[0]
                 await new Promise((resolve) => setTimeout(resolve, 5))
             }
-            throw new Error(`No DAP response: ${stderr}`)
+            throw new Error(
+                `No DAP response: ${stderr}; messages: ${JSON.stringify(messages)}`
+            )
         }
         const request = async (command: string, args: any = {}) => {
             const id = ++seq
@@ -955,3 +963,44 @@ test(
         }
     }
 )
+
+test("script failures pause with frames and variables until continued", async () => {
+    const h = harness()
+    const source = `testing failure
+func check(x: Int) -> Int {
+    assert(x > 0, "positive required");
+    x
+}
+func main() -> Int { check(-1) }`
+    launch(h, source)
+    const stopped = await h.stop()
+    assert.equal(stopped.body.reason, "exception")
+    const frames = h.request("stackTrace", { threadId: 1 }).body.stackFrames
+    assert.ok(frames.some((f: any) => f.name === "check"))
+    assert.equal(frames[0].line, 3)
+    const scopes = h.request("scopes", { frameId: frames[0].id }).body.scopes
+    const variables = h.request("variables", {
+        variablesReference: scopes[0].variablesReference
+    }).body.variables
+    assert.ok(
+        variables.some((v: any) => v.name === "x" && v.value.includes("-1"))
+    )
+    assert.equal(
+        h.request("exceptionInfo").body.exceptionId,
+        "HeliosScriptError"
+    )
+    assert.equal(
+        h.request("evaluate", { expression: "x", frameId: frames[0].id }).body
+            .result,
+        "-1"
+    )
+    h.request("continue")
+    assert.equal((await h.stop()).event, "terminated")
+})
+
+test("script exception stops can be disabled", async () => {
+    const h = harness()
+    h.request("setExceptionBreakPoints", { filters: [] })
+    launch(h, 'testing failure\nfunc main() -> () { error("failure") }')
+    assert.equal((await h.stop()).event, "terminated")
+})

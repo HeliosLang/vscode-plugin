@@ -14,7 +14,16 @@ export class TypeSchemasProvider {
         this.listeners = []
 
         astProvider.addCompileListener((programs: Record<string, Program>) => {
-            this.setSchemas(collectTypeSchemas(programs))
+            this.setSchemas(
+                collectTypeSchemas({
+                    ...programs,
+                    __active:
+                        astProvider.activeDocumentProgram ??
+                        Object.values(programs)[
+                            Object.values(programs).length - 1
+                        ]!
+                })
+            )
         })
     }
 
@@ -45,6 +54,7 @@ function collectTypeSchemas(
     for (let programKey in programs) {
         const p = programs[programKey]
 
+        if (!p) continue
         const types = p.userTypes
 
         for (let moduleName in types) {

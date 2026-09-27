@@ -1,3 +1,6 @@
+import { capturedArguments } from "./captureImport"
+import { type Capture } from "./captureFeed"
+import { importCapturedArguments } from "schemas"
 import { Schema } from "effect"
 import {
     TypeSchemasContext,
@@ -125,9 +128,57 @@ export class ArgsViewProvider implements WebviewViewProvider {
         )
     }
 
-    setAST(ast: Program | undefined) {
+    async importCapture(
+        ast: Program,
+        uri: Uri,
+        capture: Capture,
+        index: number
+    ) {
+        const evaluation = capture.evaluations[index]
+        const argumentsToImport = capturedArguments(ast, evaluation)
+        const schemas = { ...this.schemasProvider.schemas }
+        for (const types of Object.values(ast.userTypes))
+            for (const [name, type] of Object.entries(types))
+                schemas[name] = type.toSchema()
+        await this.valuesProvider.importIntoDocument(uri, (store) => {
+            try {
+                return importCapturedArguments(
+                    store,
+                    schemas,
+                    `${ast.name}::main`,
+                    capture.captureId,
+                    argumentsToImport
+                )
+            } catch (error) {
+                throw new Error(
+                    `Captured arguments do not match the local types for validator "${ast.name}". Revert the local type changes to match the captured validator before loading this capture. ${(error as Error).message}`
+                )
+            }
+        })
+        this.schemasProvider.setSchemas(schemas)
         this.ast = ast
+        this.entryPoint = "main"
+        this.entryPointHistory[ast.name] = "main"
         this.syncAST()
+    }
+
+    private astRevision = 0
+    setAST(ast: Program | undefined) {
+        const revision = ++this.astRevision
+        if (!ast) {
+            this.ast = undefined
+            this.syncAST()
+            return
+        }
+        const file = ast.entryPoint.mainModule.name.site.file
+        this.valuesProvider
+            .selectDocument(Uri.parse(file))
+            .then(() => {
+                if (revision !== this.astRevision) return
+                this.ast = ast
+                this.syncAST()
+            })
+            .catch(() => {})
     }
 
     resolveWebviewView(
@@ -222,11 +273,17 @@ export class ArgsViewProvider implements WebviewViewProvider {
         const contextKey = `${ast.name}::${entryPointInfo.name}`
         const args: UplcData[] = []
 
-        for (let argInfo of entryPointInfo.args) {
+        for (const [argIndex, argInfo] of entryPointInfo.args.entries()) {
             const argName = argInfo.name
 
             if (argName == "_") {
-                args.push(makeIntData(0))
+                args.push(
+                    decodeUplcData(
+                        this.valuesProvider.store.values[contextKey]?.[
+                            `_captured_${argIndex}`
+                        ] ?? "00"
+                    )
+                )
                 continue
             }
 

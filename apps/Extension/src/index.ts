@@ -1,3 +1,4 @@
+import { CapturesViewProvider } from "./CapturesViewProvider"
 import { type ExtensionContext, window, commands, workspace } from "vscode"
 import { ArgsViewProvider } from "./ArgsViewProvider"
 import { isHeliosExt } from "./repository"
@@ -37,6 +38,8 @@ export function activate(extensionContext: ExtensionContext) {
         valuesProvider,
         valueViewCollection
     )
+
+    new CapturesViewProvider(astProvider, argsViewProvider, extensionContext)
 
     new DiagnosticsProvider(astProvider)
 

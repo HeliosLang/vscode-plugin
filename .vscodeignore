@@ -7,3 +7,6 @@ README.md
 packages
 *.yaml
 *.md
+
+dist/extension-host.test.cjs
+.playwright-cli

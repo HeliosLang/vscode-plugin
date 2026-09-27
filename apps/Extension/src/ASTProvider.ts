@@ -1,4 +1,4 @@
-import { TextDocument, window, workspace } from "vscode"
+import { TextDocument, window, workspace, Uri } from "vscode"
 import {
     makeHeliosSource,
     makeSource,
@@ -83,6 +83,19 @@ export class ASTProvider {
         this.recompileOpenASTs()
     }
 
+    async compileDocument(
+        doc: TextDocument,
+        docs: TextDocument[]
+    ): Promise<Program> {
+        docs.forEach((d) => this.setSource(d))
+        this.setSource(doc)
+        const key = doc.uri.toString()
+        const program = this.compileProgram(this.sources[key])
+        this.programs[key] = program
+        this.compileListeners.forEach((l) => l(this.programs))
+        return program
+    }
+
     init(): void {
         if (this.initialized) {
             this.loadKnownDocs()
@@ -90,7 +103,7 @@ export class ASTProvider {
         }
 
         workspace
-            .findFiles("**/*.hl", "**/node_modules/**")
+            .findFiles("**/*.{hl,helios}", "**/node_modules/**")
             .then((uris) =>
                 Promise.all(uris.map((uri) => workspace.openTextDocument(uri)))
             )
@@ -135,12 +148,21 @@ export class ASTProvider {
     }
 
     private compileProgram(s: Source): Program {
+        const folder = workspace
+            .getWorkspaceFolder(Uri.parse(s.name))
+            ?.uri.toString()
+        const sources = Object.values(this.sources).filter(
+            (source) =>
+                workspace
+                    .getWorkspaceFolder(Uri.parse(source.name))
+                    ?.uri.toString() === folder
+        )
         return new Program(s, {
-            moduleSources: Object.values(this.sources).filter(
+            moduleSources: sources.filter(
                 (ms) => ms.purpose == "module" && ms.name != s.name
             ),
             validatorTypes: Object.fromEntries(
-                Object.values(this.sources)
+                sources
                     .filter(
                         (s) =>
                             s.purpose != undefined &&

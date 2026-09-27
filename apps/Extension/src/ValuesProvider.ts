@@ -13,7 +13,7 @@ import {
     tryResolveSchema,
     validateUplcData
 } from "schemas"
-import { Uri, workspace } from "vscode"
+import { Uri, workspace, window } from "vscode"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import { TypeSchemasProvider } from "./TypeSchemasProvider"
 import { expectDefined, TypeSchema } from "@helios-lang/type-utils"
@@ -30,6 +30,9 @@ export class ValuesProvider {
     private readonly schemasProvider: TypeSchemasProvider
     private store_: Store
     private listeners: ValuesListener[]
+    private uri: Uri | undefined
+    private ready: Promise<void>
+    private operations: Promise<void> = Promise.resolve()
 
     constructor(schemasProvider: TypeSchemasProvider) {
         this.schemasProvider = schemasProvider
@@ -37,10 +40,66 @@ export class ValuesProvider {
 
         this.listeners = []
 
-        readValueStore().then((s) => {
+        this.uri = getValueStoreUri()
+        this.ready = readValueStore(this.uri).then((s) => {
             this.store_ = s
             this.listeners.forEach((l) => l(s))
         })
+        // Keep corrupt files intact; every operation also awaits ready and fails.
+        void this.ready.catch((error) =>
+            window.showErrorMessage(
+                `Cannot load Helios values: ${error.message}`
+            )
+        )
+    }
+
+    private enqueue(action: () => Promise<void>): Promise<void> {
+        const operation = this.operations.then(async () => {
+            await this.ready
+            await action()
+        })
+        this.operations = operation.catch((error) => {
+            window.showErrorMessage(
+                `Cannot update Helios values: ${error.message}`
+            )
+        })
+        return operation
+    }
+
+    selectDocument(document: Uri): Promise<void> {
+        return this.enqueue(async () => {
+            const uri = this.documentStoreUri(document)
+            if (uri.toString() === this.uri?.toString()) return
+            const store = await readValueStore(uri)
+            this.uri = uri
+            this.store_ = store
+            this.listeners.forEach((l) => l(store))
+        })
+    }
+
+    importIntoDocument(
+        document: Uri,
+        prepare: (store: Store) => Store
+    ): Promise<void> {
+        return this.enqueue(async () => {
+            const uri = this.documentStoreUri(document)
+            const previous =
+                uri.toString() === this.uri?.toString()
+                    ? this.store_
+                    : await readValueStore(uri)
+            const store = prepare(previous)
+            await writeValueStore(store, uri)
+            this.uri = uri
+            this.store_ = store
+            this.listeners.forEach((l) => l(store))
+        })
+    }
+
+    private documentStoreUri(document: Uri): Uri {
+        const folder = workspace.getWorkspaceFolder(document)
+        if (!folder)
+            throw new Error("Validator must be inside a workspace folder")
+        return Uri.joinPath(folder.uri, ...STORE_REL_PATH)
     }
 
     get store() {
@@ -63,32 +122,34 @@ export class ValuesProvider {
      * @param newName
      */
     changeValueName(typeName: string, oldName: string, newName: string): void {
-        const oldKey = `${typeName}::${oldName}`
-        const newKey = `${typeName}::${newName}`
+        void this.enqueue(async () => {
+            const oldKey = `${typeName}::${oldName}`
+            const newKey = `${typeName}::${newName}`
 
-        const { values, links } = this.store
+            const { values, links } = this.store
 
-        if (oldKey in values) {
-            values[newKey] = values[oldKey]
-            delete values[oldKey]
-        }
-
-        for (let linkKey in links) {
-            const linkValue = links[linkKey]
-
-            if (linkValue == oldKey) {
-                links[linkKey] = newKey
+            if (oldKey in values) {
+                values[newKey] = values[oldKey]
+                delete values[oldKey]
             }
 
-            if (linkKey.startsWith(oldKey + "::")) {
-                const newLinkKey =
-                    newKey + "::" + linkKey.slice(oldKey.length + 2)
-                links[newLinkKey] = links[linkKey]
-                delete links[linkKey]
-            }
-        }
+            for (let linkKey in links) {
+                const linkValue = links[linkKey]
 
-        this.flush()
+                if (linkValue == oldKey) {
+                    links[linkKey] = newKey
+                }
+
+                if (linkKey.startsWith(oldKey + "::")) {
+                    const newLinkKey =
+                        newKey + "::" + linkKey.slice(oldKey.length + 2)
+                    links[newLinkKey] = links[linkKey]
+                    delete links[linkKey]
+                }
+            }
+
+            await this.flush()
+        }).catch(() => {})
     }
 
     /**
@@ -99,37 +160,40 @@ export class ValuesProvider {
      * @param valueName
      */
     deleteValue(typeName: string, valueName: string): void {
-        const key = `${typeName}::${valueName}`
+        void this.enqueue(async () => {
+            const key = `${typeName}::${valueName}`
 
-        if (key in this.store.values) {
-            delete this.store.values[key]
-        }
+            if (key in this.store.values) {
+                delete this.store.values[key]
+            }
 
-        for (let linkKey in this.store.links) {
-            if (linkKey.startsWith(key + "::")) {
-                delete this.store.links[linkKey]
-            } else {
-                const linkValue = this.store.links[linkKey]
-
-                if (linkValue == key) {
+            for (let linkKey in this.store.links) {
+                if (linkKey.startsWith(key + "::")) {
                     delete this.store.links[linkKey]
+                } else {
+                    const linkValue = this.store.links[linkKey]
 
-                    // TODO: reusable split functions
-                    const linkKeyParts = linkKey.split("::")
-                    const contextKey = linkKeyParts
-                        .slice(0, linkKeyParts.length - 1)
-                        .join("::")
-                    const fieldName = linkKeyParts[linkKeyParts.length - 1]
+                    if (linkValue == key) {
+                        delete this.store.links[linkKey]
 
-                    const schema = this.schemasProvider.resolveSchema(typeName)
-                    const fieldValue = makeNilValue(schema)
+                        // TODO: reusable split functions
+                        const linkKeyParts = linkKey.split("::")
+                        const contextKey = linkKeyParts
+                            .slice(0, linkKeyParts.length - 1)
+                            .join("::")
+                        const fieldName = linkKeyParts[linkKeyParts.length - 1]
 
-                    this.setFieldValue(contextKey, fieldName, fieldValue)
+                        const schema =
+                            this.schemasProvider.resolveSchema(typeName)
+                        const fieldValue = makeNilValue(schema)
+
+                        this.setFieldValue(contextKey, fieldName, fieldValue)
+                    }
                 }
             }
-        }
 
-        this.flush()
+            await this.flush()
+        }).catch(() => {})
     }
 
     /**
@@ -137,19 +201,23 @@ export class ValuesProvider {
      * @param event
      */
     handleChangeFieldValue(event: ChangeFieldValueEvent): void {
-        console.log("Received event: ", JSON.stringify(event, undefined, 4))
+        void this.enqueue(async () => {
+            this.setFieldValue(
+                event.contextKey,
+                event.fieldName,
+                event.fieldValue
+            )
 
-        this.setFieldValue(event.contextKey, event.fieldName, event.fieldValue)
+            // at this point all values have been updated recursively, we can now change the link
+            const linkKey = `${event.contextKey}::${event.fieldName}`
+            if (event.link) {
+                this.store_.links[linkKey] = event.link
+            } else if (linkKey in this.store_.links) {
+                delete this.store_.links[linkKey]
+            }
 
-        // at this point all values have been updated recursively, we can now change the link
-        const linkKey = `${event.contextKey}::${event.fieldName}`
-        if (event.link) {
-            this.store_.links[linkKey] = event.link
-        } else if (linkKey in this.store_.links) {
-            delete this.store_.links[linkKey]
-        }
-
-        this.flush()
+            await this.flush()
+        }).catch(() => {})
     }
 
     /**
@@ -158,27 +226,30 @@ export class ValuesProvider {
      * @param event
      */
     handleCreateValue(event: CreateValueEvent): void {
-        const { values, links } = this.store
+        void this.enqueue(async () => {
+            const { values, links } = this.store
 
-        const schema = this.schemasProvider.resolveSchema(event.typeName)
-        const fieldValues = makeDefaultFieldValues(schema)
-        const key = `${event.typeName}::${event.valueName}`
+            const schema = this.schemasProvider.resolveSchema(event.typeName)
+            const fieldValues = makeDefaultFieldValues(schema)
+            const key = `${event.typeName}::${event.valueName}`
 
-        values[key] = fieldValues
+            values[key] = fieldValues
 
-        if (event.linkToCaller) {
-            links[`${event.callerContextKey}::${event.callerFieldName}`] = key
+            if (event.linkToCaller) {
+                links[`${event.callerContextKey}::${event.callerFieldName}`] =
+                    key
 
-            this.setFieldValue(
-                event.callerContextKey,
-                event.callerFieldName,
-                bytesToHex(
-                    convertFieldsToUplcData(schema, fieldValues).toCbor()
+                this.setFieldValue(
+                    event.callerContextKey,
+                    event.callerFieldName,
+                    bytesToHex(
+                        convertFieldsToUplcData(schema, fieldValues).toCbor()
+                    )
                 )
-            )
-        }
+            }
 
-        this.flush()
+            await this.flush()
+        }).catch(() => {})
     }
 
     /**
@@ -259,16 +330,13 @@ export class ValuesProvider {
         }
     }
 
-    private flush() {
-        writeValueStore(this.store_).then(() => {
-            this.listeners.forEach((l) => l(this.store_))
-        })
+    private async flush() {
+        await writeValueStore(this.store_, this.uri)
+        this.listeners.forEach((l) => l(this.store_))
     }
 }
 
-async function readValueStore(): Promise<Store> {
-    const uri = getValueStoreUri()
-
+async function readValueStore(uri: Uri | undefined): Promise<Store> {
     if (!uri) {
         return { values: {}, links: {} }
     }
@@ -277,31 +345,42 @@ async function readValueStore(): Promise<Store> {
         const content = await workspace.fs.readFile(uri)
         const text = new TextDecoder("utf-8").decode(content)
 
-        return Schema.decodeUnknownSync(Schema.parseJson(Store))(text)
-    } catch (e: any) {
-        if (e.code != "ENOENT") {
-            console.log(`Failed to read store: ${e} (code=${e.code})`)
+        const store = Schema.decodeUnknownSync(Schema.parseJson(Store))(text)
+        for (const [key, fields] of Object.entries(store.values)) {
+            if (
+                key.startsWith("Tx::") &&
+                fields.refInputs !== undefined &&
+                fields.ref_inputs === undefined
+            ) {
+                fields.ref_inputs = fields.refInputs
+                delete fields.refInputs
+            }
         }
-
-        return { values: {}, links: {} }
+        for (const key of Object.keys(store.links))
+            if (key.startsWith("Tx::") && key.endsWith("::refInputs")) {
+                store.links[key.slice(0, -9) + "ref_inputs"] = store.links[key]
+                delete store.links[key]
+            }
+        return store
+    } catch (e: any) {
+        if (e.code === "ENOENT" || e.code === "FileNotFound")
+            return { values: {}, links: {} }
+        throw new Error(
+            "Cannot read .vscode/heliosdebugger.json; fix its contents or permissions before editing values."
+        )
     }
 }
 
-async function writeValueStore(store: Store): Promise<void> {
-    const uri = getValueStoreUri()
-
-    if (!uri) {
-        return
-    }
-
-    try {
-        const content = JSON.stringify(store, undefined, 4)
-        const encodedContent = new TextEncoder().encode(content)
-        await workspace.fs.writeFile(uri, encodedContent)
-    } catch (e) {
-        // log error?
-        return
-    }
+async function writeValueStore(
+    store: Store,
+    uri: Uri | undefined
+): Promise<void> {
+    if (!uri) return
+    await workspace.fs.createDirectory(Uri.joinPath(uri, ".."))
+    await workspace.fs.writeFile(
+        uri,
+        new TextEncoder().encode(JSON.stringify(store, undefined, 4))
+    )
 }
 
 function getValueStoreUri(): Uri | undefined {
