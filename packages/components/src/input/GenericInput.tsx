@@ -38,12 +38,14 @@ export function GenericInput({
     const vscode = useVsCodeApi()
     const store = useStoreHelper()
 
+    const schemas = useTypeSchemas()
+
     // NIL is always available
     const options = useMemo(() => {
         return store
-            .getTypeOptions(fieldType)
+            .getTypeOptions(fieldType, tryResolveSchema(schemas, fieldType))
             .concat([DEFAULT_VALUE_NAME, makeCreateMessage(fieldType)])
-    }, [store, fieldType])
+    }, [store, fieldType, schemas])
 
     const valueName = useCurrentGenericInputValue(
         fieldName,

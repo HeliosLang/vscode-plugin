@@ -1,3 +1,5 @@
+import { collectTypeSchemas, entryPointTypeName } from "./typeSchemas"
+import { type TypeSchema } from "@helios-lang/type-utils"
 import { capturedCompileOptions } from "./captureCompilation"
 import {
     genDummyHash,
@@ -10,7 +12,8 @@ import { type UplcProgramV2 } from "@helios-lang/uplc"
 
 export function collectEntryPointInfo(
     ast: Program | undefined,
-    entryPoint: string | undefined
+    entryPoint: string | undefined,
+    schemas: Record<string, TypeSchema> = ast ? collectTypeSchemas({ ast }) : {}
 ): ArgsPanelEntryPoint | undefined {
     if (!ast || !entryPoint) {
         return undefined
@@ -23,7 +26,10 @@ export function collectEntryPointInfo(
     if (entryPoint == "main") {
         args = ast.entryPoint.mainFunc.args.map((a) => ({
             name: a.name.value,
-            type: a.type.toString(),
+            type:
+                a.name.value === "_" || !a.type.asDataType
+                    ? a.type.toString()
+                    : entryPointTypeName(a.type.asDataType.toSchema(), schemas),
             optional: false
         }))
 
@@ -42,7 +48,13 @@ export function collectEntryPointInfo(
 
             args = fnStmnt.args.map((a) => ({
                 name: a.name.value,
-                type: a.type.toString(),
+                type:
+                    a.name.value === "_" || !a.type.asDataType
+                        ? a.type.toString()
+                        : entryPointTypeName(
+                              a.type.asDataType.toSchema(),
+                              schemas
+                          ),
                 optional: a.isOptional
             }))
         } catch (_e) {

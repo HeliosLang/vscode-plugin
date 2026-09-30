@@ -1,3 +1,4 @@
+import { collectTypeSchemas } from "./typeSchemas"
 import { type TypeSchema } from "@helios-lang/type-utils"
 import { resolveSchema } from "schemas"
 import { ASTProvider } from "./ASTProvider"
@@ -44,29 +45,4 @@ export class TypeSchemasProvider {
     resolveSchema(typeName: string): TypeSchema {
         return resolveSchema(this.schemas, typeName)
     }
-}
-
-function collectTypeSchemas(
-    programs: Record<string, Program>
-): Record<string, TypeSchema> {
-    const result: Record<string, TypeSchema> = {}
-
-    for (let programKey in programs) {
-        const p = programs[programKey]
-
-        if (!p) continue
-        const types = p.userTypes
-
-        for (let moduleName in types) {
-            const moduleTypes = types[moduleName]
-
-            // just keep the inner name
-
-            for (let typeName in moduleTypes) {
-                result[typeName] = moduleTypes[typeName].toSchema()
-            }
-        }
-    }
-
-    return result
 }

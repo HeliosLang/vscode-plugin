@@ -1,3 +1,4 @@
+import { type TypeSchema } from "@helios-lang/type-utils"
 import { type Program } from "@helios-lang/compiler"
 import { decodeUplcData } from "@helios-lang/uplc"
 import { collectEntryPointInfo } from "./ast"
@@ -5,13 +6,14 @@ import { type CaptureEvaluation } from "./captureFeed"
 
 export function capturedArguments(
     ast: Program,
-    evaluation: CaptureEvaluation
+    evaluation: CaptureEvaluation,
+    schemas?: Record<string, TypeSchema>
 ): { name: string; type: string; cbor: string }[] {
     if (evaluation.plutusVersion !== "PlutusScriptV2")
         throw new Error(
             "Captured argument import currently supports Plutus V2 only"
         )
-    const info = collectEntryPointInfo(ast, "main")!
+    const info = collectEntryPointInfo(ast, "main", schemas)!
     const expected = ast.purpose === "spending" ? 3 : 2
     if (
         evaluation.arguments.length !== expected ||

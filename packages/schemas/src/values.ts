@@ -159,9 +159,6 @@ export function resolveSchema(
 ): TypeSchema {
     if (typeName in schemas) {
         return schemas[typeName]
-    } else if (typeName.split("::").slice(1).join("::") in schemas) {
-        // try without the module name
-        return schemas[typeName.split("::").slice(1).join("::")]
     } else if (
         Object.values(schemas).some(
             (s) => "id" in s && s.id === typeName && s.kind !== "reference"

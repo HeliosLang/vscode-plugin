@@ -336,7 +336,7 @@ export function importCapturedArguments(
         if (!index) {
             index = new Map()
             for (const [key, fields] of Object.entries(next.values)) {
-                if (!key.startsWith(`${type}::`)) continue
+                if (key.slice(0, key.lastIndexOf("::")) !== type) continue
                 try {
                     const cbor = hex(convertFieldsToUplcData(schema, fields))
                     if (!index.has(cbor)) index.set(cbor, key)

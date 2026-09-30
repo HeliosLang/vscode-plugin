@@ -67,7 +67,13 @@ export class StoreHelper {
             return undefined
         }
 
-        return bytesToHex(convertFieldsToUplcData(schema, fields).toCbor())
+        try {
+            return bytesToHex(convertFieldsToUplcData(schema, fields).toCbor())
+        } catch {
+            // Saved values may belong to another validator's same-named type
+            // or an older schema. They are not candidates for this schema.
+            return undefined
+        }
     }
 
     getFieldValue(contextKey: string, fieldName: string): string | undefined {
@@ -85,7 +91,10 @@ export class StoreHelper {
         const result: Record<string, Record<string, string>> = {}
 
         for (let key in this.store.values) {
-            if (key.startsWith(prefix)) {
+            if (
+                key.startsWith(prefix) &&
+                !key.slice(prefix.length).includes("::")
+            ) {
                 result[key.slice(prefix.length)] = this.store.values[key]
             }
         }
@@ -93,8 +102,12 @@ export class StoreHelper {
         return result
     }
 
-    getTypeOptions(typeName: string): string[] {
-        return Object.keys(this.getTypeValues(typeName))
+    getTypeOptions(typeName: string, schema?: TypeSchema): string[] {
+        return Object.keys(this.getTypeValues(typeName)).filter(
+            (name) =>
+                !schema ||
+                this.getValue(`${typeName}::${name}`, schema) !== undefined
+        )
     }
 
     /**
@@ -118,9 +131,7 @@ export class StoreHelper {
 
         for (let valueName in options) {
             if (
-                bytesToHex(
-                    convertFieldsToUplcData(schema, options[valueName]).toCbor()
-                ) == cborHex
+                this.getValue(`${typeName}::${valueName}`, schema) === cborHex
             ) {
                 valueNames.push(valueName)
             }
@@ -155,6 +166,6 @@ export class StoreHelper {
             return undefined
         }
 
-        return link.split("::").slice(1).join("::")
+        return link.slice(link.lastIndexOf("::") + 2)
     }
 }

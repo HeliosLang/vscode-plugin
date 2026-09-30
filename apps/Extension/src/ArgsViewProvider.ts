@@ -1,3 +1,5 @@
+import { collectTypeSchemas } from "./typeSchemas"
+import { migrateArgumentNamespaces } from "./argumentNamespaces"
 import { capturedProgram, verifyCompilation } from "./captureCompilation"
 import { type CompilationContext } from "schemas"
 import { capturedArguments } from "./captureImport"
@@ -196,11 +198,11 @@ export class ArgsViewProvider implements WebviewViewProvider {
         const evaluation = capture.evaluations[index]
         const rawAst = ast
         ast = capturedProgram(ast, evaluation.compilation)
-        const argumentsToImport = capturedArguments(ast, evaluation)
-        const schemas = { ...this.schemasProvider.schemas }
-        for (const types of Object.values(ast.userTypes))
-            for (const [name, type] of Object.entries(types))
-                schemas[name] = type.toSchema()
+        const schemas = collectTypeSchemas({
+            ...this.astProvider.programs,
+            __captured: ast
+        })
+        const argumentsToImport = capturedArguments(ast, evaluation, schemas)
         await this.valuesProvider.importIntoDocument(uri, (store) => {
             try {
                 const next = importCapturedArguments(
@@ -247,14 +249,32 @@ export class ArgsViewProvider implements WebviewViewProvider {
         const file = ast.entryPoint.mainModule.name.site.file
         this.valuesProvider
             .selectDocument(Uri.parse(file))
-            .then(() => {
+            .then(async () => {
                 if (revision !== this.astRevision) return
                 this.rawAst = ast
                 this.compilation =
                     this.valuesProvider.store.captureContexts?.[
                         this.captureContextKey(ast)
                     ]?.compilation
-                this.ast = capturedProgram(ast, this.compilation)
+                const selectedAst = capturedProgram(ast, this.compilation)
+                const schemas = collectTypeSchemas({
+                    ...this.astProvider.programs,
+                    __selected: selectedAst
+                })
+                const migrate = (store: import("schemas").Store) =>
+                    migrateArgumentNamespaces(selectedAst, store, schemas)
+                if (
+                    migrate(this.valuesProvider.store) !==
+                    this.valuesProvider.store
+                ) {
+                    await this.valuesProvider.importIntoDocument(
+                        Uri.parse(file),
+                        migrate
+                    )
+                    if (revision !== this.astRevision) return
+                }
+                this.schemasProvider.setSchemas(schemas)
+                this.ast = selectedAst
                 this.syncAST()
             })
             .catch((error) => {
@@ -376,7 +396,11 @@ export class ArgsViewProvider implements WebviewViewProvider {
 
     private compileArgs(): UplcData[] | undefined {
         const ast = this.ast
-        const entryPointInfo = collectEntryPointInfo(ast, this.entryPoint)
+        const entryPointInfo = collectEntryPointInfo(
+            ast,
+            this.entryPoint,
+            this.schemasProvider.schemas
+        )
         if (!ast || !entryPointInfo) {
             return undefined
         }
@@ -539,7 +563,11 @@ export class ArgsViewProvider implements WebviewViewProvider {
             errorUris,
             allValidators,
             allEntryPoints,
-            entryPoint: collectEntryPointInfo(ast, this.entryPoint)
+            entryPoint: collectEntryPointInfo(
+                ast,
+                this.entryPoint,
+                this.schemasProvider.schemas
+            )
         } satisfies ArgsPanelContext)
     }
 }
