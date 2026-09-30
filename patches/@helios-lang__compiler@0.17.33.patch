@@ -1,0 +1,87 @@
+diff --git a/src/program/DebugExpression.js b/src/program/DebugExpression.js
+index 704f58b4f337c295c4e9d8fd463665086f5d6e68..fce85fd32137b8aea62c4a2d957ccc0fc3c47811 100644
+--- a/src/program/DebugExpression.js
++++ b/src/program/DebugExpression.js
+@@ -6,6 +6,7 @@ import {
+     makeWord
+ } from "@helios-lang/compiler-utils"
+ import { $, compile } from "@helios-lang/ir"
++import { genExtraDefs } from "../codegen/Definitions.js"
+ import { ToIRContext } from "../codegen/index.js"
+ import { debugScopes } from "../expressions/DebugScope.js"
+ import { IR_PARSE_OPTIONS } from "../parse/index.js"
+@@ -20,8 +21,9 @@ import { ModuleCollection } from "./ModuleCollection.js"
+  * @param {string} expression
+  * @param {{file: string, line: number, column: number}} location
+  * @param {string[]} names
++ * @param {import("./Program.js").CompileOptions} options
+  */
+-export function compileDebugExpression(program, expression, location, names) {
++export function compileDebugExpression(program, expression, location, names, options = {}) {
+     const candidates = (debugScopes.get(program.errors) ?? []).filter(
+         ({ site }) =>
+             site.file == location.file &&
+@@ -59,7 +61,19 @@ export function compileDebugExpression(program, expression, location, names) {
+         program.entryPoint.mainModule
+     ])
+     let ir = expr.toIR(ctx)
+-    const defs = modules.fetchDefinitions(ctx, ir, () => false)
++    const extra = genExtraDefs({
++        dependsOnOwnHash: options.dependsOnOwnHash ?? false,
++        name: program.name,
++        purpose: program.purpose,
++        hashDependencies: options.hashDependencies ?? {},
++        validatorTypes: program.props.validatorTypes,
++        validatorIndices: options.validatorIndices,
++        currentScriptValue: options.validatorIndices?.[program.name] !== undefined
++            ? `__core__constrData(${options.validatorIndices[program.name]}, __core__mkNilData(()))`
++            : undefined,
++        makeParamsSubstitutable: false
++    })
++    const defs = modules.fetchDefinitions(ctx, ir, () => false, extra)
+     ir = modules.wrap(ctx, ir, defs)
+     // The explicit outer parameters also bind runtime ScriptContext dependencies.
+     for (let i = parameters.length - 1; i >= 0; i--)
+diff --git a/src/program/Program.js b/src/program/Program.js
+index 6d737b65131db65848c70d5b33ca293adf3035a5..b3d1427a5d108a4c35be69b539395dd319bdcf67 100644
+--- a/src/program/Program.js
++++ b/src/program/Program.js
+@@ -60,9 +60,10 @@ export class Program {
+      * @param {string} expression
+      * @param {{file: string, line: number, column: number}} location Zero-based coordinates.
+      * @param {string[]} names Runtime environment binding names, in argument order.
++     * @param {CompileOptions} options Captured compilation dependencies.
+      */
+-    compileDebugExpression(expression, location, names) {
+-        return compileDebugExpression(this, expression, location, names)
++    compileDebugExpression(expression, location, names, options = {}) {
++        return compileDebugExpression(this, expression, location, names, options)
+     }
+     /**
+      * @readonly
+diff --git a/types/program/DebugExpression.d.ts b/types/program/DebugExpression.d.ts
+index 06c6313555423d98b8f85ebfa2c3be0a402feeee..8cbfd8ae28545a58cc3e82af1aca7f193ab9edb1 100644
+--- a/types/program/DebugExpression.d.ts
++++ b/types/program/DebugExpression.d.ts
+@@ -10,7 +10,7 @@ export function compileDebugExpression(program: import("./Program.js").Program,
+     file: string;
+     line: number;
+     column: number;
+-}, names: string[]): {
++}, names: string[], options?: import("./Program.js").CompileOptions): {
+     program: import("@helios-lang/uplc").UplcProgramV2;
+     type: string;
+ };
+diff --git a/types/program/Program.d.ts b/types/program/Program.d.ts
+index e6e27d58e3f8bae345161bb49ef43904695efbbf..3551d52271fa96203ff6613298a72d6263435c74 100644
+--- a/types/program/Program.d.ts
++++ b/types/program/Program.d.ts
+@@ -51,7 +51,7 @@ export class Program {
+         file: string;
+         line: number;
+         column: number;
+-    }, names: string[]): {
++    }, names: string[], options?: CompileOptions): {
+         program: UplcProgramV2;
+         type: string;
+     };

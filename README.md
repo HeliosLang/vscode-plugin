@@ -135,7 +135,7 @@ after restoring the source. It never uses a production key or submits transactio
 
 ### Captured compilation context
 
-New captures restore compile-time parameter overrides (including imported-module constants), network settings and validator dependencies before source debugging. Parameters also apply to watch expressions. Local optimized hashes are checked against the captured validator; a mismatch is reported as a local reconstruction and does not prevent debugging. The captured and local compiler versions are shown.
+New captures restore compile-time parameter overrides (including imported-module constants), network settings and validator dependencies before source debugging. Parameters and captured validator hash dependencies also apply to watch expressions, including imported address constants. The unoptimized compilation inputs contain the optimized validator hashes used by the deployment; watch evaluation never hashes the debug program to obtain an address. Missing hashes in legacy captures are reported explicitly. Local optimized hashes are checked against the captured validator; a mismatch is reported as a local reconstruction and does not prevent debugging. The captured and local compiler versions are shown.
 
 Compilation context is saved with imported arguments in `.vscode/heliosdebugger.json`, scoped by source URI. **Helios: Show Captured Compilation Parameters** opens a read-only view of the captured context. **Helios: Clear Captured Compilation Context** restores local source defaults while preserving arguments. Legacy captures remain usable with a warning that compilation context is unavailable. No source constants are rewritten.
 

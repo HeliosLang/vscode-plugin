@@ -3,7 +3,7 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { spawn } from "node:child_process"
-import { Program } from "@helios-lang/compiler"
+import { Program, getScriptHashType } from "@helios-lang/compiler"
 import { makeSource } from "@helios-lang/compiler-utils"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import {
@@ -1054,6 +1054,110 @@ func main(r: Int) -> Bool {
                 snapshot.stack.values
             )
             assert.equal(String(result.value), "true")
+            checked = true
+            break
+        }
+        if (machine.step().kind !== "running") break
+    }
+    assert(checked)
+})
+
+test("watch expressions use captured hashes in imported addresses and reject unavailable hashes", () => {
+    const text = `minting hash_watch
+import Addresses
+func main(r: Int) -> Bool {
+    n = r + 1;
+    n == 3
+}`
+    const moduleText = `module Addresses
+const config: Address = Address::from_validator(Scripts::config_validator)`
+    const hash = "22".repeat(28)
+    const ownHash = "33".repeat(28)
+    const base = {
+        main: { name: file, content: text },
+        modules: [{ name: "/tmp/Addresses.hl", content: moduleText }],
+        validators: [
+            { name: "hash_watch", purpose: "minting" },
+            { name: "config_validator", purpose: "spending" }
+        ]
+    }
+    const compilation = {
+        version: 1 as const,
+        compilerVersion: "0.17.30",
+        validator: { name: "hash_watch", purpose: "minting" },
+        parameters: {},
+        isTestnet: false,
+        validatorTypes: {
+            hash_watch: "MintingPolicyHash",
+            config_validator: "ValidatorHash"
+        },
+        optimized: {
+            hashDependencies: { config_validator: "11".repeat(28) },
+            dependsOnOwnHash: false
+        },
+        unoptimized: {
+            hashDependencies: { config_validator: `#${hash}` },
+            dependsOnOwnHash: false,
+            ownHash
+        }
+    }
+    const evaluator = new ExpressionEvaluator({ ...base, compilation })
+    const missing = new ExpressionEvaluator(base)
+    const placeholder = new ExpressionEvaluator({
+        ...base,
+        compilation: {
+            ...compilation,
+            unoptimized: {
+                ...compilation.unoptimized,
+                hashDependencies: { config_validator: "#" }
+            }
+        }
+    })
+    const program = new Program(makeSource(text, { name: file }), {
+        moduleSources: [makeSource(moduleText, { name: "/tmp/Addresses.hl" })],
+        validatorTypes: Object.fromEntries(
+            base.validators.map((v) => [v.name, getScriptHashType(v.purpose)])
+        )
+    })
+    const machine = program
+        .compile(false)
+        .createCekMachine([
+            makeUplcDataValue(makeIntData(2)),
+            makeUplcDataValue(makeIntData(0))
+        ])
+    let checked = false
+    for (let i = 0; i < 10000; i++) {
+        const snapshot = machine.snapshot()
+        if (
+            snapshot.currentTerm?.site?.line === 4 &&
+            snapshot.stack?.values.some((v) => v.name === "n")
+        ) {
+            const site = snapshot.currentTerm.site
+            const values = snapshot.stack.values
+            const before = machine.snapshot()
+            for (const expression of [
+                `Scripts::config_validator == ValidatorHash::new(#${hash})`,
+                `Addresses::config == Address::from_validator(ValidatorHash::new(#${hash}))`,
+                `Scripts::hash_watch == MintingPolicyHash::new(#${ownHash})`
+            ])
+                assert.equal(
+                    String(evaluator.evaluate(expression, site, values).value),
+                    "true"
+                )
+            assert.equal(
+                String(missing.evaluate("n == 3", site, values).value),
+                "true"
+            )
+            for (const other of [missing, placeholder])
+                assert.throws(
+                    () => other.evaluate("Addresses::config", site, values),
+                    /Hash for config_validator was not captured/
+                )
+            assert.deepEqual(machine.snapshot(), before)
+            assert.equal(
+                compilation.unoptimized.hashDependencies.config_validator,
+                `#${hash}`
+            )
             checked = true
             break
         }

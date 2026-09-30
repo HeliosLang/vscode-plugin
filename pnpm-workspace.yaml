@@ -7,4 +7,5 @@ packages:
   - apps/ValueView
 
 patchedDependencies:
+  '@helios-lang/compiler@0.17.33': patches/@helios-lang__compiler@0.17.33.patch
   '@helios-lang/uplc@0.7.20': patches/@helios-lang__uplc@0.7.20.patch

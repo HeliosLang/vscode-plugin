@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
+  '@helios-lang/compiler@0.17.33':
+    hash: 0b2d658f1d03621167fdacacb633055610261c7a5bf7e5c5ddf44ae9817c3b02
+    path: patches/@helios-lang__compiler@0.17.33.patch
   '@helios-lang/uplc@0.7.20':
     hash: 244a0149f53095fb426bad689fc0e21f2f113481ada2f60d5cc0714bb1c1846d
     path: patches/@helios-lang__uplc@0.7.20.patch
@@ -81,7 +84,7 @@ importers:
         version: 0.3.4
       '@helios-lang/compiler':
         specifier: 0.17.33
-        version: 0.17.33
+        version: 0.17.33(patch_hash=0b2d658f1d03621167fdacacb633055610261c7a5bf7e5c5ddf44ae9817c3b02)
       '@helios-lang/compiler-utils':
         specifier: ^0.5.17
         version: 0.5.17
@@ -114,7 +117,7 @@ importers:
         version: 0.3.4
       '@helios-lang/compiler':
         specifier: 0.17.33
-        version: 0.17.33
+        version: 0.17.33(patch_hash=0b2d658f1d03621167fdacacb633055610261c7a5bf7e5c5ddf44ae9817c3b02)
       '@helios-lang/compiler-utils':
         specifier: ^0.5.16
         version: 0.5.17
@@ -2284,7 +2287,7 @@ snapshots:
       '@helios-lang/codec-utils': 0.3.4
       '@helios-lang/type-utils': 0.2.9
 
-  '@helios-lang/compiler@0.17.33':
+  '@helios-lang/compiler@0.17.33(patch_hash=0b2d658f1d03621167fdacacb633055610261c7a5bf7e5c5ddf44ae9817c3b02)':
     dependencies:
       '@helios-lang/codec-utils': 0.3.4
       '@helios-lang/compiler-utils': 0.5.17

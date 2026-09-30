@@ -20,8 +20,10 @@ export type DebugSources = {
 
 export class ExpressionEvaluator {
     private program: Program
+    private compilation?: CompilationContext
 
     constructor(sources: DebugSources) {
+        this.compilation = sources.compilation
         this.program = new Program(
             makeSource(sources.main.content, { name: sources.main.name }),
             {
@@ -58,9 +60,32 @@ export class ExpressionEvaluator {
             if (value.name && /^[A-Za-z_][A-Za-z_0-9]*$/.test(value.name))
                 bindings.set(value.name, value)
         }
-        const compiled = this.program.compileDebugExpression(expression, site, [
-            ...bindings.keys()
-        ])
+        const context = this.compilation
+        const options = context?.unoptimized
+        const hashDependencies = { ...options?.hashDependencies }
+        if (options?.ownHash && context)
+            hashDependencies[context.validator.name] = options.ownHash
+        // An empty compiler placeholder is not an actual captured hash.
+        for (const [name, hash] of Object.entries(hashDependencies))
+            if (hash === "#") delete hashDependencies[name]
+        let compiled: ReturnType<Program["compileDebugExpression"]>
+        try {
+            compiled = this.program.compileDebugExpression(
+                expression,
+                site,
+                [...bindings.keys()],
+                { ...options, hashDependencies }
+            )
+        } catch (error) {
+            const missing = /builtin __helios__scripts__(\w+) not found/.exec(
+                (error as Error).message
+            )
+            if (missing)
+                throw new Error(
+                    `Hash for ${missing[1]} was not captured. Load a capture containing compilation metadata from the updated platform to inspect this expression.`
+                )
+            throw error
+        }
         let root = compiled.program.root
         for (const _ of bindings) {
             if (root.kind != "lambda")
