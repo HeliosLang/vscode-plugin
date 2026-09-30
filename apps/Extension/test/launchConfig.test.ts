@@ -3,11 +3,51 @@ import assert from "node:assert/strict"
 import { parse } from "jsonc-parser"
 import { synchronizeHeliosLaunchConfiguration } from "../src/launchConfig"
 import { selectEntryPoint } from "../src/entryPoint"
+import { Program, getScriptHashType } from "@helios-lang/compiler"
+import { collectValidators } from "../src/ast"
+
+test("debug launches preserve spending, minting, staking and mixed hash types", () => {
+    const purposes = {
+        spend: "spending",
+        mint: "minting",
+        stake: "staking",
+        mixed: "mixed"
+    }
+    const validatorTypes = Object.fromEntries(
+        Object.entries(purposes).map(([name, purpose]) => [
+            name,
+            getScriptHashType(purpose)
+        ])
+    )
+    const source = `spending caller
+const target: Address = Address::from_validator(Scripts::spend)
+func main(_datum: Data, _redeemer: Data) -> Bool { target == target }`
+    const program = new Program(source, { validatorTypes })
+    const serialized = collectValidators(program)
+    assert.deepEqual(
+        Object.fromEntries(serialized.map((v) => [v.name, v.purpose])),
+        purposes
+    )
+    assert.doesNotThrow(
+        () =>
+            new Program(source, {
+                validatorTypes: Object.fromEntries(
+                    serialized.map((v) => [
+                        v.name,
+                        getScriptHashType(v.purpose)
+                    ])
+                )
+            })
+    )
+})
 
 test("defaults to main rather than the first helper, preserving valid selections", () => {
     const entries = ["validate_unlock", "main"]
     assert.equal(selectEntryPoint(entries), "main")
-    assert.equal(selectEntryPoint(entries, "validate_unlock"), "validate_unlock")
+    assert.equal(
+        selectEntryPoint(entries, "validate_unlock"),
+        "validate_unlock"
+    )
     assert.equal(selectEntryPoint(entries, "removed"), "main")
     assert.equal(selectEntryPoint(["helper"]), "helper")
     assert.equal(selectEntryPoint([]), undefined)
@@ -35,7 +75,12 @@ test("aggressively replaces Helios configurations while preserving other debugge
         version: "custom",
         configurations: [
             minimal,
-            { type: "node", request: "launch", name: "Node", program: "index.js" }
+            {
+                type: "node",
+                request: "launch",
+                name: "Node",
+                program: "index.js"
+            }
         ],
         compounds: [{ name: "Both", configurations: ["Node"] }]
     })
@@ -61,9 +106,9 @@ test("does not modify malformed JSONC or non-array configurations", () => {
         '{"configurations":[',
         '{"configurations":null}',
         '{"configurations":{}}',
-        '[]',
-        'null',
-        ''
+        "[]",
+        "null",
+        ""
     ]) {
         assert.equal(synchronizeHeliosLaunchConfiguration(raw, minimal), raw)
     }
@@ -77,8 +122,11 @@ test("removes duplicate and legacy Helios entries including stale arguments", ()
             minimal
         ]
     })
-    assert.deepEqual(parse(synchronizeHeliosLaunchConfiguration(raw, minimal)), {
-        version: "0.2.0",
-        configurations: [minimal]
-    })
+    assert.deepEqual(
+        parse(synchronizeHeliosLaunchConfiguration(raw, minimal)),
+        {
+            version: "0.2.0",
+            configurations: [minimal]
+        }
+    )
 })

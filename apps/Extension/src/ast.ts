@@ -1,4 +1,9 @@
-import { genDummyHash, type ArgsPanelEntryPoint } from "schemas"
+import { capturedCompileOptions } from "./captureCompilation"
+import {
+    genDummyHash,
+    type CompilationContext,
+    type ArgsPanelEntryPoint
+} from "schemas"
 import { Program } from "@helios-lang/compiler"
 import { type ErrorCollector } from "@helios-lang/compiler-utils"
 import { type UplcProgramV2 } from "@helios-lang/uplc"
@@ -112,7 +117,7 @@ export function collectValidators(
 
     const entries = names.map((name) => {
         const purpose = (() => {
-            switch (validatorTypes[name].value) {
+            switch (validatorTypes[name].toString()) {
                 case "ScriptHash":
                     return "mixed"
                 case "ValidatorHash":
@@ -143,7 +148,8 @@ export function sortedValidatorIndices(
 // TODO: compile with source map
 export function compileEntryPoint(
     ast: Program | undefined,
-    entryPoint: string | undefined
+    entryPoint: string | undefined,
+    compilation?: CompilationContext
 ): UplcProgramV2 | undefined {
     const entryPointInfo = collectEntryPointInfo(ast, entryPoint)
     if (!ast || !entryPoint || !entryPointInfo) {
@@ -156,11 +162,19 @@ export function compileEntryPoint(
         return undefined
     }
 
-    const hashDependencies = genDummyHashes(Object.keys(validatorTypes))
-    const validatorIndices = sortedValidatorIndices(ast)
+    const capturedOptions = compilation
+        ? capturedCompileOptions(compilation)
+        : undefined
+    const hashDependencies =
+        capturedOptions?.hashDependencies ??
+        genDummyHashes(Object.keys(validatorTypes))
+    const validatorIndices = compilation
+        ? capturedOptions?.validatorIndices
+        : sortedValidatorIndices(ast)
 
     if (entryPoint == "main") {
         return ast.compile({
+            ...capturedOptions,
             optimize: false,
             onCompileUserFunc: undefined,
             hashDependencies: hashDependencies,

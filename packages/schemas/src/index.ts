@@ -41,4 +41,9 @@ export {
     TX_OUTPUT_DATUM_VARIANTS
 } from "./values"
 
+export {
+    validCompilationContext,
+    type CompilationContext,
+    type CompilationOptions
+} from "./compilation"
 export { importCapturedArguments, decodeValueFields } from "./capture"

@@ -1,12 +1,18 @@
+import {
+    validCompilationContext,
+    type CompilationContext
+} from "schemas/compilation"
 import { Program, getScriptHashType } from "@helios-lang/compiler"
 import { makeSource, type Site } from "@helios-lang/compiler-utils"
 import {
+    decodeUplcData,
     makeUplcProgramV2,
     type CekValue,
     type UplcTerm
 } from "@helios-lang/uplc"
 
 export type DebugSources = {
+    compilation?: CompilationContext
     main: { name: string; content: string }
     modules: { name: string; content: string }[]
     validators: { name: string; purpose: string }[]
@@ -28,9 +34,21 @@ export class ExpressionEvaluator {
                         getScriptHashType(v.purpose)
                     ])
                 ),
+                ...(sources.compilation
+                    ? { isTestnet: sources.compilation.isTestnet }
+                    : {}),
                 allowModuleEntryPoint: true
             }
         )
+        if (sources.compilation) {
+            if (!validCompilationContext(sources.compilation))
+                throw new Error("Invalid captured compilation context")
+            for (const [name, cbor] of Object.entries(
+                sources.compilation.parameters
+            ))
+                if (!this.program.changeParam(name, decodeUplcData(cbor)))
+                    throw new Error(`Cannot apply captured parameter ${name}`)
+        }
     }
 
     evaluate(expression: string, site: Site, values: CekValue[]) {

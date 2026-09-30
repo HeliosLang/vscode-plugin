@@ -6,6 +6,10 @@
         ".": {
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js"
+        },
+        "./compilation": {
+            "types": "./dist/compilation.d.ts",
+            "import": "./dist/compilation.js"
         }
     },
     "main": "./dist/index.js",
@@ -28,5 +32,12 @@
         "@helios-lang/type-utils": "^0.3.0",
         "@helios-lang/uplc": "^0.7.18",
         "effect": "^3.17.8"
+    },
+    "typesVersions": {
+        "*": {
+            "compilation": [
+                "dist/compilation.d.ts"
+            ]
+        }
     }
 }

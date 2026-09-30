@@ -1,3 +1,5 @@
+import { capturedProgram, verifyCompilation } from "./captureCompilation"
+import { type CompilationContext } from "schemas"
 import { capturedArguments } from "./captureImport"
 import { type Capture } from "./captureFeed"
 import { importCapturedArguments } from "schemas"
@@ -78,6 +80,9 @@ export class ArgsViewProvider implements WebviewViewProvider {
     private readonly valueViewsProvider: ValueViewsProvider
 
     private view: WebviewView | undefined
+    private rawAst: Program | undefined
+    private compilation: CompilationContext | undefined
+    private lastVerification = ""
     private ast: Program | undefined
     private entryPoint: string | undefined
     private entryPointHistory: Record<string, string>
@@ -94,6 +99,56 @@ export class ArgsViewProvider implements WebviewViewProvider {
         this.schemasProvider = schemasProvider
         this.valuesProvider = valuesProvider
         this.valueViewsProvider = valueViewsProvider
+        let inspectionContent = ""
+        let inspectionRevision = 0
+        extensionContext.subscriptions.push(
+            workspace.registerTextDocumentContentProvider("helios-capture", {
+                provideTextDocumentContent: () => inspectionContent
+            }),
+            commands.registerCommand(
+                "helios.clearCapturedContext",
+                async () => {
+                    if (!this.rawAst) return
+                    const uri = Uri.parse(
+                        this.rawAst.entryPoint.mainModule.name.site.file
+                    )
+                    await this.valuesProvider.importIntoDocument(
+                        uri,
+                        (store) => {
+                            const next = JSON.parse(
+                                JSON.stringify(store)
+                            ) as typeof store
+                            delete next.captureContexts?.[
+                                this.captureContextKey(this.rawAst!)
+                            ]
+                            return next
+                        }
+                    )
+                    this.compilation = undefined
+                    this.ast = this.rawAst
+                    this.lastVerification = ""
+                    this.syncAST()
+                }
+            ),
+            commands.registerCommand(
+                "helios.showCapturedParameters",
+                async () => {
+                    inspectionContent = JSON.stringify(
+                        this.compilation ?? {
+                            status: "Compilation context unavailable"
+                        },
+                        null,
+                        2
+                    )
+                    const document = await workspace.openTextDocument(
+                        Uri.parse(
+                            `helios-capture:/compilation.json?revision=${++inspectionRevision}`
+                        )
+                    )
+                    await window.showTextDocument(document, { preview: true })
+                }
+            )
+        )
 
         this.view = undefined
         this.ast = undefined
@@ -128,6 +183,10 @@ export class ArgsViewProvider implements WebviewViewProvider {
         )
     }
 
+    private captureContextKey(ast: Program) {
+        return `${ast.entryPoint.mainModule.name.site.file}::main`
+    }
+
     async importCapture(
         ast: Program,
         uri: Uri,
@@ -135,6 +194,8 @@ export class ArgsViewProvider implements WebviewViewProvider {
         index: number
     ) {
         const evaluation = capture.evaluations[index]
+        const rawAst = ast
+        ast = capturedProgram(ast, evaluation.compilation)
         const argumentsToImport = capturedArguments(ast, evaluation)
         const schemas = { ...this.schemasProvider.schemas }
         for (const types of Object.values(ast.userTypes))
@@ -142,13 +203,21 @@ export class ArgsViewProvider implements WebviewViewProvider {
                 schemas[name] = type.toSchema()
         await this.valuesProvider.importIntoDocument(uri, (store) => {
             try {
-                return importCapturedArguments(
+                const next = importCapturedArguments(
                     store,
                     schemas,
                     `${ast.name}::main`,
                     capture.captureId,
                     argumentsToImport
                 )
+                next.captureContexts ??= {}
+                next.captureContexts[this.captureContextKey(ast)] = {
+                    captureId: capture.captureId,
+                    evaluationIndex: index,
+                    scriptHash: evaluation.scriptHash,
+                    compilation: evaluation.compilation
+                }
+                return next
             } catch (error) {
                 throw new Error(
                     `Captured arguments do not match the local types for validator "${ast.name}". Revert the local type changes to match the captured validator before loading this capture. ${(error as Error).message}`
@@ -156,6 +225,9 @@ export class ArgsViewProvider implements WebviewViewProvider {
             }
         })
         this.schemasProvider.setSchemas(schemas)
+        this.rawAst = rawAst
+        this.compilation = evaluation.compilation
+        this.lastVerification = ""
         this.ast = ast
         this.entryPoint = "main"
         this.entryPointHistory[ast.name] = "main"
@@ -166,6 +238,8 @@ export class ArgsViewProvider implements WebviewViewProvider {
     setAST(ast: Program | undefined) {
         const revision = ++this.astRevision
         if (!ast) {
+            this.rawAst = undefined
+            this.compilation = undefined
             this.ast = undefined
             this.syncAST()
             return
@@ -175,10 +249,19 @@ export class ArgsViewProvider implements WebviewViewProvider {
             .selectDocument(Uri.parse(file))
             .then(() => {
                 if (revision !== this.astRevision) return
-                this.ast = ast
+                this.rawAst = ast
+                this.compilation =
+                    this.valuesProvider.store.captureContexts?.[
+                        this.captureContextKey(ast)
+                    ]?.compilation
+                this.ast = capturedProgram(ast, this.compilation)
                 this.syncAST()
             })
-            .catch(() => {})
+            .catch((error) => {
+                this.ast = undefined
+                window.showErrorMessage((error as Error).message)
+                this.syncAST()
+            })
     }
 
     resolveWebviewView(
@@ -228,7 +311,34 @@ export class ArgsViewProvider implements WebviewViewProvider {
     }
 
     compileProgramAndArgs(): UPLCProgramWithArgs | undefined {
-        const uplcProgram = compileEntryPoint(this.ast, this.entryPoint)
+        const saved =
+            this.ast &&
+            this.valuesProvider.store.captureContexts?.[
+                this.captureContextKey(this.ast)
+            ]
+        if (saved && this.ast) {
+            let warning: string | undefined
+            if (this.compilation) {
+                const result = verifyCompilation(
+                    this.ast,
+                    this.compilation,
+                    saved.scriptHash
+                )
+                if (!result.matches)
+                    warning = `Local reconstruction differs from captured validator. Captured compiler ${result.capturedCompiler}; local compiler ${result.localCompiler}. Expected ${result.expectedHash}; got ${result.hash}.`
+            } else
+                warning =
+                    "Compilation context unavailable; debugging uses local source defaults."
+            if (warning && warning !== this.lastVerification) {
+                void window.showWarningMessage(warning)
+                this.lastVerification = warning
+            }
+        }
+        const uplcProgram = compileEntryPoint(
+            this.ast,
+            this.entryPoint,
+            this.compilation
+        )
         if (!uplcProgram) {
             return undefined
         }
@@ -259,6 +369,7 @@ export class ArgsViewProvider implements WebviewViewProvider {
                 name: m.sourceCode.name,
                 content: m.sourceCode.content
             })),
+            compilation: this.compilation,
             validators: collectValidators(ast)
         }
     }

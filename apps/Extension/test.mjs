@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url"
 
 const dir = await mkdtemp(join(tmpdir(), "helios-extension-tests-"))
 try {
-    for (const name of ["launchConfig", "captures"]) {
+    for (const name of ["launchConfig", "captures", "compilation"]) {
         const outfile = join(dir, `${name}.test.cjs`)
         await build({
             entryPoints: [`test/${name}.test.ts`],

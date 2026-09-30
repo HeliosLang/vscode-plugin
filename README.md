@@ -81,6 +81,11 @@ picker; missing validators, compilation errors and incompatible captures report
 an error above the captures table. Incompatible local types must be reverted to
 match the capture before importing; failed imports leave saved arguments intact.
 Sources are compiled with the extension's existing compiler **0.17.33**.
+Manual captures can omit embedded source text. On selection, source-map names
+are matched against the open workspace to identify the validator. Imported
+modules are excluded; multiple matching validators remain an ambiguity error.
+Without embedded sources, compatibility cannot be checked and a warning is shown.
+
 Differences from captured sources produce a warning: Run uses your current local
 source, allowing you to test fixes, rather than replaying production bytecode.
 
@@ -127,3 +132,9 @@ files into an isolated temporary workspace, then launch VS Code with a private
 It verifies polling, refresh, imported values, repeat-selection reuse and a real
 DAP exception stop, incompatible-type and missing-validator errors, and recovery
 after restoring the source. It never uses a production key or submits transactions.
+
+### Captured compilation context
+
+New captures restore compile-time parameter overrides (including imported-module constants), network settings and validator dependencies before source debugging. Parameters also apply to watch expressions. Local optimized hashes are checked against the captured validator; a mismatch is reported as a local reconstruction and does not prevent debugging. The captured and local compiler versions are shown.
+
+Compilation context is saved with imported arguments in `.vscode/heliosdebugger.json`, scoped by source URI. **Helios: Show Captured Compilation Parameters** opens a read-only view of the captured context. **Helios: Clear Captured Compilation Context** restores local source defaults while preserving arguments. Legacy captures remain usable with a warning that compilation context is unavailable. No source constants are rewritten.

@@ -7,6 +7,7 @@ import { Program } from "@helios-lang/compiler"
 import { makeSource } from "@helios-lang/compiler-utils"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import {
+    makeUplcDataValue,
     encodeFullUplcProgram,
     makeListData,
     makeIntData,
@@ -1003,4 +1004,60 @@ test("script exception stops can be disabled", async () => {
     h.request("setExceptionBreakPoints", { filters: [] })
     launch(h, 'testing failure\nfunc main() -> () { error("failure") }')
     assert.equal((await h.stop()).event, "terminated")
+})
+
+test("watch expressions use captured compile-time parameters", () => {
+    const text = `minting parameter_watch
+const LIMIT: Int = 0
+func main(r: Int) -> Bool {
+    n = r + 1;
+    n == LIMIT
+}`
+    const source = makeSource(text, { name: file })
+    const program = new Program(source)
+    program.changeParam("parameter_watch::LIMIT", makeIntData(3))
+    const machine = program
+        .compile(false)
+        .createCekMachine([
+            makeUplcDataValue(makeIntData(2)),
+            makeUplcDataValue(makeIntData(0))
+        ])
+    const options = {
+        hashDependencies: { parameter_watch: "#" },
+        dependsOnOwnHash: false
+    }
+    const evaluator = new ExpressionEvaluator({
+        main: { name: file, content: text },
+        modules: [],
+        validators: [{ name: "parameter_watch", purpose: "minting" }],
+        compilation: {
+            version: 1,
+            compilerVersion: "0.17.30",
+            validator: { name: "parameter_watch", purpose: "minting" },
+            parameters: { "parameter_watch::LIMIT": "03" },
+            isTestnet: false,
+            validatorTypes: { parameter_watch: "MintingPolicyHash" },
+            optimized: options,
+            unoptimized: options
+        }
+    })
+    let checked = false
+    for (let i = 0; i < 10000; i++) {
+        const snapshot = machine.snapshot()
+        if (
+            snapshot.currentTerm?.site?.line === 4 &&
+            snapshot.stack?.values.some((v) => v.name === "n")
+        ) {
+            const result = evaluator.evaluate(
+                "LIMIT == 3 && n == LIMIT",
+                snapshot.currentTerm.site,
+                snapshot.stack.values
+            )
+            assert.equal(String(result.value), "true")
+            checked = true
+            break
+        }
+        if (machine.step().kind !== "running") break
+    }
+    assert(checked)
 })

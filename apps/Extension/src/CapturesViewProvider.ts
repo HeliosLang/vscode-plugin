@@ -1,3 +1,4 @@
+import { capturedProgram, verifyCompilation } from "./captureCompilation"
 import { captureHtml } from "./captureView"
 import {
     commands,
@@ -8,7 +9,7 @@ import {
     type WebviewViewProvider
 } from "vscode"
 import { makeHeliosSource } from "@helios-lang/compiler-utils"
-import { CaptureFeed, type CaptureRow } from "./captureFeed"
+import { CaptureFeed, validatorName, type CaptureRow } from "./captureFeed"
 import { readCaptureProfiles } from "./captureConfig"
 import { ASTProvider } from "./ASTProvider"
 import { ArgsViewProvider } from "./ArgsViewProvider"
@@ -135,10 +136,6 @@ export class CapturesViewProvider implements WebviewViewProvider {
             throw new Error(
                 row.error ?? "Capture is unavailable. Refresh and try again."
             )
-        if (row.validator === "Unknown validator")
-            throw new Error(
-                "Capture has missing or ambiguous validator source metadata."
-            )
         const uris = await workspace.findFiles(
             "**/*.{hl,helios}",
             "**/{node_modules,.git}/**"
@@ -146,14 +143,33 @@ export class CapturesViewProvider implements WebviewViewProvider {
         const docs = await Promise.all(
             uris.map((uri) => workspace.openTextDocument(uri))
         )
-        const matches = docs.filter((doc) => {
+        const workspaceSources: Record<string, string> = Object.create(null)
+        const parsed = docs.flatMap((doc) => {
             try {
                 const s = makeHeliosSource(doc.getText())
-                return s.moduleName === row.validator && s.purpose !== "module"
+                if (!s.moduleName) return []
+                workspaceSources[s.moduleName] = doc.getText()
+                return [{ doc, source: s }]
             } catch {
-                return false
+                return []
             }
         })
+        const name = validatorName(
+            capture,
+            capture.evaluations[row.evaluationIndex],
+            workspaceSources
+        )
+        if (!name)
+            throw new Error(
+                "Cannot identify a unique validator from the capture and workspace. Open the matching Helios sources; the capture must include source-map names."
+            )
+        row.validator = name
+        const matches = parsed
+            .filter(
+                ({ source }) =>
+                    source.moduleName === name && source.purpose !== "module"
+            )
+            .map(({ doc }) => doc)
         if (!matches.length)
             throw new Error(
                 `Validator "${row.validator}" can't be found in the local workspace. Open the folder containing its Helios source.`
@@ -172,7 +188,9 @@ export class CapturesViewProvider implements WebviewViewProvider {
                       )
                   )?.doc
         if (!selected) return
-        const program = await this.ast.compileDocument(selected, docs)
+        const rawProgram = await this.ast.compileDocument(selected, docs)
+        const compilation = capture.evaluations[row.evaluationIndex].compilation
+        const program = capturedProgram(rawProgram, compilation)
         if (program.errors.errors.length)
             throw new Error(
                 `Cannot import capture: '${row.validator}' has compilation errors. Fix them first.`
@@ -184,13 +202,15 @@ export class CapturesViewProvider implements WebviewViewProvider {
                 (m) => m.sourceCode.content
             )
         ]
-        const warning = !capturedSources.length
-            ? "Captured source metadata is unavailable; source compatibility cannot be checked."
-            : localSources.some((source) => !capturedSources.includes(source))
-              ? "Workspace sources differ from this capture. Run will debug the current local source."
-              : undefined
+        const warning = !compilation
+            ? "Compilation context unavailable; debugging uses local source defaults."
+            : !capturedSources.length
+              ? "Captured source metadata is unavailable; source compatibility cannot be checked."
+              : localSources.some((source) => !capturedSources.includes(source))
+                ? "Workspace sources differ from this capture. Run will debug the current local source."
+                : undefined
         await this.args.importCapture(
-            program,
+            rawProgram,
             selected.uri,
             capture,
             row.evaluationIndex
@@ -198,6 +218,22 @@ export class CapturesViewProvider implements WebviewViewProvider {
         await window.showTextDocument(selected, { preview: false })
         await commands.executeCommand("setContext", "heliosDebugActive", true)
         await commands.executeCommand("helios.entryPointAndArguments.focus")
-        if (warning) window.showWarningMessage(warning)
+        if (compilation) {
+            const result = verifyCompilation(
+                program,
+                compilation,
+                capture.evaluations[row.evaluationIndex].scriptHash
+            )
+            const message = `Captured compiler ${result.capturedCompiler}; local compiler ${result.localCompiler}.`
+            if (result.matches)
+                void window.showInformationMessage(
+                    `Captured validator hash verified. ${message}`
+                )
+            else
+                void window.showWarningMessage(
+                    `Local reconstruction differs from captured validator. ${message} Debugging is still available.`
+                )
+        }
+        if (warning) void window.showWarningMessage(warning)
     }
 }

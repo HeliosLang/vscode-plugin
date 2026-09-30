@@ -1,3 +1,4 @@
+import { validCompilationContext, type CompilationContext } from "./compilation"
 import { TypeSchema } from "@helios-lang/type-utils"
 import { Schema } from "effect"
 import { convertFieldsToUplcData } from "./values"
@@ -5,6 +6,23 @@ import { bytesToHex } from "@helios-lang/codec-utils"
 
 export const Store = Schema.mutable(
     Schema.Struct({
+        captureContexts: Schema.optional(
+            Schema.mutable(
+                Schema.Record({
+                    key: Schema.String,
+                    value: Schema.Struct({
+                        captureId: Schema.String,
+                        evaluationIndex: Schema.Number,
+                        scriptHash: Schema.String,
+                        compilation: Schema.optional(
+                            Schema.declare<CompilationContext>(
+                                validCompilationContext
+                            )
+                        )
+                    })
+                })
+            )
+        ),
         values: Schema.mutable(
             Schema.Record({
                 key: Schema.String,

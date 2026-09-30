@@ -1,8 +1,10 @@
+import { validCompilationContext, type CompilationContext } from "schemas"
 import { request as httpsRequest } from "node:https"
 import { request as httpRequest } from "node:http"
 import { type CaptureProfile } from "./captureConfig"
 
 export type CaptureEvaluation = {
+    compilation?: CompilationContext
     plutusVersion: string
     scriptHash: string
     arguments: string[]
@@ -105,15 +107,23 @@ export function requestJson(
 }
 export function validatorName(
     capture: Capture,
-    evaluation: CaptureEvaluation
+    evaluation: CaptureEvaluation,
+    workspaceSources: Record<string, string> = {}
 ): string | undefined {
+    if (
+        evaluation.compilation &&
+        validCompilationContext(evaluation.compilation)
+    )
+        return evaluation.compilation.validator.name
     const names = new Set([
         ...(evaluation.sourceMap?.sourceNames ?? []),
         ...(evaluation.companion?.sourceMap?.sourceNames ?? [])
     ])
     const validators = new Set<string>()
     for (const name of names) {
-        const match = capture.sources?.[name]?.match(
+        const source = capture.sources?.[name] ?? workspaceSources[name]
+        if (typeof source !== "string") continue
+        const match = source.match(
             /^\s*(?:spending|minting|staking|mixed|certifying|rewarding)\s+([A-Za-z_]\w*)\b/
         )
         if (match) validators.add(match[1])
@@ -131,6 +141,11 @@ export function validateCapture(value: any, id: string): Capture {
     )
         throw new Error("Invalid capture v1 response")
     for (const e of value.evaluations) {
+        if (
+            e?.compilation !== undefined &&
+            !validCompilationContext(e.compilation)
+        )
+            throw new Error("Invalid captured compilation context")
         if (
             !e ||
             !Array.isArray(e.arguments) ||

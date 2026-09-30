@@ -56,6 +56,61 @@ const payload = {
 }
 const hex = (data: any) => bytesToHex(data.toCbor())
 
+test("manual captures resolve source-map names against workspace sources", () => {
+    const capture = { ...payload, sources: {} }
+    const evaluation = {
+        ...payload.evaluations[0],
+        sourceMap: {
+            sourceNames: ["PriceModule", "mint_order_validator", "ConfigModule"]
+        }
+    }
+    const workspaceSources = {
+        PriceModule: "module PriceModule\n",
+        mint_order_validator: "spending mint_order_validator\n",
+        ConfigModule: "module ConfigModule\n",
+        unrelated: "spending unrelated\n"
+    }
+    assert.equal(
+        validatorName(capture, evaluation, workspaceSources),
+        "mint_order_validator"
+    )
+    assert.equal(
+        validatorName(
+            capture,
+            { ...evaluation, sourceMap: undefined },
+            workspaceSources
+        ),
+        undefined
+    )
+    assert.equal(
+        validatorName(
+            capture,
+            { ...evaluation, sourceMap: { sourceNames: ["PriceModule"] } },
+            workspaceSources
+        ),
+        undefined
+    )
+    assert.equal(
+        validatorName(
+            capture,
+            {
+                ...evaluation,
+                sourceMap: {
+                    sourceNames: ["mint_order_validator", "unrelated"]
+                }
+            },
+            workspaceSources
+        ),
+        undefined
+    )
+    assert.equal(
+        validatorName(payload, payload.evaluations[0], {
+            validator: "spending changed\n"
+        }),
+        "time_lock"
+    )
+})
+
 test("CLI credential paths and owner-only profile files", async () => {
     assert.equal(
         configPath("linux", {}, "/home/test"),

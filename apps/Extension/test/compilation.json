@@ -1,0 +1,27 @@
+{
+    "version": 1,
+    "compilerVersion": "0.17.30",
+    "validator": {
+        "name": "oracle_delegate",
+        "purpose": "staking"
+    },
+    "parameters": {
+        "oracle_delegate::ORACLE_KEYS": "9f581c11111111111111111111111111111111111111111111111111111111581c22222222222222222222222222222222222222222222222222222222581c33333333333333333333333333333333333333333333333333333333ff"
+    },
+    "isTestnet": false,
+    "validatorTypes": {
+        "oracle_delegate": "StakingValidatorHash"
+    },
+    "optimized": {
+        "hashDependencies": {
+            "oracle_delegate": "#"
+        },
+        "dependsOnOwnHash": false
+    },
+    "unoptimized": {
+        "hashDependencies": {
+            "oracle_delegate": "#44444444444444444444444444444444444444444444444444444444"
+        },
+        "dependsOnOwnHash": false
+    }
+}
