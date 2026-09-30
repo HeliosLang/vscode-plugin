@@ -12,16 +12,12 @@ import {
 import { ReactNode, StrictMode, useCallback, useId, useMemo } from "react"
 import { createRoot } from "react-dom/client"
 import { ErrorBoundary } from "react-error-boundary"
-import {
-    ArgsPanelEntryPoint,
-    ChangeFieldValueEvent,
-    makeDefaultValue,
-    tryResolveSchema
-} from "schemas"
+import { ArgsPanelEntryPoint, ChangeFieldValueEvent } from "schemas"
 import { bytesToHex } from "@helios-lang/codec-utils"
 import { decodeUplcData, makeConstrData } from "@helios-lang/uplc"
 import { expectDefined } from "@helios-lang/type-utils"
 import { useArgsPanelContext } from "./useArgsPanelContext"
+import { resolveArgumentValues } from "./argumentValues"
 
 import "components/styles.module.css"
 import styles from "./styles.module.css"
@@ -209,20 +205,11 @@ function EntryPointForm({
     const schemas = useTypeSchemas()
 
     const [argValues, scriptContextValue] = useMemo(() => {
-        const argValues: Record<string, string> = {}
-
-        for (let a of entryPointInfo.args) {
-            const value = store.getFieldValue(contextKey, a.name)
-
-            if (value) {
-                argValues[a.name] = value
-            } else {
-                const schema = tryResolveSchema(schemas, a.type)
-                if (schema) {
-                    argValues[a.name] = makeDefaultValue(schema)
-                }
-            }
-        }
+        const argValues = resolveArgumentValues(
+            entryPointInfo.args,
+            schemas,
+            (name) => store.getFieldValue(contextKey, name)
+        )
 
         const scriptContextValue = store.getFieldValue(
             contextKey,
@@ -232,9 +219,7 @@ function EntryPointForm({
         return [argValues, scriptContextValue]
     }, [entryPointInfo, store, contextKey, schemas])
 
-    if (
-        Object.keys(argValues).length < Object.keys(entryPointInfo.args).length
-    ) {
+    if (!argValues) {
         return <Loading />
     }
 
